@@ -1,0 +1,183 @@
+/* ==============================
+   Precision Toronto Luxury Auto Detailing Theme
+   ============================== */
+
+/* Root Variables */
+
+@import "tailwindcss";
+:root {
+    /* Luxury Dark Theme */
+    --background: hsl(220, 20%, 8%);
+    --foreground: hsl(0, 0%, 98%);
+  
+    --card: hsl(220, 20%, 10%);
+    --card-foreground: hsl(0, 0%, 98%);
+  
+    --popover: hsl(220, 20%, 10%);
+    --popover-foreground: hsl(0, 0%, 98%);
+  
+    /* Gold luxury accents */
+    --primary: hsl(45, 100%, 65%);
+    --primary-foreground: hsl(220, 20%, 8%);
+    --primary-glow: hsl(45, 100%, 75%);
+  
+    --secondary: hsl(220, 15%, 15%);
+    --secondary-foreground: hsl(0, 0%, 98%);
+  
+    --muted: hsl(220, 15%, 15%);
+    --muted-foreground: hsl(0, 0%, 70%);
+  
+    --accent: hsl(45, 100%, 65%);
+    --accent-foreground: hsl(220, 20%, 8%);
+  
+    --destructive: hsl(0, 84.2%, 60.2%);
+    --destructive-foreground: hsl(0, 0%, 98%);
+  
+    --border: hsl(220, 15%, 20%);
+    --input: hsl(220, 15%, 15%);
+    --ring: hsl(45, 100%, 65%);
+  
+    --radius: 12px;
+  
+    /* Luxury Gradients */
+    --gradient-gold: linear-gradient(135deg, hsl(45, 100%, 65%), hsl(45, 100%, 75%));
+    --gradient-dark: linear-gradient(135deg, hsl(220, 20%, 8%), hsl(220, 15%, 12%));
+    --gradient-hero: linear-gradient(135deg,
+      hsl(220, 20%, 8%) 0%,
+      hsl(220, 15%, 12%) 50%,
+      hsl(45, 100%, 65%, 0.1) 100%);
+  
+    /* Automotive Shadows */
+    --shadow-luxury: 0 20px 40px -10px hsl(45, 100%, 65%, 0.2);
+    --shadow-card: 0 10px 30px -5px hsl(220, 20%, 5%, 0.5);
+    --shadow-glow: 0 0 30px hsl(45, 100%, 65%, 0.3);
+  
+    /* Smooth Transitions */
+    --transition-luxury: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+    /* Automotive Metallic */
+    --metallic: hsl(220, 15%, 25%);
+    --metallic-foreground: hsl(0, 0%, 98%);
+  
+    /* Status Colors */
+    --success: hsl(120, 100%, 40%);
+    --warning: hsl(45, 100%, 60%);
+    --info: hsl(210, 100%, 60%);
+  }
+  
+  /* Light Theme */
+  .light {
+    --background: hsl(0, 0%, 100%);
+    --foreground: hsl(220, 20%, 8%);
+    --card: hsl(0, 0%, 100%);
+    --card-foreground: hsl(220, 20%, 8%);
+    --border: hsl(220, 15%, 90%);
+    --input: hsl(220, 15%, 95%);
+  }
+  
+  /* ==============================
+     Base Styles
+     ============================== */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html, body {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: "Inter", sans-serif;
+    line-height: 1.5;
+    transition: var(--transition-luxury);
+  }
+  
+  a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: var(--transition-fast);
+  }
+  
+  a:hover {
+    color: var(--primary-glow);
+  }
+  
+  /* Buttons */
+  button {
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition-fast);
+  }
+  
+  button.primary {
+    background: var(--gradient-gold);
+    color: var(--primary-foreground);
+    box-shadow: var(--shadow-luxury);
+  }
+  
+  button.primary:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+  
+  button.secondary {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+  }
+  
+  button.secondary:hover {
+    opacity: 0.9;
+  }
+  
+  /* Cards */
+  .card {
+    background: var(--card);
+    color: var(--card-foreground);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-luxury);
+  }
+  
+  .card:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-4px);
+  }
+  
+  /* Headings */
+  h1, h2, h3, h4, h5 {
+    font-weight: 700;
+    color: var(--foreground);
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  h2 {
+    font-size: 2rem;
+  }
+  
+  /* Utility */
+  .text-accent {
+    color: var(--accent);
+  }
+  
+  .bg-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  

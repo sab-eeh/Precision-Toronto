@@ -1,0 +1,11 @@
+Model Information:
+* title:	Porsche Mission E
+* source:	https://sketchfab.com/3d-models/porsche-mission-e-0265b34846cc4380bfb6f5d73203f063
+* author:	kevin (ケビン) (https://sketchfab.com/sohyalebret)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Porsche Mission E" (https://sketchfab.com/3d-models/porsche-mission-e-0265b34846cc4380bfb6f5d73203f063) by kevin (ケビン) (https://sketchfab.com/sohyalebret) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

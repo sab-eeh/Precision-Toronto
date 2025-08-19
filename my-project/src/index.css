@@ -1,68 +1,119 @@
+@import "tailwindcss";
+
+/* ==============================
+   Precision Toronto Luxury Auto Detailing Theme
+   ============================== */
+
+/* Root Variables */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* Luxury Dark Theme */
+  --background: hsl(220, 20%, 8%);
+  --foreground: hsl(0, 0%, 98%);
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --card: hsl(220, 20%, 10%);
+  --card-foreground: hsl(0, 0%, 98%);
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --popover: hsl(220, 20%, 10%);
+  --popover-foreground: hsl(0, 0%, 98%);
+
+  /* Gold luxury accents */
+  --primary: hsl(45, 100%, 65%);
+  --primary-foreground: hsl(220, 20%, 8%);
+  --primary-glow: hsl(45, 100%, 75%);
+
+  --secondary: hsl(220, 15%, 15%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+
+  --muted: hsl(220, 15%, 15%);
+  --muted-foreground: hsl(0, 0%, 70%);
+
+  --accent: hsl(45, 100%, 65%);
+  --accent-foreground: hsl(220, 20%, 8%);
+
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+
+  --border: hsl(220, 15%, 20%);
+  --input: hsl(220, 15%, 15%);
+  --ring: hsl(45, 100%, 65%);
+
+  --radius: 12px;
+
+  /* Luxury Gradients */
+  --gradient-gold: linear-gradient(135deg, hsl(45, 100%, 65%), hsl(45, 100%, 75%));
+  --gradient-dark: linear-gradient(135deg, hsl(220, 20%, 8%), hsl(220, 15%, 12%));
+  --gradient-hero: linear-gradient(
+    135deg,
+    hsl(220, 20%, 8%) 0%,
+    hsl(220, 15%, 12%) 50%,
+    hsl(45, 100%, 65%, 0.1) 100%
+  );
+
+  /* Automotive Shadows */
+  --shadow-luxury: 0 20px 40px -10px hsl(45, 100%, 65%, 0.2);
+  --shadow-card: 0 10px 30px -5px hsl(220, 20%, 5%, 0.5);
+  --shadow-glow: 0 0 30px hsl(45, 100%, 65%, 0.3);
+
+  /* Smooth Transitions */
+  --transition-luxury: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Automotive Metallic */
+  --metallic: hsl(220, 15%, 25%);
+  --metallic-foreground: hsl(0, 0%, 98%);
+
+  /* Service Status Colors */
+  --success: hsl(120, 100%, 40%);
+  --warning: hsl(45, 100%, 60%);
+  --info: hsl(210, 100%, 60%);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* Light Theme */
+.light {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(220, 20%, 8%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(220, 20%, 8%);
+  --border: hsl(220, 15%, 90%);
+  --input: hsl(220, 15%, 95%);
 }
-a:hover {
-  color: #535bf2;
+
+/* ==============================
+   Base Styles
+   ============================== */
+html {
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: var(--transition-luxury);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
+/* Example utility overrides */
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  border-radius: var(--radius);
+  transition: var(--transition-fast);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+button.primary {
+  background: var(--gradient-gold);
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-luxury);
+}
+
+button.secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+
+.card {
+  background: var(--card);
+  color: var(--card-foreground);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
 }
