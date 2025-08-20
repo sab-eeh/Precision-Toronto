@@ -1,17 +1,17 @@
-// src/pages/HomePage.jsx
 import React from "react";
-// import { Button } from "@/components/ui/button";
-// import Car3D from "@/components/Car3D";
-// import ProgressTracker from "@/components/ProgressTracker";
-// import FloatingContact from "@/components/FloatingContact";
+import { useNavigate } from "react-router-dom";
+import CarModelViewer from "../components/ui/CarModelViewer";
+import ProgressTracker from "../components/ProgressTracker";
 import BeforeAfterSlider from "../components/BeforeAfterSlider";
+// import FloatingContact from "@/components/FloatingContact";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
 import { Star, MapPin, Clock, Shield } from "lucide-react";
 import heroBackground from "../assets/hero-bg.jpg";
-// import CarModelViewer from "@/components/ui/CarModelViewer"
 
-const HomePage = ({ onCarSelect, selectedCar, onNext }) => {
+const HomePage = ({ onCarSelect }) => {
+  const navigate = useNavigate();
+
   const features = [
     {
       icon: Shield,
@@ -80,6 +80,14 @@ const HomePage = ({ onCarSelect, selectedCar, onNext }) => {
     },
   ];
 
+  // Handle car selection → save + navigate
+  const handleCarSelect = (carType) => {
+    if (onCarSelect) {
+      onCarSelect(carType);
+    }
+    navigate("/services"); // navigate to services page
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -129,7 +137,7 @@ const HomePage = ({ onCarSelect, selectedCar, onNext }) => {
       </section>
 
       {/* Progress Tracker */}
-      {/* <ProgressTracker currentStep={1} /> */}
+      <ProgressTracker currentStep={1} />
 
       {/* Car Selection */}
       <section className="py-20 px-6">
@@ -145,12 +153,10 @@ const HomePage = ({ onCarSelect, selectedCar, onNext }) => {
             {cars.map((car) => (
               <div
                 key={car.type}
-                className={`border rounded-2xl p-5 bg-card shadow-card hover:ring-2 hover:ring-blue-400 transition-all duration-300 cursor-pointer ${
-                  selectedCar === car.type ? "ring-2 ring-yellow-400" : ""
-                }`}
-                onClick={() => onCarSelect(car.type)}
+                className="border rounded-2xl p-5 bg-card shadow-card hover:ring-2 hover:ring-blue-400 transition-all duration-300 cursor-pointer"
+                onClick={() => handleCarSelect(car.type)}
               >
-                {/* <CarModelViewer modelPath={car.modelPath} modelType={car.type} /> */}
+                <CarModelViewer modelPath={car.modelPath} modelType={car.type} />
                 <div className="text-center mt-5">
                   <h3 className="text-lg font-semibold">{car.label}</h3>
                   <p className="text-sm text-muted-foreground">{car.desc}</p>
@@ -158,18 +164,6 @@ const HomePage = ({ onCarSelect, selectedCar, onNext }) => {
               </div>
             ))}
           </div>
-
-          {selectedCar && (
-            <div className="text-center mt-10">
-              <Button
-                onClick={onNext}
-                size="lg"
-                className="btn-primary px-10 py-3"
-              >
-                Continue to Services
-              </Button>
-            </div>
-          )}
         </div>
       </section>
 
@@ -187,10 +181,7 @@ const HomePage = ({ onCarSelect, selectedCar, onNext }) => {
             <h2 className="text-3xl font-bold mb-4">What Our Customers Say</h2>
             <div className="flex items-center justify-center gap-1 mb-6">
               {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className="w-6 h-6 fill-yellow-400 text-yellow-400"
-                />
+                <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
               ))}
               <span className="ml-2 text-lg font-semibold">4.9/5 on Google</span>
             </div>

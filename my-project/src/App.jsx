@@ -1,21 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
-// import "../src/theme.css";
-import Home from "./pages/HomePage";
-// import About from "./pages/About";
-import Contact from "./pages/Contact"
+import HomePage from "./pages/HomePage";
+import ServicesPage from "./pages/ServicesPage";
+import BookingPage from "./pages/BookingPage";
+// import ConfirmationPage from "./pages/ConfirmationPage";
 
 function App() {
-  return (
-    <div>
-   
-      <Routes>
-        <Route path="/" element={<Home />} />
-        {/* <Route path="/about" element={<About />} /> */}
-        <Route path="/contact" element={<Contact />} />
+  const [selectedCar, setSelectedCar] = useState(null);
 
-      </Routes>
-    </div>
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage onCarSelect={setSelectedCar} />} />
+      <Route path="/services" element={<ServicesPage selectedCar={selectedCar} />} />
+      <Route path="/booking" element={<BookingPage />} />
+      {/* <Route path="/confirmation" element={<ConfirmationPage />} /> */}
+    </Routes>
   );
 }
 
