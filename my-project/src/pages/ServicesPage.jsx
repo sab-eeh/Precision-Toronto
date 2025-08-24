@@ -5,71 +5,22 @@ import Footer from "../layout/Footer";
 import ProgressTracker from "../components/ProgressTracker";
 import ServiceCard from "../components/ServiceCard";
 import Button from "../components/ui/Button";
-import { Plus, Minus } from "lucide-react";
 
 const servicesData = {
   sedan: [
-    {
-      title: "Interior Only",
-      description: "Deep clean of all interior surfaces.",
-      price: 150,
-      features: ["Vacuum & shampoo", "Dashboard detail", "Windows"],
-    },
-    {
-      title: "Interior + Exterior",
-      description: "Complete detail inside & out.",
-      price: 200,
-      features: ["Interior detail", "Full exterior wash", "Wax protection"],
-      popular: true,
-    },
-    {
-      title: "Stage 1 Paint Correction",
-      description: "Machine polish & correction.",
-      price: 399,
-      features: ["Removes light swirls", "Restores gloss"],
-    },
+    { title: "Interior Only", description: "Deep clean of all interior surfaces.", price: 150, features: ["Vacuum & shampoo", "Dashboard detail", "Windows"] },
+    { title: "Interior + Exterior", description: "Complete detail inside & out.", price: 200, features: ["Interior detail", "Full exterior wash", "Wax protection"], popular: true },
+    { title: "Stage 1 Paint Correction", description: "Machine polish & correction.", price: 399, features: ["Removes light swirls", "Restores gloss"] },
   ],
   suv: [
-    {
-      title: "Interior Only",
-      description: "Deep clean of SUV interior.",
-      price: 165,
-      features: ["Vacuum & shampoo", "Dashboard detail", "Windows"],
-    },
-    {
-      title: "Interior + Exterior",
-      description: "Full SUV inside & out.",
-      price: 225,
-      features: ["Deep clean interior", "Full exterior wash", "Wax protection"],
-      popular: true,
-    },
-    {
-      title: "Stage 1 Paint Correction",
-      description: "Machine polish for SUV.",
-      price: 399,
-      features: ["Removes light swirls", "Restores gloss"],
-    },
+    { title: "Interior Only", description: "Deep clean of SUV interior.", price: 165, features: ["Vacuum & shampoo", "Dashboard detail", "Windows"] },
+    { title: "Interior + Exterior", description: "Full SUV inside & out.", price: 225, features: ["Deep clean interior", "Full exterior wash", "Wax protection"], popular: true },
+    { title: "Stage 1 Paint Correction", description: "Machine polish for SUV.", price: 399, features: ["Removes light swirls", "Restores gloss"] },
   ],
   truck: [
-    {
-      title: "Interior Only",
-      description: "Heavy-duty truck interior detail.",
-      price: 170,
-      features: ["Vacuum & shampoo", "Dashboard detail", "Windows"],
-    },
-    {
-      title: "Interior + Exterior",
-      description: "Full truck interior & exterior.",
-      price: 250,
-      features: ["Deep clean interior", "Full exterior wash", "Wax protection"],
-      popular: true,
-    },
-    {
-      title: "Stage 1 Paint Correction",
-      description: "Machine polish for trucks.",
-      price: 399,
-      features: ["Removes light swirls", "Restores gloss"],
-    },
+    { title: "Interior Only", description: "Heavy-duty truck interior detail.", price: 170, features: ["Vacuum & shampoo", "Dashboard detail", "Windows"] },
+    { title: "Interior + Exterior", description: "Full truck interior & exterior.", price: 250, features: ["Deep clean interior", "Full exterior wash", "Wax protection"], popular: true },
+    { title: "Stage 1 Paint Correction", description: "Machine polish for trucks.", price: 399, features: ["Removes light swirls", "Restores gloss"] },
   ],
 };
 
@@ -93,46 +44,37 @@ const addonsData = {
   ],
 };
 
-const ServicesPage = ({ selectedCar, onBack }) => {
+const ServicesPage = ({ selectedCar }) => {
   const navigate = useNavigate();
   const [selectedServices, setSelectedServices] = useState([]);
-  const [selectedAddons, setSelectedAddons] = useState({});
+  const [selectedAddons, setSelectedAddons] = useState([]);
 
   const availableServices = servicesData[selectedCar] || [];
   const availableAddons = addonsData[selectedCar] || [];
 
+  // Toggle Services
   const toggleService = (service) => {
     setSelectedServices((prev) =>
-      prev.includes(service)
-        ? prev.filter((s) => s !== service)
-        : [...prev, service]
+      prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service]
     );
   };
 
-  const changeAddonQty = (addon, delta) => {
-    setSelectedAddons((prev) => {
-      const newQty = (prev[addon.title] || 0) + delta;
-      if (newQty <= 0) {
-        const copy = { ...prev };
-        delete copy[addon.title];
-        return copy;
-      }
-      return { ...prev, [addon.title]: newQty };
-    });
+  // Toggle Addons
+  const toggleAddon = (addon) => {
+    setSelectedAddons((prev) =>
+      prev.includes(addon) ? prev.filter((a) => a !== addon) : [...prev, addon]
+    );
   };
 
   const totalPrice =
     selectedServices.reduce((sum, s) => sum + s.price, 0) +
-    Object.entries(selectedAddons).reduce(
-      (sum, [title, qty]) =>
-        sum + qty * availableAddons.find((a) => a.title === title).price,
-      0
-    );
+    selectedAddons.reduce((sum, a) => sum + a.price, 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
       <ProgressTracker currentStep={2} />
+
       <section className="py-16 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
@@ -162,29 +104,24 @@ const ServicesPage = ({ selectedCar, onBack }) => {
             {availableAddons.map((addon, index) => (
               <div
                 key={index}
-                className="p-5 rounded-2xl border transition bg-white text-gray-800 shadow hover:border-blue-400"
+                className={`p-5 rounded-2xl border transition shadow cursor-pointer ${
+                  selectedAddons.includes(addon)
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-800 hover:border-blue-400"
+                }`}
+                onClick={() => toggleAddon(addon)}
               >
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="text-lg font-semibold">{addon.title}</h4>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => changeAddonQty(addon, -1)}
-                    >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <span className="w-6 text-center">
-                      {selectedAddons[addon.title] || 0}
-                    </span>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => changeAddonQty(addon, 1)}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className={`px-3 py-1 rounded-lg text-white ${
+                      selectedAddons.includes(addon) ? "bg-red-600" : "bg-blue-600"
+                    }`}
+                  >
+                    {selectedAddons.includes(addon) ? "-" : "+"}
+                  </Button>
                 </div>
                 <p className="text-sm">${addon.price}</p>
               </div>
@@ -201,17 +138,12 @@ const ServicesPage = ({ selectedCar, onBack }) => {
                   <span>${s.price}</span>
                 </li>
               ))}
-              {Object.entries(selectedAddons).map(([title, qty], i) => {
-                const addon = availableAddons.find((a) => a.title === title);
-                return (
-                  <li key={i} className="flex justify-between border-b py-2">
-                    <span>
-                      {title} x {qty}
-                    </span>
-                    <span>${(addon.price * qty).toFixed(2)}</span>
-                  </li>
-                );
-              })}
+              {selectedAddons.map((a, i) => (
+                <li key={i} className="flex justify-between border-b py-2">
+                  <span>{a.title}</span>
+                  <span>${a.price}</span>
+                </li>
+              ))}
             </ul>
             <div className="flex justify-between font-bold text-xl">
               <span>Total</span>
@@ -221,8 +153,8 @@ const ServicesPage = ({ selectedCar, onBack }) => {
 
           {/* Navigation */}
           <div className="flex justify-between mt-10 max-w-3xl mx-auto">
-            <Button variant="outline" onClick={onBack}>
-              Back
+            <Button variant="outline" onClick={() => navigate("/")}>
+              Back to Home
             </Button>
             <Button
               variant="default"
@@ -238,6 +170,7 @@ const ServicesPage = ({ selectedCar, onBack }) => {
           </div>
         </div>
       </section>
+
       <Footer />
     </div>
   );
