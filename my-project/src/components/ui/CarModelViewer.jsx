@@ -1,27 +1,36 @@
-import React, { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF } from "@react-three/drei";
+import React, { Suspense, useRef } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useGLTF } from "@react-three/drei";
 
 const modelSettings = {
-  sedan: { scale: 110.5, y: -0.7 },
-  suv: { scale: 0.34, y: -0.2 },
-  coupe: { scale: 1, y: -0.2 },
-  truck: { scale: 0.01, y: 0.1 },
+  sedan: { scale: 95.5, y: -0.8 },
+  suv: { scale: 0.29, y: -0.2 },
+  coupe: { scale: 0.85, y: -0.2 },
+  truck: { scale: 8, y: -1},
 };
 
 function CarModel({ modelPath, modelType }) {
   const { scene } = useGLTF(modelPath);
+  const meshRef = useRef();
 
   const { scale, y } = modelSettings[modelType.toLowerCase()] || {
     scale: 1,
     y: 0,
   };
 
+  // Continuous rotation only on Y-axis
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.01; // horizontal spin
+      meshRef.current.rotation.x = 0;     // lock tilt
+      meshRef.current.rotation.z = 0;     // lock tilt
+    }
+  });
+
   scene.scale.set(scale, scale, scale);
   scene.position.set(0, y, 0);
-  scene.rotation.y = Math.PI;
 
-  return <primitive object={scene} />;
+  return <primitive ref={meshRef} object={scene} />;
 }
 
 function CarModelViewer({ modelPath, modelType }) {
@@ -33,7 +42,6 @@ function CarModelViewer({ modelPath, modelType }) {
         <Suspense fallback={null}>
           <CarModel modelPath={modelPath} modelType={modelType} />
         </Suspense>
-        <OrbitControls enableZoom={false} autoRotate />
       </Canvas>
     </div>
   );

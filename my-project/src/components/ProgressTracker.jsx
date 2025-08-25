@@ -12,7 +12,7 @@ const steps = [
 const ProgressTracker = ({ currentStep }) => {
   return (
     <div className="w-full py-8 bg-gradient-to-r from-[#0B1315] via-[#10181A] to-[#0B1315] shadow-lg">
-      <div className="flex flex-col sm:flex-row items-center justify-between max-w-5xl mx-auto px-6 gap-10 sm:gap-6">
+      <div className="flex items-center justify-between max-w-5xl mx-auto px-4 gap-4">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isCompleted = currentStep > step.step;
@@ -28,7 +28,7 @@ const ProgressTracker = ({ currentStep }) => {
                 transition={{ delay: index * 0.15, type: "spring" }}
               >
                 <div
-                  className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
+                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
                     isCompleted
                       ? "bg-gradient-to-br from-blue-500 to-blue-400 border-blue-500 text-white shadow-lg shadow-blue-500/40"
                       : isCurrent
@@ -43,7 +43,7 @@ const ProgressTracker = ({ currentStep }) => {
                   )}
                 </div>
                 <span
-                  className={`mt-3 text-sm font-medium text-center tracking-wide ${
+                  className={`mt-2 text-xs sm:text-sm font-medium text-center tracking-wide ${
                     isCompleted || isCurrent ? "text-white" : "text-gray-400"
                   }`}
                 >
@@ -53,18 +53,19 @@ const ProgressTracker = ({ currentStep }) => {
 
               {/* Connector Line */}
               {index < steps.length - 1 && (
-                <div className="hidden sm:block flex-1 h-1 mx-3 relative">
-                  {/* Base Line */}
-                  <div className="absolute inset-0 bg-gray-700 rounded-full"></div>
-                  {/* Progress Line */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{
-                      width: currentStep > step.step ? "100%" : "0%",
-                    }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                  />
+                <div className="flex-1 flex items-center">
+                  {/* Base line */}
+                  <div className="h-1 w-full bg-gray-700 rounded-full relative">
+                    {/* Progress fill */}
+                    <motion.div
+                      className="absolute top-0 left-0 h-1 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full"
+                      initial={{ width: "0%" }}
+                      animate={{
+                        width: currentStep > step.step ? "100%" : "0%",
+                      }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                    />
+                  </div>
                 </div>
               )}
             </div>

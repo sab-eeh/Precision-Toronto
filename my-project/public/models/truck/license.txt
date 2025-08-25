@@ -1,11 +1,11 @@
 Model Information:
-* title:	OffRoad Chevy Silverado 4x4
-* source:	https://sketchfab.com/3d-models/offroad-chevy-silverado-4x4-fa24f49fc4af4881881ba9df408a2e9d
-* author:	David_Holiday (https://sketchfab.com/David_Holiday)
+* title:	2020 Chevrolet Silverado 1500 RST
+* source:	https://sketchfab.com/3d-models/2020-chevrolet-silverado-1500-rst-d4acf44cf9ea43f086038c9cd0e3bd0d
+* author:	Outlaw Games™ (https://sketchfab.com/Outlaw_Games)
 
 Model License:
-* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
-* requirements:	Author must be credited. Commercial use is allowed.
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
 
 If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
-This work is based on "OffRoad Chevy Silverado 4x4" (https://sketchfab.com/3d-models/offroad-chevy-silverado-4x4-fa24f49fc4af4881881ba9df408a2e9d) by David_Holiday (https://sketchfab.com/David_Holiday) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+This work is based on "2020 Chevrolet Silverado 1500 RST" (https://sketchfab.com/3d-models/2020-chevrolet-silverado-1500-rst-d4acf44cf9ea43f086038c9cd0e3bd0d) by Outlaw Games™ (https://sketchfab.com/Outlaw_Games) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
