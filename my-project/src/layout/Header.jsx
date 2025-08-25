@@ -22,10 +22,10 @@ const Header = () => {
 
   const navLinks = [
     { to: "/", label: "Home" },
-    { to: "/about", label: "About" },
+    { to: "/About", label: "About" },
     { to: "/services", label: "Services" },
     { to: "/gallery", label: "Gallery" },
-    { to: "/contact", label: "Contact" },
+    { to: "/Contact", label: "Contact" },
   ];
 
   const isActive = (path) => location.pathname === path;
