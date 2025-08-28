@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import beforeAfterImage from "../assets/before-after.jpg";
+import beforeAfterImage from "../assets/images/before-after.webp";
 
 const BeforeAfterSlider = () => {
   const [sliderPosition, setSliderPosition] = useState(50);

@@ -7,21 +7,23 @@ import Header from "../layout/Header";
 import Footer from "../layout/Footer";
 
 // Assets
-import aboutImg from "../assets/hero-bg.jpg";
-import process1 from "../assets/process1.jpg";
-import process2 from "../assets/process2.jpg";
-import process3 from "../assets/process3.jpg";
-import gallery1 from "../assets/image-1.jpg";
-import gallery2 from "../assets/image-8.jpg";
-import gallery3 from "../assets/image-10.jpg";
-import gallery4 from "../assets/image-4.jpg";
-import gallery5 from "../assets/image-12.jpg";
-import gallery6 from "../assets/image-6.jpg";
-import gallery7 from "../assets/image-7.jpg";
-import gallery8 from "../assets/image-3.jpg";
-import gallery9 from "../assets/image-11.jpg";
-import bgHero from "../assets/hero-bg.jpg";
-import bgCTA from "../assets/cta-bg.jpg";
+import image1 from "../assets/images/image-17.webp";
+import image2 from "../assets/images/image-18.webp";
+import process1 from "../assets/images/process1.webp";
+import process2 from "../assets/images/process2.webp";
+import process3 from "../assets/images/process3.webp";
+import gallery1 from "../assets/images/image-9.webp";
+import gallery2 from "../assets/images/image-8.webp";
+import gallery3 from "../assets/images/image-10.webp";
+import gallery4 from "../assets/images/image-14.webp";
+import gallery5 from "../assets/images/image-21.webp";
+import gallery6 from "../assets/images/image-15.webp";
+import gallery7 from "../assets/images/image-24.webp";
+import gallery8 from "../assets/images/image-25.webp";
+import gallery9 from "../assets/images/image-26.webp";
+import bgHero from "../assets/images/image-24.webp";
+import aboutImg from "../assets/images/image-13.webp";
+import bgCTA from "../assets/images/cta-bg.jpg";
 
 const galleryImages = [gallery1, gallery2, gallery3, gallery4, gallery5, gallery6, gallery7, gallery8, gallery9];
 
@@ -49,15 +51,15 @@ const About = () => {
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/40" />
         <motion.div
           className="relative z-10 max-w-3xl px-6"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-            About <span className="text-blue-500">Precision Toronto</span>
+          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-4">
+            About - <span className="text-blue-500">Precision Toronto</span>
           </h1>
           <p className="text-lg md:text-xl text-gray-300 leading-relaxed">
             Crafting premium car care with passion, precision, and trust. Every
@@ -75,7 +77,7 @@ const About = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-bold text-blue-400 mb-4">Our Story & Mission</h2>
+          <h2 className="text-4xl font-bold text-blue-400 mb-4">Our Story & Mission</h2>
           <p className="text-gray-400 leading-relaxed mb-6">
             At Precision Toronto, we believe every vehicle is more than just transportation — it’s a passion, an identity, and a reflection of you. From luxury exotics to daily drivers, we bring expertise, premium products, and a commitment to excellence in every detail.
           </p>
@@ -92,7 +94,7 @@ const About = () => {
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
         >
-          {[gallery8, gallery7].map((img, idx) => (
+          {[image1, image2].map((img, idx) => (
             <div key={idx} className="rounded-2xl overflow-hidden shadow-lg flex-1">
               <img
                 src={img}

@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Logo from "../assets/Logo copy.png";
+import Logo from "../assets/images/logo-copy.webp";
 
 const Header = () => {
   const location = useLocation();

@@ -8,10 +8,10 @@ import BeforeAfterSlider from "../components/BeforeAfterSlider";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
 import { Star, MapPin, Clock, Shield, ChevronLeft, ChevronRight } from "lucide-react";
-import heroBackground from "../assets/hero-bg.jpg";
-import image1 from "../assets/image-1.jpg";
-import image2 from "../assets/image-2.jpg";
-import image3 from "../assets/image-3.jpg";
+import heroBackground from "../assets/images/Hero.webp";
+import image1 from "../assets/images/image-1.webp";
+import image2 from "../assets/images/image-2.webp";
+import image3 from "../assets/images/image-25.webp";
 import LiveReviews from "../components/LiveReviews";
 
 const HomePage = ({ onCarSelect }) => {
