@@ -13,9 +13,15 @@ import {
 import ProgressTracker from "../components/ProgressTracker";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
-import { ArrowLeft, Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+} from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 // simple cn helper in case it's not available in your project context
 const cn = (...classes) => classes.filter(Boolean).join(" ");
@@ -40,11 +46,25 @@ const TIME_SLOTS = [
 export default function BookingPage() {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      // Find element with that id
+      const element = document.getElementById(location.hash.replace("#", ""));
+      if (element) {
+        // Browser default jump (no smooth scroll)
+        element.scrollIntoView({ behavior: "auto" });
+      }
+    }
+  }, [location]);
 
   if (!state) {
     return (
       <div className="min-h-screen grid place-items-center bg-[#0A0F1C] text-white p-10">
-        <div className={cn(cardBase, "p-8 text-center w-full max-w-xl")}>No booking data found.</div>
+        <div className={cn(cardBase, "p-8 text-center w-full max-w-xl")}>
+          No booking data found.
+        </div>
       </div>
     );
   }
@@ -86,7 +106,8 @@ export default function BookingPage() {
   }, [selectedDate, selectedTime, customerInfo, vehicleInfo]);
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault(); // only stops default if it's a real form submit
+  
     const bookingData = {
       date: selectedDate,
       time: selectedTime,
@@ -97,6 +118,7 @@ export default function BookingPage() {
       carType: selectedCar,
       total: totalPrice,
     };
+  
     navigate("/confirmation", { state: bookingData });
   };
 
@@ -114,7 +136,10 @@ export default function BookingPage() {
     );
 
   return (
-    <div className="min-h-screen bg-[#070B14] text-white flex flex-col">
+    <div
+      id="CarBooking"
+      className="min-h-screen bg-[#070B14] text-white flex flex-col"
+    >
       <Header />
 
       <div className="sticky top-0 z-30 bg-gradient-to-b from-[#070B14] via-[#070B14]/95 to-transparent backdrop-blur border-b border-white/5">
@@ -138,15 +163,22 @@ export default function BookingPage() {
             <ArrowLeft className="w-4 h-4 mr-2" /> Back
           </Button>
           <div className="flex-1 min-w-[240px]">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Book Your Appointment</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Book Your Appointment
+            </h1>
             <p className="text-gray-400 mt-2 text-sm">
               {selectedServices.map((s) => s.title).join(", ")} for{" "}
-              <span className="capitalize font-medium text-blue-300">{selectedCar}</span>
+              <span className="capitalize font-medium text-blue-300">
+                {selectedCar}
+              </span>
             </p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="max-w-6xl mx-auto space-y-8 lg:space-y-10">
+        <form
+          onSubmit={handleSubmit}
+          className="max-w-6xl mx-auto space-y-8 lg:space-y-10"
+        >
           {/* Date & Time */}
           <motion.section
             variants={sectionVariants}
@@ -156,7 +188,8 @@ export default function BookingPage() {
             className={cn(cardBase, "p-5 sm:p-6 lg:p-8")}
           >
             <h3 className={sectionHeading}>
-              <CalendarIcon className="w-5 h-5 text-blue-300" /> Select Date & Time
+              <CalendarIcon className="w-5 h-5 text-blue-300" /> Select Date &
+              Time
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
@@ -173,7 +206,9 @@ export default function BookingPage() {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4 text-blue-300" />
-                      {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                      {selectedDate
+                        ? format(selectedDate, "PPP")
+                        : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -209,7 +244,7 @@ export default function BookingPage() {
                           "[&_.rdp-day:not(.rdp-day_selected):not(.rdp-day_outside)]:hover:bg-blue-500/20",
                           "[&_.rdp-day_today]:ring-1 [&_.rdp-day_today]:ring-blue-400/50",
                           "[&_.rdp-day_selected]:bg-blue-600 [&_.rdp-day_selected]:text-white [&_.rdp-day_selected:hover]:bg-blue-500",
-                          "[&_.rdp-day_disabled]:opacity-30 [&_.rdp-day_disabled]:cursor-not-allowed",
+                          "[&_.rdp-day_disabled]:opacity-30 [&_.rdp-day_disabled]:cursor-not-allowed"
                         )}
                       />
                     </div>
@@ -254,10 +289,15 @@ export default function BookingPage() {
               {[
                 { key: "name", label: "Name" },
                 { key: "email", label: "Email", type: "email" },
-                { key: "phone", label: "Phone", pattern: "[0-9+\-() ]+" },
+                { key: "phone", label: "Phone", pattern: "[0-9+-() ]+" },
                 { key: "address", label: "Address" },
               ].map(({ key, label, type, pattern }, i) => (
-                <motion.div key={key} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                >
                   <Label htmlFor={key}>{label} *</Label>
                   <Input
                     id={key}
@@ -265,7 +305,9 @@ export default function BookingPage() {
                     inputMode={key === "phone" ? "tel" : undefined}
                     pattern={pattern}
                     value={customerInfo[key]}
-                    onChange={(e) => setCustomerInfo((p) => ({ ...p, [key]: e.target.value }))}
+                    onChange={(e) =>
+                      setCustomerInfo((p) => ({ ...p, [key]: e.target.value }))
+                    }
                     className="mt-2 rounded-xl bg-[#0F1627] border border-white/10 text-white focus:ring-2 focus:ring-blue-500"
                     required
                   />
@@ -277,7 +319,9 @@ export default function BookingPage() {
               <Textarea
                 id="notes"
                 value={customerInfo.notes}
-                onChange={(e) => setCustomerInfo((p) => ({ ...p, notes: e.target.value }))}
+                onChange={(e) =>
+                  setCustomerInfo((p) => ({ ...p, notes: e.target.value }))
+                }
                 className="mt-2 rounded-xl bg-[#0F1627] border border-white/10 text-white focus:ring-2 focus:ring-blue-500"
                 placeholder="Parking details, gate code, pets, etc."
                 rows={4}
@@ -300,18 +344,34 @@ export default function BookingPage() {
               {[
                 { key: "make", label: "Make", required: true },
                 { key: "model", label: "Model", required: true },
-                { key: "year", label: "Year", required: true, inputMode: "numeric", pattern: "[0-9]{4}" },
+                {
+                  key: "year",
+                  label: "Year",
+                  required: true,
+                  inputMode: "numeric",
+                  pattern: "[0-9]{4}",
+                },
                 { key: "color", label: "Color" },
                 { key: "license", label: "License Plate" },
               ].map(({ key, label, required, inputMode, pattern }, i) => (
-                <motion.div key={key} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <Label htmlFor={key}>{label}{required ? " *" : ""}</Label>
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                >
+                  <Label htmlFor={key}>
+                    {label}
+                    {required ? " *" : ""}
+                  </Label>
                   <Input
                     id={key}
                     inputMode={inputMode}
                     pattern={pattern}
                     value={vehicleInfo[key]}
-                    onChange={(e) => setVehicleInfo((p) => ({ ...p, [key]: e.target.value }))}
+                    onChange={(e) =>
+                      setVehicleInfo((p) => ({ ...p, [key]: e.target.value }))
+                    }
                     className="mt-2 rounded-xl bg-[#0F1627] border border-white/10 text-white focus:ring-2 focus:ring-blue-500"
                     required={required}
                   />
@@ -325,7 +385,9 @@ export default function BookingPage() {
               <Textarea
                 id="cautions"
                 value={vehicleInfo.cautions}
-                onChange={(e) => setVehicleInfo((p) => ({ ...p, cautions: e.target.value }))}
+                onChange={(e) =>
+                  setVehicleInfo((p) => ({ ...p, cautions: e.target.value }))
+                }
                 className="mt-2 rounded-xl bg-[#0F1627] border border-white/10 text-white focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g., extremely dirty, delicate paint, ceramic coated, very expensive/exotic car, aftermarket parts, child seats inside, etc."
                 rows={4}
@@ -360,28 +422,40 @@ export default function BookingPage() {
                 {selectedDate && (
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-gray-400">Date:</span>
-                    <span className="font-semibold text-blue-300">{format(selectedDate, "PPP")}</span>
+                    <span className="font-semibold text-blue-300">
+                      {format(selectedDate, "PPP")}
+                    </span>
                   </div>
                 )}
 
                 {selectedTime && (
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-gray-400">Time:</span>
-                    <span className="font-semibold text-blue-300">{selectedTime}</span>
+                    <span className="font-semibold text-blue-300">
+                      {selectedTime}
+                    </span>
                   </div>
                 )}
 
                 {customerInfo.notes && (
                   <div className="mt-2">
-                    <span className="block text-gray-400 mb-1">Special Instructions:</span>
-                    <p className="text-gray-200 text-sm whitespace-pre-wrap">{customerInfo.notes}</p>
+                    <span className="block text-gray-400 mb-1">
+                      Special Instructions:
+                    </span>
+                    <p className="text-gray-200 text-sm whitespace-pre-wrap">
+                      {customerInfo.notes}
+                    </p>
                   </div>
                 )}
 
                 {vehicleInfo.cautions && (
                   <div className="mt-2">
-                    <span className="block text-gray-400 mb-1">Vehicle Notes & Cautions:</span>
-                    <p className="text-gray-200 text-sm whitespace-pre-wrap">{vehicleInfo.cautions}</p>
+                    <span className="block text-gray-400 mb-1">
+                      Vehicle Notes & Cautions:
+                    </span>
+                    <p className="text-gray-200 text-sm whitespace-pre-wrap">
+                      {vehicleInfo.cautions}
+                    </p>
                   </div>
                 )}
               </div>
@@ -389,11 +463,14 @@ export default function BookingPage() {
               <div className="rounded-xl bg-gradient-to-br from-white/5 to-white/[0.03] p-4 border border-white/10">
                 <div className="flex items-center justify-between">
                   <span className="text-base">Subtotal</span>
-                  <span className="font-semibold">${totalPrice.toFixed ? totalPrice.toFixed(2) : totalPrice}</span>
+                  <span className="font-semibold">
+                    ${totalPrice.toFixed ? totalPrice.toFixed(2) : totalPrice}
+                  </span>
                 </div>
                 {selectedAddons?.length > 0 && (
                   <div className="mt-2 text-xs text-gray-400">
-                    Add-ons: {selectedAddons.map((a) => a.title ?? a).join(", ")}
+                    Add-ons:{" "}
+                    {selectedAddons.map((a) => a.title ?? a).join(", ")}
                   </div>
                 )}
                 <div className="h-px my-4 bg-white/10" />
@@ -413,9 +490,10 @@ export default function BookingPage() {
             viewport={{ once: true, margin: "-50px" }}
           >
             <Button
-              type="submit"
+              type="button" // prevent default form submission
               size="lg"
               disabled={!isFormValid}
+              onClick={handleSubmit} // ✅ direct navigation on click
               className={cn(
                 "w-full py-4 text-lg rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-95 transition-all duration-300",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
@@ -423,6 +501,7 @@ export default function BookingPage() {
             >
               Continue to Confirmation
             </Button>
+
             {!isFormValid && (
               <p className="text-xs text-gray-400 mt-2 text-center">
                 Please complete all required fields to continue.
