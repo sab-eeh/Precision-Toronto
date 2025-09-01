@@ -106,22 +106,40 @@ export default function BookingPage() {
   }, [selectedDate, selectedTime, customerInfo, vehicleInfo]);
 
   const handleSubmit = (e) => {
-    if (e) e.preventDefault(); // only stops default if it's a real form submit
-  
+    if (e) e.preventDefault();
+
+    // Convert selectedDate + selectedTime → startAt ISO
+    const [timeStr, modifier] = selectedTime.split(" ");
+    let [hours, minutes] = timeStr.split(":").map(Number);
+    if (modifier === "PM" && hours < 12) hours += 12;
+    if (modifier === "AM" && hours === 12) hours = 0;
+
+    const startAt = new Date(selectedDate);
+    startAt.setHours(hours, minutes || 0, 0, 0);
+
     const bookingData = {
-      date: selectedDate,
-      time: selectedTime,
-      customer: customerInfo,
+      customerName: customerInfo.name,
+      phone: customerInfo.phone,
+      email: customerInfo.email,
+      services: selectedServices.map((s) => ({
+        title: s.title,
+        price: s.price,
+        durationMinutes: s.durationMinutes || 60,
+      })),
+      totalPrice,
+      startAt: startAt.toISOString(),
+      durationMinutes: selectedServices.reduce(
+        (sum, s) => sum + (s.durationMinutes || 60),
+        0
+      ),
       vehicle: vehicleInfo,
-      services: selectedServices,
-      addons: selectedAddons,
-      carType: selectedCar,
-      total: totalPrice,
+      notes: customerInfo.notes,
+      addons: selectedAddons, // optional, backend may ignore if not needed
+      carType: selectedCar, // optional
     };
-  
+
     navigate("/confirmation", { state: bookingData });
   };
-
   const sectionVariants = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { duration: 0.4 } },
@@ -493,7 +511,7 @@ export default function BookingPage() {
               type="button" // prevent default form submission
               size="lg"
               disabled={!isFormValid}
-              onClick={handleSubmit} // ✅ direct navigation on click
+              onSubmit={handleSubmit} // ✅ direct navigation on click
               className={cn(
                 "w-full py-4 text-lg rounded-xl bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-95 transition-all duration-300",
                 "disabled:opacity-50 disabled:cursor-not-allowed"
