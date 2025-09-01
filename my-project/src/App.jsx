@@ -6,6 +6,8 @@ import ContactPage from "./pages/ContactPage";
 import ServicesPage from "./pages/ServicesPage";
 import BookingPage from "./pages/BookingPage";
 import ConfirmationPage from "./pages/ConfirmationPage";
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
 import { useEffect } from "react";
 
 // ✅ Global scroll reset
@@ -41,6 +43,8 @@ function App() {
           element={<BookingPage selectedCar={selectedCar} />}
         />
         <Route path="/confirmation" element={<ConfirmationPage />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     </>
   );

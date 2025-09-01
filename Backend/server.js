@@ -6,6 +6,10 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const connectDB = require("./config/db.js");
 
+// Start reminder scheduler
+require("./utils/reminderScheduler");
+
+
 // Load environment variables
 dotenv.config();
 

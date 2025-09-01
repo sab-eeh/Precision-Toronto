@@ -2,6 +2,71 @@
 const Booking = require("../models/Booking");
 const { addMinutes, generateSlotsForDay, isOverlap } = require("../utils/time");
 
+const sendEmail = require("../utils/email");
+const sendSMS = require("../utils/sms");
+
+exports.createBooking = async (req, res) => {
+  try {
+    const booking = new Booking(req.body);
+    await booking.save();
+
+    const bookingDate = new Date(booking.startAt).toLocaleString();
+
+    // ---- Customer Email ----
+    if (booking.email) {
+      const emailHtml = `
+        <h2>Booking Confirmation</h2>
+        <p>Dear ${booking.customerName},</p>
+        <p>Your booking has been received successfully.</p>
+        <p><strong>Service(s):</strong> ${booking.services
+          .map((s) => s.title)
+          .join(", ")}</p>
+        <p><strong>Date & Time:</strong> ${bookingDate}</p>
+        <p><strong>Total:</strong> $${booking.totalPrice}</p>
+        <p>We look forward to serving you!</p>
+      `;
+      await sendEmail(booking.email, "Your Booking Confirmation", emailHtml);
+    }
+
+    // ---- Customer SMS ----
+    if (booking.phone) {
+      const smsText = `Hi ${booking.customerName}, your booking is confirmed on ${bookingDate}. - Precision Toronto`;
+      await sendSMS(booking.phone, smsText);
+    }
+
+    // ---- Admin Email ----
+    const adminEmailHtml = `
+      <h2>New Booking Received</h2>
+      <p><strong>Name:</strong> ${booking.customerName}</p>
+      <p><strong>Phone:</strong> ${booking.phone}</p>
+      <p><strong>Email:</strong> ${booking.email || "N/A"}</p>
+      <p><strong>Service(s):</strong> ${booking.services
+        .map((s) => s.title)
+        .join(", ")}</p>
+      <p><strong>Date & Time:</strong> ${bookingDate}</p>
+      <p><strong>Total:</strong> $${booking.totalPrice}</p>
+      <p><strong>Notes:</strong> ${booking.notes || "N/A"}</p>
+    `;
+    await sendEmail(
+      process.env.ADMIN_EMAIL,
+      "📩 New Booking Alert",
+      adminEmailHtml
+    );
+
+    // ---- Admin SMS ----
+    if (process.env.ADMIN_PHONE) {
+      const adminSms = `📢 New Booking: ${booking.customerName}, ${
+        booking.phone
+      }, ${booking.services.map((s) => s.title).join(", ")} on ${bookingDate}.`;
+      await sendSMS(process.env.ADMIN_PHONE, adminSms);
+    }
+
+    res.status(201).json({ success: true, data: booking });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 /**
  * Compute duration
  */
@@ -12,6 +77,43 @@ function computeDurationMinutes(services = [], fallbackDurationMinutes = 60) {
   );
   return sum > 0 ? sum : fallbackDurationMinutes;
 }
+
+// Get all bookings (admin only)
+export const getAllBookings = async (req, res) => {
+  try {
+    const bookings = await Booking.find().sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch bookings" });
+  }
+};
+
+// Approve booking
+export const approveBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    booking.status = "approved";
+    await booking.save();
+
+    res.json({ message: "Booking approved", booking });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to approve booking" });
+  }
+};
+
+// Delete booking
+export const deleteBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndDelete(req.params.id);
+    if (!booking) return res.status(404).json({ message: "Booking not found" });
+
+    res.json({ message: "Booking deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete booking" });
+  }
+};
 
 /**
  * POST /api/bookings
@@ -46,16 +148,14 @@ const createBooking = async (req, res, next) => {
     const overlapping = await Booking.findOne({
       status: { $ne: "cancelled" },
       $expr: {
-        $and: [
-          { $lt: ["$startAt", end] },
-          { $gt: ["$endAt", start] },
-        ],
+        $and: [{ $lt: ["$startAt", end] }, { $gt: ["$endAt", start] }],
       },
     }).lean();
 
     if (overlapping) {
       return res.status(409).json({
-        message: "Selected time overlaps with an existing booking. Please pick another time.",
+        message:
+          "Selected time overlaps with an existing booking. Please pick another time.",
       });
     }
 
@@ -150,7 +250,8 @@ const updateBooking = async (req, res, next) => {
       }
 
       const existing = await Booking.findById(req.params.id);
-      if (!existing) return res.status(404).json({ message: "Booking not found" });
+      if (!existing)
+        return res.status(404).json({ message: "Booking not found" });
 
       const minutes =
         Number(durationMinutes) ||
@@ -162,10 +263,7 @@ const updateBooking = async (req, res, next) => {
         _id: { $ne: existing._id },
         status: { $ne: "cancelled" },
         $expr: {
-          $and: [
-            { $lt: ["$startAt", end] },
-            { $gt: ["$endAt", start] },
-          ],
+          $and: [{ $lt: ["$startAt", end] }, { $gt: ["$endAt", start] }],
         },
       }).lean();
 

@@ -3,6 +3,7 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { body, query, param } = require("express-validator");
 const validateRequest = require("../middleware/validateRequest");
+const authMiddleware = require("../middleware/authMiddleware");
 const {
   createBooking,
   listBookings,
@@ -68,11 +69,15 @@ const availabilityValidators = [
 /**
  * Routes
  */
+
+// Public routes
 router.get("/availability", availabilityValidators, validateRequest, getAvailability);
 router.post("/", createLimiter, bookingCreateValidators, validateRequest, createBooking);
-router.get("/", listValidators, validateRequest, listBookings);
-router.get("/:id", idValidator, validateRequest, getBooking);
-router.put("/:id", idValidator, validateRequest, updateBooking);
-router.delete("/:id", idValidator, validateRequest, cancelBooking);
+
+// Admin routes (protected)
+router.get("/", authMiddleware("admin"), listValidators, validateRequest, listBookings);
+router.get("/:id", authMiddleware("admin"), idValidator, validateRequest, getBooking);
+router.put("/:id", authMiddleware("admin"), idValidator, validateRequest, updateBooking);
+router.delete("/:id", authMiddleware("admin"), idValidator, validateRequest, cancelBooking);
 
 module.exports = router;
