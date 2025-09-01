@@ -11,6 +11,8 @@ const {
   updateBooking,
   cancelBooking,
   getAvailability,
+  approveBooking,
+  deleteBooking,
 } = require("../controllers/bookingController");
 
 const router = express.Router();
@@ -27,7 +29,7 @@ const createLimiter = rateLimit({
 });
 
 /**
- * Validators
+ * Validators (same as before)
  */
 const bookingCreateValidators = [
   body("customerName").isString().trim().isLength({ min: 2, max: 120 }),
@@ -51,7 +53,7 @@ const listValidators = [
   query("limit").optional().isInt({ min: 1, max: 200 }).toInt(),
   query("status")
     .optional()
-    .isIn(["pending", "confirmed", "cancelled", "completed", "no_show"]),
+    .isIn(["pending", "approved", "confirmed", "cancelled", "completed", "no_show"]),
   query("dateFrom").optional().isISO8601(),
   query("dateTo").optional().isISO8601(),
   query("sort").optional().isString(),
@@ -67,17 +69,70 @@ const availabilityValidators = [
 ];
 
 /**
- * Routes
+ * Public routes
  */
-
-// Public routes
 router.get("/availability", availabilityValidators, validateRequest, getAvailability);
 router.post("/", createLimiter, bookingCreateValidators, validateRequest, createBooking);
 
-// Admin routes (protected)
-router.get("/", authMiddleware("admin"), listValidators, validateRequest, listBookings);
-router.get("/:id", authMiddleware("admin"), idValidator, validateRequest, getBooking);
-router.put("/:id", authMiddleware("admin"), idValidator, validateRequest, updateBooking);
-router.delete("/:id", authMiddleware("admin"), idValidator, validateRequest, cancelBooking);
+/**
+ * Admin routes (protected)
+ * Use authMiddleware.protect and authMiddleware.adminOnly
+ */
+router.get(
+  "/",
+  authMiddleware.protect,
+  authMiddleware.adminOnly,
+  listValidators,
+  validateRequest,
+  listBookings
+);
+
+router.get(
+  "/:id",
+  authMiddleware.protect,
+  authMiddleware.adminOnly,
+  idValidator,
+  validateRequest,
+  getBooking
+);
+
+router.put(
+  "/:id",
+  authMiddleware.protect,
+  authMiddleware.adminOnly,
+  idValidator,
+  validateRequest,
+  updateBooking
+);
+
+// Approve booking
+router.put(
+  "/:id/approve",
+  authMiddleware.protect,
+  authMiddleware.adminOnly,
+  idValidator,
+  validateRequest,
+  approveBooking
+);
+
+// Cancel (mark cancelled)
+router.post(
+  "/:id/cancel",
+  authMiddleware.protect,
+  authMiddleware.adminOnly,
+  idValidator,
+  validateRequest,
+  cancelBooking
+);
+
+// Delete (hard delete)
+router.delete(
+  "/:id",
+  authMiddleware.protect,
+  authMiddleware.adminOnly,
+  idValidator,
+  validateRequest,
+  deleteBooking
+);
 
 module.exports = router;

@@ -1,21 +1,17 @@
-// controllers/authController.js
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// Generate JWT token
 const generateToken = (userId, role) => {
   return jwt.sign({ id: userId, role }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 };
 
-// Admin Registration (One-time setup)
-// You can comment this after creating the first admin.
+// Register Admin (first time only)
 exports.registerAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Prevent duplicate
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: "Admin already exists" });
 

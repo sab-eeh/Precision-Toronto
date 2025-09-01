@@ -1,6 +1,6 @@
 const cron = require("node-cron");
 const Booking = require("../models/Booking");
-const sendEmail = require("./email");
+const sendEmail = require("./emails");
 const sendSMS = require("./sms");
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL; // add this in .env

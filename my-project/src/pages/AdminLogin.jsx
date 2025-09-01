@@ -1,10 +1,9 @@
-// src/pages/AdminLogin.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function AdminLogin() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(""); // blank in production
+  const [password, setPassword] = useState(""); 
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -34,21 +33,23 @@ function AdminLogin() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
+    <div className="flex items-center justify-center h-screen bg-gray-900">
       <form
         onSubmit={handleLogin}
-        className="bg-white shadow-lg rounded-xl p-8 w-96"
+        className="bg-gray-800 shadow-xl rounded-xl p-8 w-96"
       >
-        <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-white">
+          Admin Login
+        </h2>
 
         {error && (
-          <p className="text-red-600 text-sm mb-4 text-center">{error}</p>
+          <p className="text-red-400 text-sm mb-4 text-center">{error}</p>
         )}
 
         <input
           type="email"
           placeholder="Email"
-          className="w-full border px-4 py-2 rounded mb-4"
+          className="w-full bg-gray-700 text-white border border-gray-600 px-4 py-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -57,7 +58,7 @@ function AdminLogin() {
         <input
           type="password"
           placeholder="Password"
-          className="w-full border px-4 py-2 rounded mb-4"
+          className="w-full bg-gray-700 text-white border border-gray-600 px-4 py-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -65,7 +66,7 @@ function AdminLogin() {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
         >
           Login
         </button>
