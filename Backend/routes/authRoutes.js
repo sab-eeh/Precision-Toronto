@@ -1,14 +1,22 @@
+// routes/authRoutes.js
 const express = require("express");
-const { registerAdmin, loginAdmin } = require("../controllers/authController");
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const {
+  login,
+  forgotPassword,
+  resetPassword,
+  dashboard,
+  registerAdminIfFirst,
+} = require("../controllers/authController");
+const { protect } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.post("/register", registerAdmin);
-router.post("/login", loginAdmin);
+router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.put("/reset-password/:token", resetPassword);
+router.get("/dashboard", protect, dashboard);
 
-router.get("/dashboard", protect, adminOnly, (req, res) => {
-  res.json({ message: "Welcome to Admin Dashboard 🚀", admin: req.user });
-});
+// Optional: create first admin (only run once, secure/remove later)
+router.post("/register-admin", registerAdminIfFirst);
 
 module.exports = router;

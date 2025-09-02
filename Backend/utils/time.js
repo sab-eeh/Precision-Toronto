@@ -1,43 +1,45 @@
-// utils/time.js
+// Business hours & slot generation utilities
 
-/**
- * Add minutes to a date.
- */
 function addMinutes(date, minutes) {
-  return new Date(date.getTime() + minutes * 60000);
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() + minutes);
+  return d;
 }
 
-/**
- * Generate time slots for a given day.
- * @param {Date} dayUTC Midnight UTC date for the day
- * @param {string} startHHMM "09:00"
- * @param {string} endHHMM "18:00"
- * @param {number} slotMinutes
- */
-function generateSlotsForDay(dayUTC, startHHMM, endHHMM, slotMinutes) {
-  const [startH, startM] = startHHMM.split(":").map(Number);
-  const [endH, endM] = endHHMM.split(":").map(Number);
-
-  const start = new Date(dayUTC);
-  start.setUTCHours(startH, startM, 0, 0);
-
-  const end = new Date(dayUTC);
-  end.setUTCHours(endH, endM, 0, 0);
-
-  const slots = [];
-  let cur = new Date(start);
-  while (cur < end) {
-    slots.push(new Date(cur));
-    cur = addMinutes(cur, slotMinutes);
-  }
-  return slots;
-}
-
-/**
- * Check if two intervals overlap
- */
+// Simple overlap check for [aStart, aEnd) vs [bStart, bEnd)
 function isOverlap(aStart, aEnd, bStart, bEnd) {
   return aStart < bEnd && aEnd > bStart;
 }
 
-module.exports = { addMinutes, generateSlotsForDay, isOverlap };
+/**
+ * Generate slots for a given day.
+ * Business hours: 9:00 → 17:00
+ * Slot size: 60 minutes (changeable)
+ */
+function generateSlotsForDay(
+  dayStart,
+  { startHour = 9, endHour = 17, slotMinutes = 60 } = {}
+) {
+  const start = new Date(dayStart);
+  start.setHours(startHour, 0, 0, 0);
+
+  const end = new Date(dayStart);
+  end.setHours(endHour, 0, 0, 0);
+
+  const slots = [];
+  let cursor = new Date(start);
+
+  while (addMinutes(cursor, slotMinutes) <= end) {
+    const slotEnd = addMinutes(cursor, slotMinutes);
+    slots.push({ start: new Date(cursor), end: slotEnd });
+    cursor = slotEnd;
+  }
+
+  return slots;
+}
+
+module.exports = {
+  addMinutes,
+  isOverlap,
+  generateSlotsForDay,
+};

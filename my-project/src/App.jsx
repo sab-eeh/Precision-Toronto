@@ -8,6 +8,8 @@ import BookingPage from "./pages/BookingPage";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import { useEffect } from "react";
 
 // ✅ Global scroll reset
@@ -45,6 +47,8 @@ function App() {
         <Route path="/confirmation" element={<ConfirmationPage />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </>
   );

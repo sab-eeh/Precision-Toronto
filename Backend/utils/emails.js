@@ -1,25 +1,8 @@
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  service: "gmail", // you can also use outlook, smtp, etc.
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-const sendEmail = async (to, subject, html) => {
-  try {
-    await transporter.sendMail({
-      from: `"Precision Toronto" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
-    });
-    console.log(`📧 Email sent to ${to}`);
-  } catch (error) {
-    console.error("❌ Email error:", error.message);
-  }
-};
+// Stub email sender — integrate your provider (e.g., Nodemailer, SendGrid)
+async function sendEmail(to, subject, html) {
+  if (!to) return;
+  console.log(`📧 [EMAIL] To: ${to} | Subject: ${subject}\n${html}`);
+  // TODO: integrate real email service here
+}
 
 module.exports = sendEmail;

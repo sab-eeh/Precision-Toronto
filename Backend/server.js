@@ -20,19 +20,23 @@ const app = express();
 // --------------------
 app.use(express.json({ limit: "10kb" }));
 app.use(helmet());
+
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // React frontend
+    origin: ["http://localhost:5173"], // your React frontend
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   })
 );
-app.use(morgan("dev"));
+
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("dev"));
+}
 
 // Rate Limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 200,
   message: "Too many requests from this IP, please try again later.",
 });
 app.use("/api", limiter);
@@ -40,11 +44,12 @@ app.use("/api", limiter);
 // --------------------
 // Routes
 // --------------------
-const authRoutes = require("./routes/authRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+// If you have auth routes, plug them in too
+// const authRoutes = require("./routes/authRoutes");
 
-app.use("/api/auth", authRoutes);
 app.use("/api/bookings", bookingRoutes);
+// app.use("/api/auth", authRoutes);
 
 // Health check
 app.get("/", (req, res) => {
@@ -52,6 +57,7 @@ app.get("/", (req, res) => {
 });
 
 // Global Error Handler
+// (Place after routes)
 app.use((err, req, res, next) => {
   console.error("Error:", err.stack);
   res.status(err.statusCode || 500).json({
@@ -65,5 +71,11 @@ app.use((err, req, res, next) => {
 // --------------------
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
-  console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+  console.log(
+    `🚀 Server running in ${
+      process.env.NODE_ENV || "development"
+    } mode on port ${PORT}`
+  )
 );
+
+module.exports = app; // Export for testing if needed
