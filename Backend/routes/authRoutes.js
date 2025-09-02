@@ -7,7 +7,7 @@ const {
   dashboard,
   registerAdminIfFirst,
 } = require("../controllers/authController");
-const { protect } = require("../middleware/auth");
+const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 

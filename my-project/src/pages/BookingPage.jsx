@@ -4,7 +4,6 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-// NOTE: keep your original path/name if your component lives at `calender`
 import { Calendar } from "../components/ui/calender";
 import {
   Popover,
@@ -22,12 +21,11 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "../lib/utils";
-import { api } from "../api/client";
+import api from "../api/client";
 
-const BUSINESS_MINUTES_PER_SLOT = 60; // Keep in sync with backend generateSlotsForDay
+const BUSINESS_MINUTES_PER_SLOT = 60;
 
 function toYMD(date) {
-  // yyyy-mm-dd for API
   const d = new Date(date);
   return d.toISOString().slice(0, 10);
 }
@@ -47,7 +45,6 @@ export default function BookingPage() {
   const [selectedTime, setSelectedTime] = useState("");
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState("");
-
   const [submitting, setSubmitting] = useState(false);
 
   const [customerInfo, setCustomerInfo] = useState({
@@ -57,6 +54,7 @@ export default function BookingPage() {
     address: "",
     notes: "",
   });
+
   const [vehicleInfo, setVehicleInfo] = useState({
     make: "",
     model: "",
@@ -65,7 +63,7 @@ export default function BookingPage() {
     license: "",
   });
 
-  // Fetch availability whenever date changes
+  // Fetch availability when date changes
   useEffect(() => {
     (async () => {
       setSlotsError("");
@@ -77,7 +75,6 @@ export default function BookingPage() {
         setLoadingSlots(true);
         const ymd = toYMD(selectedDate);
         const data = await api(`/api/bookings/availability?date=${ymd}`);
-        // backend returns: { success, availableSlots: [{start, end}] }
         const slots = (data?.availableSlots || []).map((s) => ({
           start: new Date(s.start),
           end: new Date(s.end),
@@ -92,7 +89,6 @@ export default function BookingPage() {
     })();
   }, [selectedDate]);
 
-  // On submit → go to confirmation page with full state
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!selectedDate || !selectedTime) return;
@@ -100,10 +96,9 @@ export default function BookingPage() {
     const selectedSlot = availableSlots.find((s) => s.label === selectedTime);
     if (!selectedSlot) return;
 
-    // Pass everything to confirmation page
     const bookingData = {
       selectedDate,
-      selectedTime, // "h:mm a"
+      selectedTime,
       customerInfo,
       vehicleInfo,
       selectedServices,
@@ -111,9 +106,11 @@ export default function BookingPage() {
       selectedCar,
       totalPrice,
       notes: customerInfo.notes,
-      startAtISO: selectedSlot.start.toISOString(), // helpful for payload
+      startAtISO: selectedSlot.start.toISOString(),
       slotMinutes: BUSINESS_MINUTES_PER_SLOT,
     };
+
+    setSubmitting(true);
     navigate("/confirmation", { state: bookingData });
   };
 
@@ -138,7 +135,7 @@ export default function BookingPage() {
       <Header />
       <ProgressTracker currentStep={3} />
 
-      <div className="container mx-auto px-6 py-12 flex-1">
+      <div className="container mx-auto px-4 md:px-8 py-10 flex-1">
         {/* Back & Title */}
         <div className="flex items-center gap-4 mb-10">
           <Button
@@ -160,22 +157,23 @@ export default function BookingPage() {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto space-y-10">
+        <div className="max-w-5xl mx-auto space-y-10">
           <form onSubmit={handleSubmit} className="space-y-10">
             {/* Date & Time */}
-            <div className="bg-[#111827] p-8 rounded-xl">
+            <section className="bg-[#111827] p-6 rounded-2xl">
               <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5 text-blue-400" /> Select Date &
                 Time
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Date Picker */}
                 <div>
                   <Label htmlFor="date">Preferred Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
-                        variant="outline"
                         type="button"
+                        variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal mt-3 rounded-lg py-3 bg-[#1A2234] hover:bg-[#223048] text-white",
                           !selectedDate && "text-gray-400"
@@ -187,7 +185,7 @@ export default function BookingPage() {
                           : "Pick a date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-lg bg-[#1A2234] border border-blue-500/20">
+                    <PopoverContent className="w-auto p-0 rounded-xl bg-[#111827] border border-blue-500/20">
                       <Calendar
                         mode="single"
                         selected={selectedDate}
@@ -195,38 +193,32 @@ export default function BookingPage() {
                         disabled={(date) => {
                           const today = new Date();
                           today.setHours(0, 0, 0, 0);
-                          return date < today; // no past dates
+                          return date < today;
                         }}
-                        initialFocus
                         className="p-3 rounded-lg bg-[#111827] text-white [&_.rdp-day_selected]:bg-blue-500 [&_.rdp-day_selected]:text-white [&_.rdp-day:hover]:bg-blue-600/40"
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
 
+                {/* Time Slots */}
                 <div>
                   <Label htmlFor="time">Preferred Time</Label>
-
-                  {/* Availability states */}
                   {loadingSlots && (
-                    <div className="mt-3 text-sm text-blue-300">
-                      Loading available slots…
-                    </div>
+                    <p className="mt-3 text-sm text-blue-300">Loading slots…</p>
                   )}
                   {slotsError && (
-                    <div className="mt-3 text-sm text-red-400">
-                      {slotsError}
-                    </div>
+                    <p className="mt-3 text-sm text-red-400">{slotsError}</p>
                   )}
                   {!loadingSlots &&
                     selectedDate &&
                     availableSlots.length === 0 && (
-                      <div className="mt-3 text-sm text-yellow-300">
-                        No slots available for the selected date.
-                      </div>
+                      <p className="mt-3 text-sm text-yellow-300">
+                        No slots available for this date.
+                      </p>
                     )}
 
-                  <div className="grid grid-cols-3 gap-3 mt-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
                     {availableSlots.map((slot) => (
                       <Button
                         key={slot.label}
@@ -237,7 +229,7 @@ export default function BookingPage() {
                         size="sm"
                         onClick={() => setSelectedTime(slot.label)}
                         className={cn(
-                          "rounded-md py-2",
+                          "rounded-md py-2 text-sm",
                           selectedTime === slot.label
                             ? "bg-blue-500 text-white"
                             : "bg-[#1A2234] hover:bg-[#223048] text-gray-200"
@@ -249,74 +241,53 @@ export default function BookingPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
             {/* Customer Info */}
-            <div className="bg-[#111827] p-8 rounded-xl">
+            <section className="bg-[#111827] p-6 rounded-2xl">
               <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-blue-400" /> Customer
                 Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    value={customerInfo.name}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, name: e.target.value })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={customerInfo.email}
-                    onChange={(e) =>
-                      setCustomerInfo({
-                        ...customerInfo,
-                        email: e.target.value,
-                      })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number *</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={customerInfo.phone}
-                    onChange={(e) =>
-                      setCustomerInfo({
-                        ...customerInfo,
-                        phone: e.target.value,
-                      })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="address">Service Address *</Label>
-                  <Input
-                    id="address"
-                    value={customerInfo.address}
-                    onChange={(e) =>
-                      setCustomerInfo({
-                        ...customerInfo,
-                        address: e.target.value,
-                      })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                    required
-                  />
-                </div>
+                <InputField
+                  id="name"
+                  label="Full Name *"
+                  value={customerInfo.name}
+                  onChange={(val) =>
+                    setCustomerInfo({ ...customerInfo, name: val })
+                  }
+                  required
+                />
+                <InputField
+                  id="email"
+                  type="email"
+                  label="Email Address *"
+                  value={customerInfo.email}
+                  onChange={(val) =>
+                    setCustomerInfo({ ...customerInfo, email: val })
+                  }
+                  required
+                />
+                <InputField
+                  id="phone"
+                  type="tel"
+                  label="Phone Number *"
+                  value={customerInfo.phone}
+                  onChange={(val) =>
+                    setCustomerInfo({ ...customerInfo, phone: val })
+                  }
+                  required
+                />
+                <InputField
+                  id="address"
+                  label="Service Address *"
+                  value={customerInfo.address}
+                  onChange={(val) =>
+                    setCustomerInfo({ ...customerInfo, address: val })
+                  }
+                  required
+                />
               </div>
               <div className="mt-6">
                 <Label htmlFor="notes">Special Instructions</Label>
@@ -330,103 +301,75 @@ export default function BookingPage() {
                   placeholder="Any special instructions..."
                 />
               </div>
-            </div>
+            </section>
 
             {/* Vehicle Info */}
-            <div className="bg-[#111827] p-8 rounded-xl">
+            <section className="bg-[#111827] p-6 rounded-2xl">
               <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-blue-400" /> Vehicle Details
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                  <Label htmlFor="make">Make *</Label>
-                  <Input
-                    id="make"
-                    value={vehicleInfo.make}
-                    onChange={(e) =>
-                      setVehicleInfo({ ...vehicleInfo, make: e.target.value })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="model">Model *</Label>
-                  <Input
-                    id="model"
-                    value={vehicleInfo.model}
-                    onChange={(e) =>
-                      setVehicleInfo({ ...vehicleInfo, model: e.target.value })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="year">Year *</Label>
-                  <Input
-                    id="year"
-                    value={vehicleInfo.year}
-                    onChange={(e) =>
-                      setVehicleInfo({ ...vehicleInfo, year: e.target.value })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="color">Color</Label>
-                  <Input
-                    id="color"
-                    value={vehicleInfo.color}
-                    onChange={(e) =>
-                      setVehicleInfo({ ...vehicleInfo, color: e.target.value })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="license">License Plate</Label>
-                  <Input
-                    id="license"
-                    value={vehicleInfo.license}
-                    onChange={(e) =>
-                      setVehicleInfo({
-                        ...vehicleInfo,
-                        license: e.target.value,
-                      })
-                    }
-                    className="mt-2 rounded-md bg-[#1A2234] text-white"
-                  />
-                </div>
+                <InputField
+                  id="make"
+                  label="Make *"
+                  value={vehicleInfo.make}
+                  onChange={(val) =>
+                    setVehicleInfo({ ...vehicleInfo, make: val })
+                  }
+                  required
+                />
+                <InputField
+                  id="model"
+                  label="Model *"
+                  value={vehicleInfo.model}
+                  onChange={(val) =>
+                    setVehicleInfo({ ...vehicleInfo, model: val })
+                  }
+                  required
+                />
+                <InputField
+                  id="year"
+                  label="Year *"
+                  value={vehicleInfo.year}
+                  onChange={(val) =>
+                    setVehicleInfo({ ...vehicleInfo, year: val })
+                  }
+                  required
+                />
+                <InputField
+                  id="color"
+                  label="Color"
+                  value={vehicleInfo.color}
+                  onChange={(val) =>
+                    setVehicleInfo({ ...vehicleInfo, color: val })
+                  }
+                />
+                <InputField
+                  id="license"
+                  label="License Plate"
+                  value={vehicleInfo.license}
+                  onChange={(val) =>
+                    setVehicleInfo({ ...vehicleInfo, license: val })
+                  }
+                />
               </div>
-            </div>
+            </section>
 
             {/* Summary */}
-            <div className="bg-[#111827] p-8 rounded-xl">
+            <section className="bg-[#111827] p-6 rounded-2xl">
               <h3 className="text-xl font-semibold mb-6">Booking Summary</h3>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Services:</span>
-                  <span className="font-medium">{servicesSummary}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Vehicle:</span>
-                  <span className="capitalize">{selectedCar}</span>
-                </div>
+                <SummaryRow label="Services:" value={servicesSummary} />
+                <SummaryRow label="Vehicle:" value={selectedCar} />
                 {selectedDate && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Date:</span>
-                    <span className="text-blue-400">
-                      {format(selectedDate, "PPP")}
-                    </span>
-                  </div>
+                  <SummaryRow
+                    label="Date:"
+                    value={format(selectedDate, "PPP")}
+                    highlight
+                  />
                 )}
                 {selectedTime && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Time:</span>
-                    <span className="text-blue-400">{selectedTime}</span>
-                  </div>
+                  <SummaryRow label="Time:" value={selectedTime} highlight />
                 )}
                 <div className="flex justify-between pt-4 border-t border-gray-700">
                   <span className="text-lg font-semibold">Total:</span>
@@ -435,14 +378,13 @@ export default function BookingPage() {
                   </span>
                 </div>
               </div>
-            </div>
+            </section>
 
             <Button
               type="submit"
               size="lg"
               disabled={!isFormValid || submitting}
               className="w-full py-4 text-lg rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              onSubmit={() => setSubmitting(true)}
             >
               Continue to Confirmation
             </Button>
@@ -450,6 +392,40 @@ export default function BookingPage() {
         </div>
       </div>
       <Footer />
+    </div>
+  );
+}
+
+function InputField({
+  id,
+  label,
+  value,
+  onChange,
+  type = "text",
+  required = false,
+}) {
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-2 rounded-md bg-[#1A2234] text-white"
+        required={required}
+      />
+    </div>
+  );
+}
+
+function SummaryRow({ label, value, highlight }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-gray-400">{label}</span>
+      <span className={highlight ? "text-blue-400" : "capitalize"}>
+        {value}
+      </span>
     </div>
   );
 }

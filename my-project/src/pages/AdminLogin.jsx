@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { API } from "../api/client";
+import api from "../api/client";
 
 function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -8,26 +8,24 @@ function AdminLogin() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  async function handleLogin(e) {
     e.preventDefault();
     setError("");
+
     try {
-      const res = await fetch(`${API}/auth/login`, {
+      const data = await api("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: { email, password },
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.message || "Login failed");
-        return;
-      }
+
+      // Save token to localStorage
       localStorage.setItem("adminToken", data.token);
+
       navigate("/admin/dashboard");
     } catch (err) {
-      setError("Something went wrong. Try again.");
+      setError(err.message || "Something went wrong");
     }
-  };
+  }
 
   return (
     <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-900 to-gray-800">

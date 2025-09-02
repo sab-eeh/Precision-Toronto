@@ -45,11 +45,10 @@ app.use("/api", limiter);
 // Routes
 // --------------------
 const bookingRoutes = require("./routes/bookingRoutes");
-// If you have auth routes, plug them in too
-// const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 app.use("/api/bookings", bookingRoutes);
-// app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
 
 // Health check
 app.get("/", (req, res) => {
