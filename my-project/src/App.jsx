@@ -31,7 +31,6 @@ function App() {
 
   return (
     <>
-      {/* scroll reset works for forward + back */}
       <Meta charSet="utf-8" />
       <Meta name="viewport" content="width=device-width, initial-scale=1" />
       <ScrollToTop />
