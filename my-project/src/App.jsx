@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
+import Gallery from "./pages/GalleryPage";
 import ContactPage from "./pages/ContactPage";
 import ServicesPage from "./pages/ServicesPage";
 import BookingPage from "./pages/BookingPage";
@@ -11,6 +12,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import { useEffect } from "react";
+import { Meta } from "react-head";
 
 // ✅ Global scroll reset
 function ScrollToTop() {
@@ -30,11 +32,14 @@ function App() {
   return (
     <>
       {/* scroll reset works for forward + back */}
+      <Meta charSet="utf-8" />
+      <Meta name="viewport" content="width=device-width, initial-scale=1" />
       <ScrollToTop />
 
       <Routes>
         <Route path="/" element={<HomePage onCarSelect={setSelectedCar} />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/gallery" element={<Gallery />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route
           path="/services"

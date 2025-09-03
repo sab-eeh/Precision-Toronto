@@ -19,7 +19,7 @@ const Footer = () => {
             </p>
             <div className="flex items-center gap-4">
               <a
-                href="https://instagram.com/precisiontoronto"
+                href="https://www.instagram.com/precision.to"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-800 hover:bg-blue-500 hover:text-white transition-all duration-300 shadow-md"

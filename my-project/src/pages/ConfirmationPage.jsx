@@ -3,11 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/badge";
 import ProgressTracker from "../components/ProgressTracker";
+import FloatingContact from "../components/FloatingContact";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
 import { CheckCircle, Calendar, MapPin, Car, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { api } from "../api/client";
+import { Title, Meta } from "react-head";
 
 export default function ConfirmationPage() {
   const { state } = useLocation();
@@ -165,14 +167,21 @@ export default function ConfirmationPage() {
   // bookingData may still be null if server didn't return booking; guard render
   if (!bookingData) {
     return (
-      <div className="min-h-screen grid place-items-center bg-[#0A0F1C] text-white p-6">
-        <div className="p-6 rounded-xl bg-[#111827] text-center w-full max-w-lg">
-          <p className="mb-4">
-            Booking processed but no booking details were returned.
-          </p>
-          <Button onClick={() => navigate("/")}>Back to Home</Button>
+      <>
+        <Title>Booking Confirmation | Precision Toronto</Title>
+        <Meta
+          name="description"
+          content="Thank you for booking with Precision Toronto. Your car detailing appointment has been confirmed. Get ready for a spotless, showroom-quality shine."
+        />
+        <div className="min-h-screen grid place-items-center bg-[#0A0F1C] text-white p-6">
+          <div className="p-6 rounded-xl bg-[#111827] text-center w-full max-w-lg">
+            <p className="mb-4">
+              Booking processed but no booking details were returned.
+            </p>
+            <Button onClick={() => navigate("/")}>Back to Home</Button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -216,6 +225,7 @@ export default function ConfirmationPage() {
   return (
     <div className="min-h-screen bg-[#0A0F1C] text-white">
       <Header />
+      <FloatingContact />
       <ProgressTracker currentStep={4} />
 
       <div className="container mx-auto px-4 py-8">

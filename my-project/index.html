@@ -1,14 +1,83 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Essential Meta Tags -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
-    <link rel="stylesheet" href="./src/index.css">
+    <title>Precision Toronto | Car Cleaning & Detailing in Canada</title>
+    <meta
+      name="description"
+      content="Precision Toronto offers premium car cleaning, car detailing, ceramic coating, paint protection, and interior detailing in Toronto, Canada. Professional auto detailing by Haris – trusted for every type of car."
+    />
+    <meta
+      name="keywords"
+      content="Precision Toronto, car cleaning Toronto, auto detailing Toronto, car wash Toronto, car detailing Canada, ceramic coating Toronto, paint protection Toronto, interior car cleaning, car polish Toronto, Haris car detailing"
+    />
+    <meta name="author" content="Haris - Precision Toronto" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph (OG) Tags for Social Sharing -->
+    <meta property="og:title" content="Precision Toronto | Car Cleaning & Detailing" />
+    <meta
+      property="og:description"
+      content="Professional car cleaning and detailing services in Toronto, Canada. Interior & exterior detailing, ceramic coating, and more."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://precisiontoronto.com" />
+    <meta property="og:image" content="/cover-image.jpg" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Precision Toronto | Car Cleaning & Detailing" />
+    <meta
+      name="twitter:description"
+      content="Haris offers the best car detailing, car wash, and ceramic coating in Toronto, Canada."
+    />
+    <meta name="twitter:image" content="/cover-image.jpg" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon copy.png" />
+    <link rel="apple-touch-icon" href="/favicon copy.png" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/src/index.css" />
   </head>
+
   <body>
+    <!-- Root Div for React -->
     <div id="root"></div>
+
+    <!-- Structured Data (SEO Boost with Local Business Schema) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "AutoDetailing",
+        "name": "Precision Toronto",
+        "image": "https://precisiontoronto.com/cover-image.jpg",
+        "url": "https://precisiontoronto.com",
+        "telephone": "+1-000-000-0000",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "123 Car Street",
+          "addressLocality": "Toronto",
+          "addressRegion": "ON",
+          "postalCode": "M1M 1M1",
+          "addressCountry": "CA"
+        },
+        "description": "Precision Toronto provides premium car cleaning, detailing, ceramic coating, and paint protection services in Toronto, Canada. Owned by Haris.",
+        "priceRange": "$$"
+      }
+    </script>
+
+    <!-- React Entry -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

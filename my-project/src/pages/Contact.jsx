@@ -2,12 +2,15 @@
 import React from "react";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
+import FloatingContact from "../components/FloatingContact";
+
 import { Mail, Phone, MapPin } from "lucide-react";
 
 const Contact = () => {
   return (
     <div>
       <Header />
+      <FloatingContact />
 
       {/* Contact Section */}
       <section className="bg-background py-20 px-6 md:px-14">

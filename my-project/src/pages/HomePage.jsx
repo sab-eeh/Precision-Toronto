@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CarModelViewer from "../components/ui/CarModelViewer";
 import ProgressTracker from "../components/ProgressTracker";
 import BeforeAfterSlider from "../components/BeforeAfterSlider";
+import FloatingContact from "../components/FloatingContact"
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
 import {
@@ -15,13 +16,14 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import heroBackground from "../assets/images/image-4.webp";
+import heroBackground from "../assets/images/image-2.webp";
 import image1 from "../assets/images/image-1.webp";
 import image2 from "../assets/images/image-2.webp";
 import image3 from "../assets/images/image-25.webp";
-import LiveReviews from "../components/LiveReviews";
+// import LiveReviews from "../components/LiveReviews";
 import Logo from "../assets/images/logo-1.jpg";
 import { Link } from "react-router-dom";
+
 
 const HomePage = ({ onCarSelect }) => {
   const navigate = useNavigate();
@@ -89,14 +91,15 @@ const HomePage = ({ onCarSelect }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0A0F11] via-[#0E1417] to-[#0A0F11] text-white overflow-x-hidden">
       <Header />
+      <FloatingContact/>
 
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden sm:py-4 md:py-6 ">
         {/* Background Image with Smooth Zoom */}
         <div
-          className="absolute inset-0 bg-cover bg-center scale-110 animate-slow-zoom"
+          className="absolute inset-0 bg-cover bg-center "
           style={{ backgroundImage: `url(${heroBackground})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/60 to-black/70" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/40 to-black/50" />
 
         {/* Content */}
         <motion.div
@@ -379,7 +382,7 @@ const HomePage = ({ onCarSelect }) => {
       </section>
 
       {/* Reviews */}
-      <LiveReviews />
+      {/* <LiveReviews /> */}
 
       <Footer />
     </div>
