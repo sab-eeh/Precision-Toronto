@@ -14,4 +14,13 @@ export default defineConfig({
       },
     },
   },
+  server: {
+    allowedHosts: [
+      'd22f1ff557df.ngrok-free.app', // your ngrok domain
+      '*.ngrok-free.app',            // allow any ngrok subdomain
+      '*.loca.lt'                    // if using localtunnel
+    ],
+    host: true,  // allow external access
+    port: 5173
+  }
 })

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import Header from "../layout/Header";
@@ -7,10 +7,10 @@ import Footer from "../layout/Footer";
 import ProgressTracker from "../components/ProgressTracker";
 import ServiceCard from "../components/ServiceCard";
 import Button from "../components/ui/Button";
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
 
-// Centralized data
+// Example image paths
+const baseImagePath = "/images";
+
 const servicesData = {
   sedan: [
     {
@@ -18,6 +18,7 @@ const servicesData = {
       description: "Deep clean of all interior surfaces.",
       price: 150,
       features: ["Vacuum & shampoo", "Dashboard detail", "Windows"],
+      image: `${baseImagePath}/sedan-1.jpg`,
     },
     {
       title: "Interior + Exterior",
@@ -25,12 +26,14 @@ const servicesData = {
       price: 200,
       features: ["Interior detail", "Full exterior wash", "Wax protection"],
       popular: true,
+      image: `${baseImagePath}/sedan-2.jpg`,
     },
     {
       title: "Stage 1 Paint Correction",
       description: "Machine polish & correction.",
       price: 399,
       features: ["Removes light swirls", "Restores gloss"],
+      image: `${baseImagePath}/sedan-3.jpg`,
     },
   ],
   suv: [
@@ -39,6 +42,7 @@ const servicesData = {
       description: "Deep clean of SUV interior.",
       price: 165,
       features: ["Vacuum & shampoo", "Dashboard detail", "Windows"],
+      image: `${baseImagePath}/suv-1.jpg`,
     },
     {
       title: "Interior + Exterior",
@@ -46,12 +50,14 @@ const servicesData = {
       price: 225,
       features: ["Deep clean interior", "Full exterior wash", "Wax protection"],
       popular: true,
+      image: `${baseImagePath}/suv-2.jpg`,
     },
     {
       title: "Stage 1 Paint Correction",
       description: "Machine polish for SUV.",
       price: 399,
       features: ["Removes light swirls", "Restores gloss"],
+      image: `${baseImagePath}/suv-3.jpeg`,
     },
   ],
   truck: [
@@ -60,6 +66,7 @@ const servicesData = {
       description: "Heavy-duty truck interior detail.",
       price: 170,
       features: ["Vacuum & shampoo", "Dashboard detail", "Windows"],
+      image: `${baseImagePath}/truck-1.jpg`,
     },
     {
       title: "Interior + Exterior",
@@ -67,12 +74,14 @@ const servicesData = {
       price: 250,
       features: ["Deep clean interior", "Full exterior wash", "Wax protection"],
       popular: true,
+      image: `${baseImagePath}/truck-2.jpg`,
     },
     {
       title: "Stage 1 Paint Correction",
       description: "Machine polish for trucks.",
       price: 399,
       features: ["Removes light swirls", "Restores gloss"],
+      image: `${baseImagePath}/truck-3.jpg`,
     },
   ],
   coupe: [
@@ -81,6 +90,7 @@ const servicesData = {
       description: "Luxury coupe interior deep clean.",
       price: 140,
       features: ["Vacuum & shampoo", "Dashboard detail", "Windows"],
+      image: `${baseImagePath}/coupe-1.jpg`,
     },
     {
       title: "Interior + Exterior",
@@ -88,12 +98,14 @@ const servicesData = {
       price: 190,
       features: ["Interior detail", "Hand wash", "Wax protection"],
       popular: true,
+      image: `${baseImagePath}/coupe-2.jpg`,
     },
     {
       title: "Stage 1 Paint Correction",
       description: "Polish & paint correction for coupes.",
       price: 380,
       features: ["Removes light swirls", "Restores gloss"],
+      image: `${baseImagePath}/coupe-3.webp`,
     },
   ],
 };
@@ -126,18 +138,17 @@ const addonsData = {
 
 const ServicesPage = ({ selectedCar }) => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (location.hash) {
-      // Find element with that id
       const element = document.getElementById(location.hash.replace("#", ""));
       if (element) {
-        // Browser default jump (no smooth scroll)
         element.scrollIntoView({ behavior: "auto" });
       }
     }
   }, [location]);
-  const navigate = useNavigate();
+
   const [selectedServices, setSelectedServices] = useState([]);
   const [selectedAddons, setSelectedAddons] = useState([]);
 
@@ -172,13 +183,15 @@ const ServicesPage = ({ selectedCar }) => {
   );
 
   return (
-    <div   id="CarServices" className="min-h-screen bg-gradient-to-b from-[#0A0F11] to-[#101518] text-white">
+    <div
+      id="CarServices"
+      className="min-h-screen bg-gradient-to-b from-[#0A0F11] to-[#101518] text-white"
+    >
       <Header />
       <ProgressTracker currentStep={2} />
+
       {/* Back Button */}
-      <div
-        className="max-w-6xl mx-auto px-6 mt-6 flex items-center gap-2"
-      >
+      <div className="max-w-6xl mx-auto px-6 mt-6 flex items-center gap-2">
         <Button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-300 hover:text-white transition"
@@ -190,6 +203,7 @@ const ServicesPage = ({ selectedCar }) => {
 
       <section className="py-12 px-6">
         <div className="max-w-6xl mx-auto">
+          {/* Heading */}
           <motion.div
             className="text-center mb-14"
             initial={{ opacity: 0, y: 30 }}
@@ -205,81 +219,38 @@ const ServicesPage = ({ selectedCar }) => {
 
           {/* Services */}
           <h3 className="text-2xl font-semibold mb-6">Services</h3>
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.15 },
-              },
-            }}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {availableServices.map((service, index) => (
-              <motion.div
+              <ServiceCard
                 key={index}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 },
-                }}
-              >
-                <ServiceCard
-                  {...service}
-                  selected={selectedServices.includes(service)}
-                  onToggle={() => toggleService(service)}
-                />
-              </motion.div>
+                {...service}
+                selected={selectedServices.includes(service)}
+                onToggle={() => toggleService(service)}
+              />
             ))}
-          </motion.div>
+          </div>
 
           {/* Add-ons */}
           <h3 className="text-2xl font-semibold mb-6">Add-ons</h3>
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.15 },
-              },
-            }}
-          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {availableAddons.map((addon, index) => (
               <motion.div
                 key={index}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 },
-                }}
-                onClick={() => toggleAddon(addon)}
+                whileHover={{ scale: 1.03 }}
                 className={`p-5 rounded-2xl border transition shadow-lg cursor-pointer ${
                   selectedAddons.includes(addon)
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-gray-800 text-gray-200 hover:border-blue-400"
                 }`}
+                onClick={() => toggleAddon(addon)}
               >
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="text-lg font-semibold">{addon.title}</h4>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className={`px-3 py-1 rounded-lg ${
-                      selectedAddons.includes(addon)
-                        ? "bg-red-600"
-                        : "bg-blue-600"
-                    }`}
-                  >
-                    {selectedAddons.includes(addon) ? "-" : "+"}
-                  </Button>
+                  <span className="font-bold">${addon.price}</span>
                 </div>
-                <p className="text-sm">${addon.price}</p>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
 
           {/* Summary */}
           <motion.div
