@@ -1,8 +1,10 @@
-@import "tailwindcss";
 @import "swiper/css";
 @import "swiper/css/navigation";
 @import "swiper/css/pagination";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ==============================
    Precision Toronto Luxury Auto Detailing Theme
@@ -44,8 +46,16 @@
   --radius: 12px;
 
   /* Luxury Gradients */
-  --gradient-gold: linear-gradient(135deg, hsl(45, 100%, 65%), hsl(45, 100%, 75%));
-  --gradient-dark: linear-gradient(135deg, hsl(220, 20%, 8%), hsl(220, 15%, 12%));
+  --gradient-gold: linear-gradient(
+    135deg,
+    hsl(45, 100%, 65%),
+    hsl(45, 100%, 75%)
+  );
+  --gradient-dark: linear-gradient(
+    135deg,
+    hsl(220, 20%, 8%),
+    hsl(220, 15%, 12%)
+  );
   --gradient-hero: linear-gradient(
     135deg,
     hsl(220, 20%, 8%) 0%,

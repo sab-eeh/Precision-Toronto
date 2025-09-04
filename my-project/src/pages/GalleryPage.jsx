@@ -7,21 +7,15 @@ import { Title, Meta } from "react-head";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
 import FloatingContact from "../components/FloatingContact";
-import GalleryImage from "../assets/images/image-10.webp";
 
-// Before & After pairs
-const beforeAfterPairs = [
-  { before: "/gallery/before-1.jpg", after: "/gallery/after-1.jpg" },
-  { before: "/gallery/before-2.jpg", after: "/gallery/after-2.jpg" },
-  { before: "/gallery/before-3.jpg", after: "/gallery/after-3.jpg" },
-];
-
-// Video carousel sources
-const videoSources = [
-  "/videos/video-1.mp4",
-  "/videos/video-2.mp4",
-  "/videos/video-3.mp4",
-];
+// Centralized imports from assets/index.js
+import {
+  galleryHero,
+  galleryCTA,
+  gallerySections,
+  beforeAfterPairs,
+  videoSources,
+} from "../assets/gallery";
 
 const Gallery = () => {
   const [videoIndex, setVideoIndex] = useState(0);
@@ -36,18 +30,18 @@ const Gallery = () => {
       <Title>Gallery | Precision Toronto</Title>
       <Meta
         name="description"
-        content="Explore our detailing gallery with videos, transformation before & after shots, and premium car care visuals."
+        content="Explore our detailing gallery with videos, before & after transformations, and premium car care visuals."
       />
 
       <div className="bg-[#0B1315] text-gray-300 overflow-hidden">
         <Header />
         <FloatingContact />
 
-        {/* Hero */}
+        {/* Hero Section */}
         <section
-          className="relative h-[80vh] flex items-center justify-center text-center bg-black"
+          className="relative h-[80vh] flex items-center justify-center text-center"
           style={{
-            backgroundImage: `url(${GalleryImage})`,
+            backgroundImage: `url(${galleryHero})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -69,7 +63,7 @@ const Gallery = () => {
           </motion.div>
         </section>
 
-        {/* Video Gallery (Carousel for mobile/tablet, grid for desktop) */}
+        {/* Video Gallery */}
         <section className="container mx-auto px-6 py-20 relative">
           <motion.h2
             className="text-3xl md:text-4xl font-bold text-blue-400 text-center mb-4"
@@ -85,12 +79,11 @@ const Gallery = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            Step into our world of premium detailing through captivating video
-            stories. Watch as ordinary vehicles are transformed into showroom
-            masterpieces — with precision, care, and unmatched expertise.
+            Watch ordinary vehicles transform into showroom masterpieces —
+            precision, care, and unmatched expertise.
           </motion.p>
 
-          {/* Carousel only for mobile/tablet */}
+          {/* Carousel for mobile/tablet */}
           <div className="md:hidden relative">
             <motion.div
               key={videoIndex}
@@ -109,16 +102,16 @@ const Gallery = () => {
               />
             </motion.div>
 
-            {/* Navigation Arrows */}
+            {/* Navigation */}
             <button
               onClick={prevVideo}
-              className="absolute top-1/2 -translate-y-1/2 left-2 bg-black/50 hover:bg-black/70 p-2 rounded-full text-white"
+              className="absolute top-1/2 -translate-y-1/2 left-2 bg-black/50 hover:bg-black/70 p-2 rounded-full text-white transition"
             >
               <ChevronLeft size={24} />
             </button>
             <button
               onClick={nextVideo}
-              className="absolute top-1/2 -translate-y-1/2 right-2 bg-black/50 hover:bg-black/70 p-2 rounded-full text-white"
+              className="absolute top-1/2 -translate-y-1/2 right-2 bg-black/50 hover:bg-black/70 p-2 rounded-full text-white transition"
             >
               <ChevronRight size={24} />
             </button>
@@ -137,7 +130,7 @@ const Gallery = () => {
             </div>
           </div>
 
-          {/* Grid layout only for desktop */}
+          {/* Grid layout for desktop */}
           <div className="hidden md:grid grid-cols-3 gap-6">
             {videoSources.map((src, idx) => (
               <motion.div
@@ -172,19 +165,13 @@ const Gallery = () => {
             </h2>
             <p className="text-gray-400 leading-relaxed mb-6">
               Every detail matters — from the shine of the body to the freshness
-              of the interior. We capture the essence of your vehicle’s
-              transformation through premium detailing.
-            </p>
-            <p className="text-gray-400 leading-relaxed mb-6">
-              Our work goes beyond cleaning — it’s about restoring beauty,
-              preserving value, and creating a lasting impression. Whether it’s
-              a luxury ride or a daily commuter, each vehicle receives the same
-              precision and care to ensure it looks and feels its absolute best.
+              of the interior. Our premium detailing restores beauty and
+              preserves value.
             </p>
             <p className="text-gray-400 leading-relaxed">
-              From powerful exterior finishes that command attention to refined
-              interiors that feel brand new, we make sure every angle of your
-              vehicle tells a story of elegance, passion, and perfection.
+              From commanding exteriors to refined interiors, we make sure every
+              angle of your vehicle tells a story of elegance, passion, and
+              perfection.
             </p>
           </motion.div>
 
@@ -194,17 +181,14 @@ const Gallery = () => {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {[
-              "/gallery/section-1.webp",
-              "/gallery/section-2.webp",
-            ].map((img, idx) => (
+            {gallerySections.map((img, idx) => (
               <div
                 key={idx}
                 className="rounded-2xl overflow-hidden shadow-lg flex-1"
               >
                 <img
                   src={img}
-                  alt="Gallery showcase"
+                  alt={`Gallery showcase ${idx + 1}`}
                   className="w-full h-72 object-cover"
                   loading="lazy"
                 />
@@ -229,9 +213,8 @@ const Gallery = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Experience the difference. Slide through the transformations that
-            showcase how our detailing brings dull and tired vehicles back to
-            life — making them shine like new again.
+            Slide through transformations that bring tired vehicles back to
+            life.
           </motion.p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 container mx-auto px-6">
@@ -243,10 +226,10 @@ const Gallery = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
               >
-                {/* Before image */}
+                {/* Before */}
                 <img
                   src={pair.before}
-                  alt="Before"
+                  alt="Before detailing"
                   className="w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 group-hover:opacity-0 transition-opacity duration-700"
                   loading="lazy"
                 />
@@ -254,10 +237,10 @@ const Gallery = () => {
                   Before
                 </span>
 
-                {/* After image */}
+                {/* After */}
                 <img
                   src={pair.after}
-                  alt="After"
+                  alt="After detailing"
                   className="w-full h-64 md:h-72 lg:h-80 object-cover"
                   loading="lazy"
                 />
@@ -271,9 +254,9 @@ const Gallery = () => {
 
         {/* CTA */}
         <section
-          className="relative h-[60vh] flex items-center justify-center text-center bg-black"
+          className="relative h-[60vh] flex items-center justify-center text-center"
           style={{
-            backgroundImage: `url(/gallery/cta.jpeg)`,
+            backgroundImage: `url(${galleryCTA})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}

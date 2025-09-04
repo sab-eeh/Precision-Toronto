@@ -8,51 +8,31 @@ import Footer from "../layout/Footer";
 import FloatingContact from "../components/FloatingContact";
 import { Title, Meta } from "react-head";
 
-// Assets
-import image1 from "../assets/images/image-17.webp";
-import image2 from "../assets/images/image-18.webp";
-import process1 from "../assets/images/process1.webp";
-import process2 from "../assets/images/process2.webp";
-import process3 from "../assets/images/process3.webp";
-import gallery1 from "../assets/images/image-9.webp";
-import gallery2 from "../assets/images/image-8.webp";
-import gallery3 from "../assets/images/image-10.webp";
-import gallery4 from "../assets/images/image-14.webp";
-import gallery5 from "../assets/images/image-21.webp";
-import gallery6 from "../assets/images/image-15.webp";
-import gallery7 from "../assets/images/image-24.webp";
-import gallery8 from "../assets/images/image-25.webp";
-import gallery9 from "../assets/images/image-26.webp";
-import bgHero from "../assets/images/image-24.webp";
-import aboutImg from "../assets/images/image-13.webp";
-import bgCTA from "../assets/images/cta-bg.jpg";
-
-const galleryImages = [
-  gallery1,
-  gallery2,
-  gallery3,
-  gallery4,
-  gallery5,
-  gallery6,
-  gallery7,
-  gallery8,
-  gallery9,
-];
+// Import all About page images from index.js
+import {
+  image1,
+  image2,
+  process1,
+  process2,
+  process3,
+  galleryImages,
+  bgHero,
+  aboutImg,
+  bgCTA,
+} from "../assets/about";
 
 const About = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const handlePrev = () => {
+  const handlePrev = () =>
     setCurrentIndex((prev) =>
       prev === 0 ? galleryImages.length - 1 : prev - 1
     );
-  };
 
-  const handleNext = () => {
+  const handleNext = () =>
     setCurrentIndex((prev) =>
       prev === galleryImages.length - 1 ? 0 : prev + 1
     );
-  };
 
   return (
     <>
@@ -61,6 +41,7 @@ const About = () => {
         name="description"
         content="Precision Toronto is a professional car cleaning and detailing company in Toronto, Canada. Founded by Haris, we provide premium auto detailing services for every car type."
       />
+
       <div className="bg-[#0B1315] text-gray-300 overflow-hidden">
         <Header />
         <FloatingContact />
@@ -91,9 +72,8 @@ const About = () => {
           </motion.div>
         </section>
 
-        {/* About Content Section */}
+        {/* About Content */}
         <section className="container mx-auto px-6 py-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -116,7 +96,6 @@ const About = () => {
             </p>
           </motion.div>
 
-          {/* Right Images */}
           <motion.div
             className="flex gap-6"
             initial={{ opacity: 0, x: 50 }}
@@ -231,22 +210,16 @@ const About = () => {
               service, but an experience that redefines your car’s presence.
             </p>
             <ul className="space-y-3 text-gray-300">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-400" /> Premium
-                products & advanced techniques
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-400" /> Experienced,
-                passionate professionals
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-400" /> Tailored
-                solutions for every vehicle
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-400" /> 100%
-                satisfaction guarantee
-              </li>
+              {[
+                "Premium products & advanced techniques",
+                "Experienced, passionate professionals",
+                "Tailored solutions for every vehicle",
+                "100% satisfaction guarantee",
+              ].map((item, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-blue-400" /> {item}
+                </li>
+              ))}
             </ul>
           </motion.div>
 

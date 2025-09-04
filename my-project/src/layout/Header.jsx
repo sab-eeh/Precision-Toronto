@@ -1,5 +1,5 @@
 // src/components/Header.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Phone,
@@ -12,66 +12,99 @@ import {
   X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Logo from "../assets/images/logo-copy.webp";
 
-const Header = () => {
+
+// ✅ Nav Links (outside component to prevent re-creation)
+const NAV_LINKS = [
+  { to: "/", label: "Home" },
+  { to: "/About", label: "About Us" },
+  { to: "/Gallery", label: "Gallery" },
+  { to: "/Contact", label: "Contact Us" },
+];
+
+// ✅ Contact Info for reusability
+const CONTACT_INFO = [
+  {
+    icon: Mail,
+    text: "info@precisiontoronto.com",
+    color: "text-blue-400",
+  },
+  {
+    icon: MapPin,
+    text: "Serving Greater Toronto Area",
+    color: "text-blue-400",
+  },
+  { icon: Phone, text: "(416) 123-4567", color: "text-blue-400" },
+];
+
+// ✅ Animation Variants
+const headerVariants = {
+  visible: { y: 0, transition: { duration: 0.4, ease: "easeInOut" } },
+  hidden: { y: -120, transition: { duration: 0.4, ease: "easeInOut" } },
+};
+
+const mobileMenuVariants = {
+  hidden: { opacity: 0, y: -20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.3, ease: "easeInOut" },
+  },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
+};
+
+const Header = React.memo(() => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  const navLinks = [
-    { to: "/", label: "Home" },
-    { to: "/About", label: "About Us" },
-    { to: "/Gallery", label: "Gallery" },
-    { to: "/Contact", label: "Contact Us" },
-  ];
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   const isActive = (path) => location.pathname === path;
 
+  // ✅ Optimized scroll handler with requestAnimationFrame
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (currentScrollY > lastScrollY && currentScrollY > 80) {
-        setShowHeader(false); // scrolling down → hide
-      } else {
-        setShowHeader(true); // scrolling up → show
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
+            setShowHeader(false); // hide on scroll down
+          } else {
+            setShowHeader(true); // show on scroll up
+          }
+          lastScrollY.current = currentScrollY;
+          ticking.current = false;
+        });
+        ticking.current = true;
       }
-
-      setLastScrollY(currentScrollY);
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   return (
     <motion.header
-      initial={{ y: 0 }}
-      animate={{ y: showHeader ? 0 : -120 }}
-      transition={{ duration: 0.4, ease: "easeInOut" }}
+      variants={headerVariants}
+      animate={showHeader ? "visible" : "hidden"}
       className="bg-[#14181E]/95 backdrop-blur-md sticky top-0 z-50 shadow-md"
     >
-      {/* Top Bar (Desktop Only) */}
+      {/* Top Bar (Desktop) */}
       <div className="hidden md:block border-b border-[#1F242C]">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between py-2 text-sm text-gray-300">
+            {/* Left: Contact Info */}
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-blue-400" />
-                <span>info@precisiontoronto.com</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-blue-400" />
-                <span>Serving Greater Toronto Area</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-blue-400" />
-                <span>(416) 123-4567</span>
-              </div>
+              {CONTACT_INFO.map(({ icon: Icon, text, color }) => (
+                <div key={text} className="flex items-center gap-2">
+                  <Icon className={`w-4 h-4 ${color}`} />
+                  <span>{text}</span>
+                </div>
+              ))}
             </div>
 
+            {/* Right: Reviews + Social */}
             <div className="flex items-center gap-5">
               <div className="flex items-center gap-2 text-[#FFD700]">
                 <Star className="w-4 h-4 fill-current" />
@@ -104,15 +137,16 @@ const Header = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <img
-            src={Logo}
+            src="/logo.webp"
             alt="Precision Toronto Logo"
-            className="w-28 h-auto mx-auto rounded-full shadow-lg "
+            className="w-28 h-auto mx-auto rounded-full shadow-lg"
+            loading="lazy"
           />
         </Link>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-10">
-          {navLinks.map((link) => (
+          {NAV_LINKS.map((link) => (
             <Link
               key={link.label}
               to={link.to}
@@ -157,15 +191,15 @@ const Header = () => {
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
+            variants={mobileMenuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className="md:hidden w-full bg-[#14181E] border-t border-[#1F242C] shadow-lg absolute left-0 z-40"
           >
             <div className="px-6 py-6 space-y-6">
               <ul className="space-y-5">
-                {navLinks.map((link) => (
+                {NAV_LINKS.map((link) => (
                   <li key={link.label}>
                     <Link
                       to={link.to}
@@ -182,21 +216,19 @@ const Header = () => {
                 ))}
               </ul>
 
-              {/* Contact Info */}
+              {/* Contact Info (reused) */}
               <div className="pt-6 border-t border-[#1F242C] space-y-4 text-gray-300">
                 <div className="flex items-center gap-2 text-[#FFD700]">
                   <Star className="w-4 h-4 fill-current" />
                   <span className="font-semibold">4.9/5</span>
                   <span className="text-gray-400">Google Reviews</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-blue-400" />
-                  <span>(416) 123-4567</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-blue-400" />
-                  <span>Serving Greater Toronto Area</span>
-                </div>
+                {CONTACT_INFO.slice(-2).map(({ icon: Icon, text, color }) => (
+                  <div key={text} className="flex items-center gap-2">
+                    <Icon className={`w-4 h-4 ${color}`} />
+                    <span>{text}</span>
+                  </div>
+                ))}
               </div>
 
               <Link to="/" onClick={() => setMenuOpen(false)}>
@@ -214,6 +246,6 @@ const Header = () => {
       </AnimatePresence>
     </motion.header>
   );
-};
+});
 
 export default Header;
