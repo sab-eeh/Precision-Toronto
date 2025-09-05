@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { MessageCircle, Phone, Instagram, X } from "lucide-react";
+import { FaTiktok } from "react-icons/fa";
+
 
 const FloatingContact = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -8,19 +10,25 @@ const FloatingContact = () => {
     {
       icon: MessageCircle,
       label: "WhatsApp",
-      href: "https://wa.me/14161234567",
+      href: "https://wa.me/16476857153",
       color: "bg-green-500 hover:bg-green-600",
     },
     {
       icon: Instagram,
       label: "Instagram",
       href: "https://www.instagram.com/precision.to",
-      color: "bg-pink-500 hover:bg-pink-600",
+      color: "bg-[#DA2C71] hover:bg-pink-500",
+    },
+    {
+      icon: FaTiktok,
+      label: "Instagram",
+      href: "https://www.tiktok.com/@precision.to",
+      color: "bg-black hover:bg-gray-900",
     },
     {
       icon: Phone,
       label: "Call Us",
-      href: "tel:+14161234567",
+      href: "tel:+16476857153",
       color: "bg-blue-500 hover:bg-blue-600",
     },
   ];

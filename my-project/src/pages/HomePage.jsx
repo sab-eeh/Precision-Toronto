@@ -6,6 +6,7 @@ import React, {
   useState,
   lazy,
   Suspense,
+  useContext
 } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -17,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { BookingContext } from "../context/BookingContext";
 
 // ⬇️ Centralized image imports from a single folder barrel (see instructions in chat)
 import {
@@ -102,13 +104,15 @@ const HomePage = ({ onCarSelect }) => {
   );
 
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { booking, setBooking } = useContext(BookingContext);
 
   const handleCarSelect = useCallback(
     (carType) => {
       if (onCarSelect) onCarSelect(carType);
+      setBooking({ ...booking, carType })
       navigate("/services");
     },
-    [navigate, onCarSelect]
+    [navigate, onCarSelect, booking, setBooking]
   );
 
   const nextSlide = useCallback(
@@ -207,7 +211,7 @@ const HomePage = ({ onCarSelect }) => {
               alt="Precision Toronto Logo"
               width={176}
               height={176}
-              className="w-40 md:w-44 h-auto mx-auto rounded-full shadow-lg sm:pt-5 md:pt-5 lg:pt-0"
+              className="w-46 md:w-56 h-auto mx-auto rounded-full shadow-lg sm:pt-5 md:pt-5 lg:pt-0"
               loading="lazy"
               decoding="async"
             />

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/input";
@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../components/ui/popover";
+import { DatePickerInput } from "../components/ui/DatePickerInput";
 import ProgressTracker from "../components/ProgressTracker";
 import FloatingContact from "../components/FloatingContact";
 import Header from "../layout/Header";
@@ -24,6 +25,7 @@ import { format } from "date-fns";
 import { cn } from "../lib/utils";
 import api from "../api/client";
 import { Title, Meta } from "react-head";
+import { BookingContext } from "../context/BookingContext";
 
 const BUSINESS_MINUTES_PER_SLOT = 60;
 
@@ -35,35 +37,68 @@ function toYMD(date) {
 export default function BookingPage() {
   const navigate = useNavigate();
   const { state } = useLocation();
+  const { booking, setBooking } = useContext(BookingContext);
 
-  if (!state) {
+  if (!state && !booking.services?.length) {
     return <div className="p-10 text-center">No booking data found.</div>;
   }
 
-  const { selectedCar, selectedServices, selectedAddons, totalPrice } = state;
+  const { selectedCar, selectedServices, selectedAddons, totalPrice } =
+    state || booking;
 
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(
+    booking.selectedDate || null
+  );
   const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedTime, setSelectedTime] = useState(booking.selectedTime || "");
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const [customerInfo, setCustomerInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    notes: "",
-  });
+  const [customerInfo, setCustomerInfo] = useState(
+    booking.customerInfo || {
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      notes: "",
+    }
+  );
 
-  const [vehicleInfo, setVehicleInfo] = useState({
-    make: "",
-    model: "",
-    year: "",
-    color: "",
-    license: "",
-  });
+  const [vehicleInfo, setVehicleInfo] = useState(
+    booking.vehicleInfo || {
+      make: "",
+      model: "",
+      year: "",
+      color: "",
+      license: "",
+    }
+  );
+
+  // Restore booking draft from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("precision_booking_draft_v1");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setSelectedDate(
+        parsed.selectedDate ? new Date(parsed.selectedDate) : null
+      );
+      setSelectedTime(parsed.selectedTime || "");
+      setCustomerInfo(parsed.customerInfo || {});
+      setVehicleInfo(parsed.vehicleInfo || {});
+    }
+  }, []);
+
+  // Sync draft to localStorage whenever data changes
+  useEffect(() => {
+    const draft = {
+      selectedDate,
+      selectedTime,
+      customerInfo,
+      vehicleInfo,
+    };
+    localStorage.setItem("precision_booking_draft_v1", JSON.stringify(draft));
+  }, [selectedDate, selectedTime, customerInfo, vehicleInfo]);
 
   // Fetch availability when date changes
   useEffect(() => {
@@ -112,6 +147,7 @@ export default function BookingPage() {
       slotMinutes: BUSINESS_MINUTES_PER_SLOT,
     };
 
+    setBooking((prev) => ({ ...prev, ...bookingData }));
     setSubmitting(true);
     navigate("/confirmation", { state: bookingData });
   };
@@ -189,7 +225,7 @@ export default function BookingPage() {
                           type="button"
                           variant="outline"
                           className={cn(
-                            "w-full justify-start text-left font-normal mt-2 rounded-xl py-3 px-4 border border-gray-700 hover:bg-gray-700 " +
+                            "w-full justify-start text-left font-normal mt-2 rounded-xl py-3 px-4 border border-gray-700 " +
                               "bg-[#1A2234] hover:bg-[#223048] text-white shadow-md " +
                               "transition-colors duration-200",
                             !selectedDate && "text-gray-400"
@@ -197,7 +233,7 @@ export default function BookingPage() {
                         >
                           <CalendarIcon className="mr-2 h-5 w-5 text-blue-400" />
                           {selectedDate
-                            ? format(selectedDate, "PPP")
+                            ? format(selectedDate, "MMM dd, yyyy")
                             : "Pick a date"}
                         </Button>
                       </PopoverTrigger>
@@ -206,20 +242,25 @@ export default function BookingPage() {
                           mode="single"
                           selected={selectedDate}
                           onSelect={setSelectedDate}
+                          showOutsideDays={false}
+                          fixedWeeks
                           disabled={(date) => {
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
                             return date < today;
                           }}
                           className="p-2 rounded-lg text-white grid place-items-center
-                                  [&_.rdp-months]:grid [&_.rdp-months]:grid-cols-1 md:[&_.rdp-months]:grid-cols-2 [&_.rdp-months]:gap-6
-                                  [&_.rdp-month]:bg-[#1A2234] [&_.rdp-month]:p-4 [&_.rdp-month]:rounded-lg [&_.rdp-month]:shadow-md
-                                  [&_.rdp-day_selected]:bg-blue-500 [&_.rdp-day_selected]:text-white
-                                  [&_.rdp-day:hover]:bg-blue-600/40 [&_.rdp-day_disabled]:opacity-30 [&_.rdp-day_disabled]:cursor-not-allowed"
+                                    [&_.rdp-head_cell]:hidden
+                                    [&_.rdp-months]:grid [&_.rdp-months]:grid-cols-1 md:[&_.rdp-months]:grid-cols-2 [&_.rdp-months]:gap-6
+                                    [&_.rdp-month]:bg-[#1A2234] [&_.rdp-month]:p-4 [&_.rdp-month]:rounded-lg [&_.rdp-month]:shadow-md
+                                    [&_.rdp-day_selected]:bg-blue-500 [&_.rdp-day_selected]:text-white
+                                    [&_.rdp-day:hover]:bg-blue-600/40 [&_.rdp-day_disabled]:opacity-30 [&_.rdp-day_disabled]:cursor-not-allowed"
                         />
                       </PopoverContent>
                     </Popover>
                   </div>
+
+                  {/* <DatePickerInput /> */}
 
                   {/* Time Slots */}
                   <div>
@@ -389,7 +430,7 @@ export default function BookingPage() {
                   {selectedDate && (
                     <SummaryRow
                       label="Date:"
-                      value={format(selectedDate, "PPP")}
+                      value={format(selectedDate, "MMM dd, yyyy")}
                       highlight
                     />
                   )}

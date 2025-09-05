@@ -131,3 +131,12 @@ button.secondary {
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
 }
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}

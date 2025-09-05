@@ -1,213 +1,503 @@
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  lazy,
-  Suspense,
-} from "react";
+import React, { useState, useMemo, useEffect, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Minus,
+  Plus,
+  X,
+} from "lucide-react";
 import { Title, Meta } from "react-head";
 
-// Lazy-loaded components for faster initial load
-const Header = lazy(() => import("../layout/Header"));
-const Footer = lazy(() => import("../layout/Footer"));
-const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
-const ServiceCard = lazy(() => import("../components/ServiceCard"));
-const Button = lazy(() => import("../components/ui/Button"));
-const FloatingContact = lazy(() => import("../components/FloatingContact"));
-
+import { BookingContext } from "../context/BookingContext";
+import ServiceCard from "../components/ServiceCard";
+import Button from "../components/ui/Button";
+import FloatingContact from "../components/FloatingContact";
+import ProgressTracker from "../components/ProgressTracker";
+import Header from "../layout/Header";
+import Footer from "../layout/Footer";
 import { servicesData, addonsData } from "../data/servicesData";
 
-const ServicesPage = ({ selectedCar }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+/* Accessible horizontal scroller for mobile */
+const Carousel = ({ children, idPrefix = "carousel" }) => {
+  const scrollRef = React.useRef(null);
+  const scrollBy = (dir = 1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const w = el.clientWidth;
+    el.scrollBy({ left: dir * w * 0.9, behavior: "smooth" });
+  };
+  return (
+    <div className="relative">
+      <div
+        ref={scrollRef}
+        className="flex gap-6 overflow-x-auto snap-x snap-mandatory touch-pan-x py-2 scrollbar-hide"
+        role="list"
+        aria-labelledby={`${idPrefix}-label`}
+      >
+        {React.Children.map(children, (child) => (
+          <div className="min-w-[260px] sm:min-w-[300px] lg:min-w-0 snap-center">
+            {child}
+          </div>
+        ))}
+      </div>
 
+      <button
+        aria-label="Scroll left"
+        onClick={() => scrollBy(-1)}
+        className="hidden md:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 bg-gradient-to-r from-gray-900 to-gray-800/80 rounded-full w-10 h-10 shadow-lg transition"
+      >
+        <ChevronLeft />
+      </button>
+      <button
+        aria-label="Scroll right"
+        onClick={() => scrollBy(1)}
+        className="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 bg-gradient-to-l from-gray-900 to-gray-800/80 rounded-full w-10 h-10 shadow-lg transition"
+      >
+        <ChevronRight />
+      </button>
+    </div>
+  );
+};
+
+const CATEGORIES = [
+  "Detailing",
+  "Paint Correction",
+  "Ceramic Coating",
+  "Window Tinting",
+];
+
+const ServicesPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const {
+    booking,
+    setBooking,
+    toggleService,
+    toggleAddon,
+    incrementService,
+    decrementService,
+    incrementAddon,
+    decrementAddon,
+    totalPrice,
+  } = useContext(BookingContext);
+
+  const [step, setStep] = useState("chooseCategory");
+  const [activeCategory, setActiveCategory] = useState("Detailing");
+
+  // Scroll to hash if present
   useEffect(() => {
     if (location.hash) {
-      const element = document.getElementById(location.hash.replace("#", ""));
-      element?.scrollIntoView({ behavior: "smooth" });
+      const el = document.getElementById(location.hash.replace("#", ""));
+      el?.scrollIntoView({ behavior: "smooth" });
     }
   }, [location]);
 
-  const [selectedServices, setSelectedServices] = useState([]);
-  const [selectedAddons, setSelectedAddons] = useState([]);
-
-  const availableServices = useMemo(
-    () => servicesData[selectedCar] || [],
-    [selectedCar]
+  const selectedCarType = booking.carType || "sedan";
+  const allServices = useMemo(
+    () =>
+      Array.isArray(servicesData[selectedCarType])
+        ? servicesData[selectedCarType]
+        : [],
+    [selectedCarType]
   );
   const availableAddons = useMemo(
-    () => addonsData[selectedCar] || [],
-    [selectedCar]
-  );
-
-  const toggleService = useCallback(
-    (service) => {
-      setSelectedServices((prev) =>
-        prev.includes(service)
-          ? prev.filter((s) => s !== service)
-          : [...prev, service]
-      );
-    },
-    [setSelectedServices]
-  );
-
-  const toggleAddon = useCallback(
-    (addon) => {
-      setSelectedAddons((prev) =>
-        prev.includes(addon)
-          ? prev.filter((a) => a !== addon)
-          : [...prev, addon]
-      );
-    },
-    [setSelectedAddons]
-  );
-
-  const totalPrice = useMemo(
     () =>
-      selectedServices.reduce((sum, s) => sum + s.price, 0) +
-      selectedAddons.reduce((sum, a) => sum + a.price, 0),
-    [selectedServices, selectedAddons]
+      Array.isArray(addonsData[selectedCarType])
+        ? addonsData[selectedCarType]
+        : [],
+    [selectedCarType]
   );
+
+  const servicesByCategory = useMemo(() => {
+    const map = {};
+    for (const cat of CATEGORIES) {
+      map[cat] = allServices.filter((s) => s.category === cat);
+    }
+    return map;
+  }, [allServices]);
+
+  const goToServices = (category) => {
+    setActiveCategory(category);
+    setStep("pickServices");
+    setTimeout(() => {
+      document
+        .getElementById("services-section")
+        ?.scrollIntoView({ behavior: "smooth" });
+    }, 60);
+  };
+
+  const goToAddons = () => {
+    setStep("addons");
+    setTimeout(() => {
+      document
+        .getElementById("addons-section")
+        ?.scrollIntoView({ behavior: "smooth" });
+    }, 60);
+  };
+
+  const goToSummary = () => {
+    setStep("summary");
+    setTimeout(() => {
+      document
+        .getElementById("summary-section")
+        ?.scrollIntoView({ behavior: "smooth" });
+    }, 60);
+  };
+
+  const handleContinueToBooking = () => {
+    // Do NOT confirm booking here — just pass draft state forward
+    navigate("/booking", {
+      state: {
+        selectedCar: booking.carType,
+        selectedServices: booking.services || [],
+        selectedAddons: booking.addons || [],
+        totalPrice,
+      },
+    });
+  };
 
   return (
     <>
       <Title>Car Detailing Services | Precision Toronto</Title>
       <Meta
         name="description"
-        content="Explore Precision Toronto’s car detailing services: interior cleaning, exterior polish, ceramic coating, and paint protection in Toronto, Canada."
+        content="Choose detailing, paint correction, ceramic coating, and window tinting services tailored to your car type."
       />
 
       <div className="min-h-screen bg-gradient-to-b from-[#0A0F11] to-[#101518] text-white">
-        <Suspense
-          fallback={<div className="p-6 text-gray-400">Loading...</div>}
-        >
-          <Header />
-          <FloatingContact />
-          <ProgressTracker currentStep={2} />
+        <Header />
+        <FloatingContact />
+        <ProgressTracker currentStep={2} />
 
-          {/* Back Button */}
-          <div className="max-w-6xl mx-auto px-6 mt-6 flex items-center gap-2">
+        <main className="max-w-6xl mx-auto px-4 py-10">
+          <div className="mb-6 flex items-center gap-3">
             <Button
               onClick={() => navigate(-1)}
               className="flex items-center gap-2 text-gray-300 hover:text-white transition"
             >
-              <ArrowLeft size={20} />
-              <span>Back</span>
+              <ArrowLeft size={18} /> Back
             </Button>
+            <h1 className="text-3xl font-bold">Choose Your Service</h1>
           </div>
 
-          <section className="py-12 px-6">
-            <div className="max-w-6xl mx-auto">
-              {/* Heading */}
-              <motion.div
-                className="text-center mb-14"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <h2 className="text-4xl font-bold mb-4">Choose Your Service</h2>
-                <p className="text-lg text-gray-400">
-                  Professional detailing services tailored to your{" "}
-                  <span className="font-semibold capitalize">
-                    {selectedCar}
-                  </span>
-                  .
-                </p>
-              </motion.div>
-
-              {/* Services */}
-              <h3 className="text-2xl font-semibold mb-6">Services</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                {availableServices.map((service, index) => (
-                  <ServiceCard
-                    key={index}
-                    {...service}
-                    selected={selectedServices.includes(service)}
-                    onToggle={() => toggleService(service)}
-                    // 👇 Add lazy loading to service card images
-                    imageProps={{ loading: "lazy" }}
-                  />
-                ))}
-              </div>
-
-              {/* Add-ons */}
-              <h3 className="text-2xl font-semibold mb-6">Add-ons</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-                {availableAddons.map((addon, index) => (
-                  <motion.div
-                    key={index}
-                    whileHover={{ scale: 1.03 }}
-                    className={`p-5 rounded-2xl border transition shadow-lg cursor-pointer ${
-                      selectedAddons.includes(addon)
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-gray-800 text-gray-200 hover:border-blue-400"
-                    }`}
-                    onClick={() => toggleAddon(addon)}
+          {/* Categories */}
+          {step === "chooseCategory" && (
+            <motion.section
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-12"
+            >
+              <h2 className="text-xl font-semibold mb-4">
+                Which service are you looking for?
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => goToServices(cat)}
+                    className="px-5 py-2 rounded-xl bg-gray-800 hover:bg-blue-600 transition shadow"
                   >
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-lg font-semibold">{addon.title}</h4>
-                      <span className="font-bold">${addon.price}</span>
-                    </div>
-                  </motion.div>
+                    {cat}
+                  </button>
                 ))}
               </div>
+            </motion.section>
+          )}
 
-              {/* Summary */}
-              <motion.div
-                className="bg-gray-900 rounded-2xl p-8 shadow-lg mb-12"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-              >
-                <h3 className="text-2xl font-semibold mb-4">Summary</h3>
-                <ul className="mb-4 divide-y divide-gray-700">
-                  {selectedServices.map((s, i) => (
-                    <li key={i} className="flex justify-between py-2">
-                      <span>{s.title}</span>
-                      <span>${s.price}</span>
-                    </li>
+          {/* Services */}
+          <section id="services-section" className="mb-12">
+            {(step === "pickServices" || step === "chooseCategory") && (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-semibold">{activeCategory}</h3>
+                  <Button
+                    onClick={() => setStep("chooseCategory")}
+                    variant="outline"
+                  >
+                    Change Category
+                  </Button>
+                </div>
+
+                {/* Mobile carousel */}
+                <div className="block lg:hidden mb-6">
+                  <Carousel>
+                    {(servicesByCategory[activeCategory] || []).map((s) => (
+                      <ServiceCard
+                        key={s.id ?? s.title}
+                        {...s}
+                        selected={
+                          !!(booking.services || []).find(
+                            (x) => x.id === (s.id ?? s.title)
+                          )
+                        }
+                        onToggle={() =>
+                          toggleService({ ...s, id: s.id ?? s.title })
+                        }
+                      />
+                    ))}
+                  </Carousel>
+                </div>
+
+                {/* Desktop grid */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-8 mb-6">
+                  {(servicesByCategory[activeCategory] || []).map((s) => (
+                    <ServiceCard
+                      key={s.id ?? s.title}
+                      {...s}
+                      selected={
+                        !!(booking.services || []).find(
+                          (x) => x.id === (s.id ?? s.title)
+                        )
+                      }
+                      onToggle={() =>
+                        toggleService({ ...s, id: s.id ?? s.title })
+                      }
+                    />
                   ))}
-                  {selectedAddons.map((a, i) => (
-                    <li key={i} className="flex justify-between py-2">
-                      <span>{a.title}</span>
-                      <span>${a.price}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex justify-between font-bold text-xl">
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button
+                    disabled={!(booking.services && booking.services.length)}
+                    onClick={goToAddons}
+                  >
+                    Continue to Add-ons
+                  </Button>
+                </div>
+              </>
+            )}
+          </section>
+
+          {/* Add-ons */}
+          {step === "addons" && (
+            <section id="addons-section" className="mb-12">
+              <h3 className="text-2xl font-semibold mb-4">Add-ons</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                {availableAddons.map((addon) => {
+                  const id = addon.id ?? addon.title;
+                  const active = !!(booking.addons || []).find(
+                    (a) => a.id === id
+                  );
+                  const activeItem = (booking.addons || []).find(
+                    (a) => a.id === id
+                  );
+
+                  return (
+                    <div
+                      key={id}
+                      className={`p-5 rounded-2xl transition shadow border ${
+                        active
+                          ? "bg-blue-600 text-white border-blue-400"
+                          : "bg-gray-800 text-gray-200 border-gray-700"
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-semibold">{addon.title}</h4>
+                        <span className="font-bold">
+                          ${Number(addon.price).toFixed(2)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-300 mb-4">
+                        Add {addon.title.toLowerCase()} to your booking.
+                      </p>
+
+                      {!active ? (
+                        <Button
+                          onClick={() => toggleAddon({ ...addon, id })}
+                          className="w-full"
+                          variant="secondary"
+                        >
+                          Add
+                        </Button>
+                      ) : (
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="icon"
+                              onClick={() => decrementAddon(id)}
+                              aria-label="Decrease"
+                            >
+                              <Minus size={16} />
+                            </Button>
+                            <span className="min-w-[2ch] text-center font-semibold">
+                              {activeItem?.qty ?? 1}
+                            </span>
+                            <Button
+                              size="icon"
+                              onClick={() => incrementAddon(id)}
+                              aria-label="Increase"
+                            >
+                              <Plus size={16} />
+                            </Button>
+                          </div>
+                          <Button
+                            variant="outline"
+                            onClick={() => toggleAddon({ id })}
+                          >
+                            <X size={16} className="mr-1" /> Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-between items-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep("pickServices")}
+                >
+                  Back to Services
+                </Button>
+                <Button onClick={goToSummary}>Continue to Summary</Button>
+              </div>
+            </section>
+          )}
+
+          {/* Summary */}
+          {step === "summary" && (
+            <section id="summary-section" className="mb-12">
+              <h3 className="text-2xl font-semibold mb-4">Summary</h3>
+
+              <div className="bg-gray-900 rounded-2xl p-6 mb-6 shadow-lg">
+                {/* Services */}
+                <div className="mb-6">
+                  <h4 className="font-semibold">Selected Services</h4>
+                  <ul className="mt-3 divide-y divide-gray-800">
+                    {(booking.services || []).map((s) => (
+                      <li
+                        key={s.id}
+                        className="py-4 flex items-center justify-between gap-4"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium">{s.title}</div>
+                          {s.description && (
+                            <div className="text-sm text-gray-400 line-clamp-2">
+                              {s.description}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            onClick={() => decrementService(s.id)}
+                            aria-label="Decrease"
+                          >
+                            <Minus size={16} />
+                          </Button>
+                          <span className="min-w-[2ch] text-center font-semibold">
+                            {s.qty ?? 1}
+                          </span>
+                          <Button
+                            size="icon"
+                            onClick={() => incrementService(s.id)}
+                            aria-label="Increase"
+                          >
+                            <Plus size={16} />
+                          </Button>
+                        </div>
+
+                        <div className="w-24 text-right font-semibold">
+                          $
+                          {(Number(s.price) * Math.max(1, s.qty || 1)).toFixed(
+                            2
+                          )}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => decrementService(s.id)}
+                        >
+                          <X size={16} />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Add-ons */}
+                <div className="mb-6">
+                  <h4 className="font-semibold">Add-ons</h4>
+                  <ul className="mt-3 divide-y divide-gray-800">
+                    {(booking.addons || []).map((a) => (
+                      <li
+                        key={a.id}
+                        className="py-4 flex items-center justify-between gap-4"
+                      >
+                        <div className="flex-1 min-w-0 text-gray-300">
+                          {a.title}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            onClick={() => decrementAddon(a.id)}
+                            aria-label="Decrease"
+                          >
+                            <Minus size={16} />
+                          </Button>
+                          <span className="min-w-[2ch] text-center font-semibold">
+                            {a.qty ?? 1}
+                          </span>
+                          <Button
+                            size="icon"
+                            onClick={() => incrementAddon(a.id)}
+                            aria-label="Increase"
+                          >
+                            <Plus size={16} />
+                          </Button>
+                        </div>
+
+                        <div className="w-24 text-right font-semibold">
+                          $
+                          {(Number(a.price) * Math.max(1, a.qty || 1)).toFixed(
+                            2
+                          )}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => decrementAddon(a.id)}
+                        >
+                          <X size={16} />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex justify-between items-center font-bold text-xl">
                   <span>Total</span>
                   <span>${totalPrice.toFixed(2)}</span>
                 </div>
-              </motion.div>
-
-              {/* Navigation */}
-              <div className="flex justify-end mt-10 max-w-3xl mx-auto">
-                <Button
-                  variant="default"
-                  disabled={selectedServices.length === 0}
-                  onClick={() =>
-                    navigate("/booking", {
-                      state: {
-                        selectedCar,
-                        selectedServices,
-                        selectedAddons,
-                        totalPrice,
-                      },
-                    })
-                  }
-                >
-                  Continue to Booking
-                </Button>
               </div>
-            </div>
-          </section>
 
-          <Footer />
-        </Suspense>
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep("addons")}>
+                  Back to Add-ons
+                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleContinueToBooking}
+                    disabled={!(booking.services && booking.services.length)}
+                  >
+                    Continue to Booking
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
+
+        <Footer />
       </div>
     </>
   );

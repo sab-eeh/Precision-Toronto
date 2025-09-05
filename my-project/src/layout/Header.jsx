@@ -11,8 +11,8 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { FaTiktok } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-
 
 // ✅ Nav Links (outside component to prevent re-creation)
 const NAV_LINKS = [
@@ -34,7 +34,7 @@ const CONTACT_INFO = [
     text: "Serving Greater Toronto Area",
     color: "text-blue-400",
   },
-  { icon: Phone, text: "(416) 123-4567", color: "text-blue-400" },
+  { icon: Phone, text: "+1 647-685-7153", color: "text-blue-400" },
 ];
 
 // ✅ Animation Variants
@@ -120,12 +120,20 @@ const Header = React.memo(() => {
                 <Instagram className="w-5 h-5" />
               </a>
               <a
-                href="https://wa.me/14161234567"
+                href="https://wa.me/16476857153"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:scale-110 transition-transform text-blue-400"
               >
                 <MessageCircle className="w-5 h-5" />
+              </a>
+              <a
+                href="https://www.tiktok.com/@precision.to"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:scale-110 transition-transform text-blue-400"
+              >
+                <FaTiktok  className="w-4 h-4" />
               </a>
             </div>
           </div>
@@ -133,13 +141,13 @@ const Header = React.memo(() => {
       </div>
 
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-4">
+      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-2">
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <img
-            src="/logo.webp"
+            src="/logo.png"
             alt="Precision Toronto Logo"
-            className="w-28 h-auto mx-auto rounded-full shadow-lg"
+            className="w-36 h-auto mx-auto rounded-full shadow-lg"
             loading="lazy"
           />
         </Link>
