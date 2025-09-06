@@ -31,7 +31,13 @@ import {
  */
 
 const API = "http://localhost:5000/api";
-const STATUS_OPTIONS = ["pending", "confirmed", "completed", "cancelled", "no_show"];
+const STATUS_OPTIONS = [
+  "pending",
+  "confirmed",
+  "completed",
+  "cancelled",
+  "no_show",
+];
 
 function statusClasses(status) {
   switch (status) {
@@ -63,9 +69,16 @@ function formatDateTimeRange(startAt, endAt) {
   const s = new Date(startAt);
   const e = endAt ? new Date(endAt) : null;
   const dateStr = s.toLocaleDateString();
-  const timeStr = s.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const endStr = e ? e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : null;
-  return endStr ? `${dateStr} • ${timeStr}–${endStr}` : `${dateStr} • ${timeStr}`;
+  const timeStr = s.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const endStr = e
+    ? e.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : null;
+  return endStr
+    ? `${dateStr} • ${timeStr}–${endStr}`
+    : `${dateStr} • ${timeStr}`;
 }
 
 function minutesBetween(a, b) {
@@ -89,7 +102,8 @@ function computeServiceSchedule(startAtISO, services = []) {
   const out = [];
   let cursor = new Date(start);
   for (const s of services) {
-    const durationMin = Number(s.duration || s.minutes || s.durationMinutes || 0) || 0;
+    const durationMin =
+      Number(s.duration || s.minutes || s.durationMinutes || 0) || 0;
     const serviceStart = new Date(cursor);
     const serviceEnd = new Date(cursor.getTime() + durationMin * 60_000);
     out.push({
@@ -152,7 +166,10 @@ export default function AdminDashboard() {
       setBookings(deduped);
     } catch (e) {
       console.error("Fetch bookings error:", e);
-      setToast({ type: "error", message: e.message || "Unable to load bookings" });
+      setToast({
+        type: "error",
+        message: e.message || "Unable to load bookings",
+      });
       setBookings([]);
     } finally {
       setLoading(false);
@@ -181,7 +198,9 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Approve failed");
       const updated = data.booking || data.data || data;
-      setBookings((prev) => prev.map((x) => (x._id === updated._id ? updated : x)));
+      setBookings((prev) =>
+        prev.map((x) => (x._id === updated._id ? updated : x))
+      );
       setToast({ type: "success", message: "Booking approved" });
       setExpandedBookingId(updated._id);
     } catch (e) {
@@ -193,14 +212,18 @@ export default function AdminDashboard() {
   // Toggle individual service done flag and persist booking.services
   async function toggleServiceDone(booking, serviceIndex) {
     try {
-      const services = Array.isArray(booking.services) ? [...booking.services] : [];
+      const services = Array.isArray(booking.services)
+        ? [...booking.services]
+        : [];
       // ensure service exists
       if (!services[serviceIndex]) return;
       const current = !!services[serviceIndex].done;
       services[serviceIndex] = { ...services[serviceIndex], done: !current };
 
       // optimistic update locally
-      setBookings((prev) => prev.map((b) => (b._id === booking._id ? { ...b, services } : b)));
+      setBookings((prev) =>
+        prev.map((b) => (b._id === booking._id ? { ...b, services } : b))
+      );
 
       // send to server — backend must accept updated services array
       const res = await fetch(`${API}/bookings/${booking._id}`, {
@@ -211,11 +234,16 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Update services failed");
       const updated = data.booking || data.data || data;
-      setBookings((prev) => prev.map((b) => (b._id === updated._id ? updated : b)));
+      setBookings((prev) =>
+        prev.map((b) => (b._id === updated._id ? updated : b))
+      );
       setToast({ type: "success", message: "Service updated" });
     } catch (e) {
       console.error("Service toggle error:", e);
-      setToast({ type: "error", message: e.message || "Service update failed" });
+      setToast({
+        type: "error",
+        message: e.message || "Service update failed",
+      });
       // refetch to get consistent state
       fetchBookings();
     }
@@ -254,7 +282,10 @@ export default function AdminDashboard() {
         b?.vehicle?.model,
         b?.vehicle?.plate,
         ...(Array.isArray(b?.services) ? b.services.map((s) => s?.title) : []),
-      ].filter(Boolean).join(" ").toLowerCase();
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
       return parts.includes(qlc);
     });
 
@@ -303,6 +334,15 @@ export default function AdminDashboard() {
     >
       {/* TOP HEADER */}
       <header className="flex items-center justify-between px-4 md:px-8 py-3 border-b border-gray-800">
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-gray-400 hidden md:block">
+            Welcome back, Haris
+          </div>
+          <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-700/60 to-violet-700/40 border border-gray-800 text-sm font-semibold">
+            Haris Dashboard
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
@@ -313,15 +353,10 @@ export default function AdminDashboard() {
             title="Logout"
           >
             <LogOut className="h-4 w-4 text-red-400" />
-            <span className="text-sm text-red-300 hidden sm:inline">Logout</span>
+            <span className="text-sm text-red-300 hidden sm:inline">
+              Logout
+            </span>
           </button>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-400 hidden md:block">Welcome back, Haris</div>
-          <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-700/60 to-violet-700/40 border border-gray-800 text-sm font-semibold">
-            Haris Dashboard
-          </div>
         </div>
       </header>
 
@@ -404,7 +439,9 @@ export default function AdminDashboard() {
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800/70 text-sm disabled:opacity-60"
                 title="Refresh"
               >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                />
                 Refresh
               </button>
             </div>
@@ -450,11 +487,16 @@ export default function AdminDashboard() {
           ) : (
             pageItems.map((b) => {
               const vehicle = b?.vehicle
-                ? [b.vehicle.make, b.vehicle.model, b.vehicle.year].filter(Boolean).join(" ")
+                ? [b.vehicle.make, b.vehicle.model, b.vehicle.year]
+                    .filter(Boolean)
+                    .join(" ")
                 : "—";
               const servicesTitles =
                 Array.isArray(b?.services) && b.services.length
-                  ? b.services.map((s) => s?.title).filter(Boolean).join(", ")
+                  ? b.services
+                      .map((s) => s?.title)
+                      .filter(Boolean)
+                      .join(", ")
                   : "—";
               const range = formatDateTimeRange(b.startAt, b.endAt);
               const mins = minutesBetween(b.startAt, b.endAt);
@@ -472,11 +514,15 @@ export default function AdminDashboard() {
                   {/* Desktop columns */}
                   <div className="col-span-3 flex items-start gap-3">
                     <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-tr from-indigo-700 to-violet-600 flex items-center justify-center text-white font-semibold">
-                      {b.customerName ? b.customerName.slice(0, 1).toUpperCase() : "U"}
+                      {b.customerName
+                        ? b.customerName.slice(0, 1).toUpperCase()
+                        : "U"}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium">{b.customerName || "N/A"}</h3>
+                        <h3 className="font-medium">
+                          {b.customerName || "N/A"}
+                        </h3>
                         {isNew && (
                           <span className="text-[11px] px-2 py-0.5 rounded-full bg-yellow-600 text-yellow-900 font-semibold">
                             New
@@ -516,7 +562,11 @@ export default function AdminDashboard() {
 
                   <div className="col-span-1 flex items-center text-sm text-gray-300">
                     <DollarSign className="h-4 w-4 text-gray-400 mr-2" />
-                    <div className="font-medium">{typeof b.totalPrice === "number" ? `$${b.totalPrice}` : "—"}</div>
+                    <div className="font-medium">
+                      {typeof b.totalPrice === "number"
+                        ? `$${b.totalPrice}`
+                        : "—"}
+                    </div>
                   </div>
 
                   {/* ACTIONS column */}
@@ -537,7 +587,9 @@ export default function AdminDashboard() {
                     )}
 
                     <button
-                      onClick={() => setExpandedBookingId(expanded ? null : b._id)}
+                      onClick={() =>
+                        setExpandedBookingId(expanded ? null : b._id)
+                      }
                       className="px-3 py-1.5 rounded-xl bg-gray-900/60 border border-gray-800 hover:bg-gray-800/70 text-sm"
                       title="View details"
                     >
@@ -567,61 +619,137 @@ export default function AdminDashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Left: user & vehicle */}
                         <div className="space-y-2">
-                          <h4 className="text-sm text-gray-300 font-semibold">Client</h4>
-                          <div className="text-sm text-gray-200">{b.customerName || "N/A"}</div>
-                          <div className="text-xs text-gray-400">{b.phone || "—"}</div>
-                          <div className="text-xs text-gray-400">{b.email || "—"}</div>
+                          <h4 className="text-sm text-gray-300 font-semibold">
+                            Client
+                          </h4>
+                          <div className="text-sm text-gray-200">
+                            {b.customerName || "N/A"}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {b.phone || "—"}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {b.email || "—"}
+                          </div>
 
                           <div className="mt-3">
-                            <h4 className="text-sm text-gray-300 font-semibold">Vehicle</h4>
-                            <div className="text-sm text-gray-200">{vehicle}</div>
-                            <div className="text-xs text-gray-400">{b.vehicle?.plate || ""}</div>
+                            <h4 className="text-sm text-gray-300 font-semibold">
+                              Vehicle
+                            </h4>
+                            <div className="text-sm text-gray-200">
+                              {vehicle}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {b.vehicle?.plate || ""}
+                            </div>
                           </div>
                         </div>
 
                         {/* Middle: services timeline */}
                         <div className="md:col-span-2">
                           <div className="flex items-center justify-between">
-                            <h4 className="text-sm text-gray-300 font-semibold">Services</h4>
-                            <div className="text-xs text-gray-400">Status / schedule</div>
+                            <h4 className="text-sm text-gray-300 font-semibold">
+                              Services
+                            </h4>
+                            <div className="text-xs text-gray-400">
+                              Status / schedule
+                            </div>
                           </div>
 
                           <div className="mt-3 space-y-3">
                             {sched.length === 0 ? (
-                              <div className="text-sm text-gray-400">No services listed.</div>
+                              <div className="text-sm text-gray-400">
+                                No services listed.
+                              </div>
                             ) : (
                               sched.map((s, idx) => {
                                 const now = Date.now();
                                 const start = new Date(s._schedStart).getTime();
                                 const end = new Date(s._schedEnd).getTime();
                                 const isDone = !!s.done;
-                                const stateLabel = isDone ? "Done" : now < start ? "Upcoming" : now >= start && now < end ? "In progress" : now >= end ? "Pending review" : "Upcoming";
+                                const stateLabel = isDone
+                                  ? "Done"
+                                  : now < start
+                                  ? "Upcoming"
+                                  : now >= start && now < end
+                                  ? "In progress"
+                                  : now >= end
+                                  ? "Pending review"
+                                  : "Upcoming";
                                 return (
-                                  <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-gray-900/30 border border-gray-800">
+                                  <div
+                                    key={idx}
+                                    className="flex items-start gap-3 p-3 rounded-lg bg-gray-900/30 border border-gray-800"
+                                  >
                                     <div className="w-8 flex items-center justify-center">
-                                      <div className={`w-3 h-3 rounded-full ${isDone ? "bg-emerald-400" : now < start ? "bg-yellow-400" : now >= start && now < end ? "bg-blue-400" : "bg-gray-500"}`}></div>
+                                      <div
+                                        className={`w-3 h-3 rounded-full ${
+                                          isDone
+                                            ? "bg-emerald-400"
+                                            : now < start
+                                            ? "bg-yellow-400"
+                                            : now >= start && now < end
+                                            ? "bg-blue-400"
+                                            : "bg-gray-500"
+                                        }`}
+                                      ></div>
                                     </div>
 
                                     <div className="flex-1">
                                       <div className="flex items-center justify-between gap-3">
                                         <div>
-                                          <div className="font-medium text-gray-100">{s.title || s.name || "Service"}</div>
-                                          <div className="text-xs text-gray-400">{s.description || s.note || ""}</div>
+                                          <div className="font-medium text-gray-100">
+                                            {s.title || s.name || "Service"}
+                                          </div>
+                                          <div className="text-xs text-gray-400">
+                                            {s.description || s.note || ""}
+                                          </div>
                                         </div>
                                         <div className="text-xs text-gray-400 text-right">
-                                          <div>{new Date(s._schedStart).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {new Date(s._schedEnd).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-                                          <div className="mt-1">{s._durationMin ? `${s._durationMin} min` : ""}</div>
+                                          <div>
+                                            {new Date(
+                                              s._schedStart
+                                            ).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}{" "}
+                                            -{" "}
+                                            {new Date(
+                                              s._schedEnd
+                                            ).toLocaleTimeString([], {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}
+                                          </div>
+                                          <div className="mt-1">
+                                            {s._durationMin
+                                              ? `${s._durationMin} min`
+                                              : ""}
+                                          </div>
                                         </div>
                                       </div>
 
                                       <div className="mt-2 flex items-center gap-2">
-                                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: isDone ? "rgba(16,185,129,0.12)" : "rgba(148,163,184,0.06)" }}>
+                                        <span
+                                          className="px-2 py-0.5 rounded-full text-xs font-semibold"
+                                          style={{
+                                            background: isDone
+                                              ? "rgba(16,185,129,0.12)"
+                                              : "rgba(148,163,184,0.06)",
+                                          }}
+                                        >
                                           {stateLabel}
                                         </span>
 
                                         <button
-                                          onClick={() => toggleServiceDone(b, idx)}
-                                          className={`text-xs px-2 py-1 rounded-xl ${isDone ? "bg-emerald-600 hover:bg-emerald-500" : "bg-gray-800/60 hover:bg-gray-800/80"} text-white`}
+                                          onClick={() =>
+                                            toggleServiceDone(b, idx)
+                                          }
+                                          className={`text-xs px-2 py-1 rounded-xl ${
+                                            isDone
+                                              ? "bg-emerald-600 hover:bg-emerald-500"
+                                              : "bg-gray-800/60 hover:bg-gray-800/80"
+                                          } text-white`}
                                         >
                                           {isDone ? "Mark undone" : "Mark done"}
                                         </button>
@@ -640,8 +768,12 @@ export default function AdminDashboard() {
                           {/* Booking notes & admin actions */}
                           <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-3 justify-between">
                             <div className="flex-1">
-                              <h4 className="text-sm text-gray-300 font-semibold">Notes</h4>
-                              <div className="mt-1 text-sm text-gray-300">{b.notes || b.internalNotes || "—"}</div>
+                              <h4 className="text-sm text-gray-300 font-semibold">
+                                Notes
+                              </h4>
+                              <div className="mt-1 text-sm text-gray-300">
+                                {b.notes || b.internalNotes || "—"}
+                              </div>
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -650,7 +782,9 @@ export default function AdminDashboard() {
                                   // open edit modal inline: reuse modalEditing
                                   setModalEditing({
                                     ...b,
-                                    _localStartAt: toDatetimeLocalValue(b.startAt),
+                                    _localStartAt: toDatetimeLocalValue(
+                                      b.startAt
+                                    ),
                                     _localStatus: b.status || "confirmed",
                                     _note: b.notes || b.internalNotes || "",
                                   });
@@ -663,11 +797,18 @@ export default function AdminDashboard() {
                               <button
                                 onClick={() => {
                                   // quick confirm / toggle
-                                  if (b.status !== "confirmed") approveBooking(b);
+                                  if (b.status !== "confirmed")
+                                    approveBooking(b);
                                 }}
-                                className={`px-3 py-2 rounded-xl text-sm ${b.status === "confirmed" ? "bg-gray-800/60" : "bg-emerald-600 hover:bg-emerald-500 text-white"}`}
+                                className={`px-3 py-2 rounded-xl text-sm ${
+                                  b.status === "confirmed"
+                                    ? "bg-gray-800/60"
+                                    : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                                }`}
                               >
-                                {b.status === "confirmed" ? "Confirmed" : "Quick Approve"}
+                                {b.status === "confirmed"
+                                  ? "Confirmed"
+                                  : "Quick Approve"}
                               </button>
                             </div>
                           </div>
@@ -684,7 +825,13 @@ export default function AdminDashboard() {
           {!loading && filtered.length > 0 && (
             <div className="flex items-center justify-between gap-3 px-3 py-2 border-t border-gray-800">
               <div className="text-xs text-gray-400">
-                Showing <span className="text-gray-200">{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, filtered.length)}</span> of <span className="text-gray-200">{filtered.length}</span> bookings
+                Showing{" "}
+                <span className="text-gray-200">
+                  {(currentPage - 1) * pageSize + 1}-
+                  {Math.min(currentPage * pageSize, filtered.length)}
+                </span>{" "}
+                of <span className="text-gray-200">{filtered.length}</span>{" "}
+                bookings
               </div>
 
               <div className="flex items-center gap-2">
@@ -695,7 +842,9 @@ export default function AdminDashboard() {
                 >
                   Prev
                 </button>
-                <span className="text-xs text-gray-300">Page {currentPage} / {totalPages}</span>
+                <span className="text-xs text-gray-300">
+                  Page {currentPage} / {totalPages}
+                </span>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
@@ -712,10 +861,23 @@ export default function AdminDashboard() {
       {/* TOAST */}
       {toast && (
         <div className="fixed bottom-5 right-5 z-50">
-          <div className={`flex items-center gap-3 px-4 py-2 rounded-xl shadow-lg border ${toast.type === "success" ? "bg-emerald-900/80 border-emerald-700 text-emerald-100" : "bg-red-900/80 border-red-700 text-red-100"}`}>
-            {toast.type === "success" ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+          <div
+            className={`flex items-center gap-3 px-4 py-2 rounded-xl shadow-lg border ${
+              toast.type === "success"
+                ? "bg-emerald-900/80 border-emerald-700 text-emerald-100"
+                : "bg-red-900/80 border-red-700 text-red-100"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <X className="h-4 w-4" />
+            )}
             <div className="text-sm">{toast.message}</div>
-            <button onClick={() => setToast(null)} className="ml-2 opacity-80 hover:opacity-100">
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 opacity-80 hover:opacity-100"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -725,74 +887,149 @@ export default function AdminDashboard() {
       {/* EDIT MODAL */}
       {modalEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setModalEditing(null)} />
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setModalEditing(null)}
+          />
           <div className="relative w-[95%] max-w-2xl rounded-2xl border border-gray-800 bg-gray-950 p-4 md:p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Edit Booking</h3>
-              <button onClick={() => setModalEditing(null)} className="p-2 rounded-lg hover:bg-gray-900 text-gray-400"><X className="h-5 w-5" /></button>
+              <button
+                onClick={() => setModalEditing(null)}
+                className="p-2 rounded-lg hover:bg-gray-900 text-gray-400"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-xs text-gray-400">Client</label>
-                <div className="px-3 py-2 rounded-xl bg-gray-900 border border-gray-800">{modalEditing.customerName || "N/A"}</div>
+                <div className="px-3 py-2 rounded-xl bg-gray-900 border border-gray-800">
+                  {modalEditing.customerName || "N/A"}
+                </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs text-gray-400">Phone / Email</label>
-                <div className="px-3 py-2 rounded-xl bg-gray-900 border border-gray-800">{
-                  [modalEditing.phone, modalEditing.email].filter(Boolean).join(" • ") || "—"
-                }</div>
+                <div className="px-3 py-2 rounded-xl bg-gray-900 border border-gray-800">
+                  {[modalEditing.phone, modalEditing.email]
+                    .filter(Boolean)
+                    .join(" • ") || "—"}
+                </div>
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs text-gray-400">Status</label>
-                <select value={modalEditing._localStatus} onChange={(e) => setModalEditing(prev => ({ ...prev, _localStatus: e.target.value }))} className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-800">
-                  {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                <select
+                  value={modalEditing._localStatus}
+                  onChange={(e) =>
+                    setModalEditing((prev) => ({
+                      ...prev,
+                      _localStatus: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-800"
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-gray-400">Reschedule (local)</label>
-                <input type="datetime-local" value={modalEditing._localStartAt} onChange={(e) => setModalEditing(prev => ({ ...prev, _localStartAt: e.target.value }))} className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-800" />
-                <p className="text-[11px] text-gray-500">End time calculated from services' durations.</p>
+                <label className="text-xs text-gray-400">
+                  Reschedule (local)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={modalEditing._localStartAt}
+                  onChange={(e) =>
+                    setModalEditing((prev) => ({
+                      ...prev,
+                      _localStartAt: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-800"
+                />
+                <p className="text-[11px] text-gray-500">
+                  End time calculated from services' durations.
+                </p>
               </div>
 
               <div className="md:col-span-2 space-y-1">
                 <label className="text-xs text-gray-400">Notes</label>
-                <textarea rows={3} value={modalEditing._note} onChange={(e) => setModalEditing(prev => ({ ...prev, _note: e.target.value }))} className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-800" placeholder="Add internal notes…" />
+                <textarea
+                  rows={3}
+                  value={modalEditing._note}
+                  onChange={(e) =>
+                    setModalEditing((prev) => ({
+                      ...prev,
+                      _note: e.target.value,
+                    }))
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-800"
+                  placeholder="Add internal notes…"
+                />
               </div>
             </div>
 
             <div className="mt-6 flex items-center justify-end gap-2">
-              <button onClick={() => setModalEditing(null)} className="px-4 py-2 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800">Cancel</button>
-              <button onClick={async () => {
-                // perform save
-                if (!modalEditing._id) return;
-                try {
-                  const payload = { status: modalEditing._localStatus };
-                  if (modalEditing._localStartAt) {
-                    const local = new Date(modalEditing._localStartAt);
-                    const off = local.getTimezoneOffset();
-                    payload.startAt = new Date(local.getTime() + off * 60 * 1000).toISOString();
+              <button
+                onClick={() => setModalEditing(null)}
+                className="px-4 py-2 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  // perform save
+                  if (!modalEditing._id) return;
+                  try {
+                    const payload = { status: modalEditing._localStatus };
+                    if (modalEditing._localStartAt) {
+                      const local = new Date(modalEditing._localStartAt);
+                      const off = local.getTimezoneOffset();
+                      payload.startAt = new Date(
+                        local.getTime() + off * 60 * 1000
+                      ).toISOString();
+                    }
+                    if (modalEditing._note !== undefined)
+                      payload.notes = modalEditing._note;
+                    const res = await fetch(
+                      `${API}/bookings/${modalEditing._id}`,
+                      {
+                        method: "PUT",
+                        headers: {
+                          ...authHeaders(),
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(payload),
+                      }
+                    );
+                    const data = await res.json();
+                    if (!res.ok)
+                      throw new Error(data?.message || "Update failed");
+                    const updated = data.booking || data.data || data;
+                    setBookings((prev) =>
+                      prev.map((b) => (b._id === updated._id ? updated : b))
+                    );
+                    setToast({ type: "success", message: "Booking updated" });
+                    setModalEditing(null);
+                  } catch (err) {
+                    console.error(err);
+                    setToast({
+                      type: "error",
+                      message: err.message || "Update failed",
+                    });
                   }
-                  if (modalEditing._note !== undefined) payload.notes = modalEditing._note;
-                  const res = await fetch(`${API}/bookings/${modalEditing._id}`, {
-                    method: "PUT",
-                    headers: { ...authHeaders(), "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                  });
-                  const data = await res.json();
-                  if (!res.ok) throw new Error(data?.message || "Update failed");
-                  const updated = data.booking || data.data || data;
-                  setBookings(prev => prev.map(b => b._id === updated._id ? updated : b));
-                  setToast({ type: "success", message: "Booking updated" });
-                  setModalEditing(null);
-                } catch (err) {
-                  console.error(err);
-                  setToast({ type: "error", message: err.message || "Update failed" });
-                }
-              }} className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white">Save changes</button>
+                }}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white"
+              >
+                Save changes
+              </button>
             </div>
           </div>
         </div>
