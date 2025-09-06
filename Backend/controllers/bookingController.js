@@ -3,7 +3,6 @@ const { addMinutes, generateSlotsForDay, isOverlap } = require("../utils/time");
 const sendEmail = require("../utils/emails");
 const sendSMS = require("../utils/sms");
 
-
 /** Compute total duration from selected services */
 function computeDurationMinutes(services = [], fallback = 60) {
   const total = services.reduce(
@@ -252,13 +251,19 @@ const getAvailability = async (req, res) => {
     const SLOT_MINUTES = 60;
     const slots = generateSlotsForDay(dayStart, { slotMinutes: SLOT_MINUTES });
 
-    const availableSlots = slots.filter((slot) => {
-      return !bookings.some((b) =>
+    const slotsWithStatus = slots.map((slot) => {
+      const isBooked = bookings.some((b) =>
         isOverlap(slot.start, slot.end, b.startAt, b.endAt)
       );
+      return {
+        start: slot.start,
+        end: slot.end,
+        label: slot.start.toISOString(), // frontend formats this into "h:mm a"
+        booked: isBooked,
+      };
     });
 
-    res.json({ success: true, availableSlots });
+    res.json({ success: true, availableSlots: slotsWithStatus });
   } catch (err) {
     console.error("Availability error:", err);
     res.status(500).json({ success: false, message: "Server error" });
