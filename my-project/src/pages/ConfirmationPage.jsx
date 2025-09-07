@@ -1,48 +1,73 @@
-import React, { useEffect, useState, useContext } from "react";
+// src/pages/ConfirmationPage.jsx
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/badge";
-import ProgressTracker from "../components/ProgressTracker";
-import FloatingContact from "../components/FloatingContact";
-import { BookingContext } from "../context/BookingContext";
-import Header from "../layout/Header";
-import Footer from "../layout/Footer";
 import { CheckCircle, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
-import { api } from "../api/client";
 import { Title, Meta } from "react-head";
+import api from "../api/client";
+import { BookingContext } from "../context/BookingContext";
+
+const Header = lazy(() => import("../layout/Header"));
+const Footer = lazy(() => import("../layout/Footer"));
+const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
+const FloatingContact = lazy(() => import("../components/FloatingContact"));
+
+function safeArrayTitles(arr) {
+  return Array.isArray(arr) && arr.length
+    ? arr
+        .map((s) => (s && (s.title || s)) || "")
+        .filter(Boolean)
+        .join(", ")
+    : "None";
+}
+
+function safeText(value, fallback = "N/A") {
+  if (value === 0) return "0";
+  return value ? String(value) : fallback;
+}
 
 export default function ConfirmationPage() {
-  const { state } = useLocation();
+  const location = useLocation();
   const navigate = useNavigate();
+  const { state } = location;
 
   const [bookingData, setBookingData] = useState(state || null);
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-
-  // fallback if no state is passed
-  useEffect(() => {
-    if (!state) {
-      setError("No booking data provided");
-    }
-  }, [state]);
+  const [disabled, setDisabled] = useState(false);
 
   const { confirmBooking } = useContext(BookingContext);
 
-  const onConfirmClick = async () => {
-    if (!bookingData) return;
+  useEffect(() => {
+    if (!state && !bookingData) {
+      setError("No booking data provided");
+    }
+  }, [state, bookingData]);
+
+  const onConfirmClick = useCallback(async () => {
+    if (!bookingData || disabled) return;
+    setDisabled(true);
+    setLoading(true);
+    setMessage("");
+    setError("");
 
     try {
-      setLoading(true);
-      setMessage("");
-
       const {
-        customerInfo,
-        vehicleInfo,
-        selectedServices,
-        selectedAddons,
+        customerInfo = {},
+        vehicleInfo = {},
+        selectedServices = [],
+        selectedAddons = [],
         totalPrice,
         notes,
         startAtISO,
@@ -61,47 +86,76 @@ export default function ConfirmationPage() {
             }))
           : [],
         selectedAddons: selectedAddons || [],
-        totalPrice,
+        totalPrice:
+          typeof totalPrice === "number" ? totalPrice : Number(totalPrice) || 0,
         startAt: startAtISO,
         notes: notes || "",
         address: customerInfo?.address || "",
       };
 
-      // Send booking to backend
-      const data = await api("/api/bookings", {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      const response = await api("/api/bookings", {
         method: "POST",
         body: payload,
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
-      const booking = data?.booking || data?.data || null;
-
-      if (booking) {
-        setBookingData(booking);
-        setConfirmed(true);
-        setMessage("Booking successfully confirmed.");
-
-        // ✅ clear local draft + reset state
-        confirmBooking();
-      } else {
+      const booking = response?.booking || response?.data || response || null;
+      if (!booking) {
         setError("Booking failed. Please try again.");
+        setDisabled(false);
+        setConfirmed(false);
+        return;
+      }
+
+      const merged = {
+        ...bookingData,
+        ...booking,
+        customerInfo: {
+          ...(bookingData.customerInfo || {}),
+          ...(booking.customerInfo || {}),
+        },
+        vehicleInfo: {
+          ...(bookingData.vehicleInfo || {}),
+          ...(booking.vehicleInfo || {}),
+        },
+        selectedServices:
+          booking.selectedServices || bookingData.selectedServices || [],
+        selectedAddons:
+          booking.selectedAddons || bookingData.selectedAddons || [],
+        totalPrice: booking.totalPrice ?? bookingData.totalPrice,
+        startAtISO:
+          booking.startAtISO ?? booking.startAt ?? bookingData.startAtISO,
+      };
+
+      setBookingData(merged);
+      setConfirmed(true);
+      setMessage("Booking successfully confirmed.");
+
+      // ✅ Clear booking draft/context AFTER local state is set
+      try {
+        confirmBooking(); // clears BookingContext + localStorage draft
+        localStorage.removeItem("precision_booking_draft_v1"); // extra safety
+      } catch (e) {
+        console.warn("confirmBooking cleanup failed:", e);
       }
     } catch (err) {
-      setError(err?.message || "Something went wrong while confirming booking");
+      if (err.name === "AbortError") {
+        setError("Request timed out. Please try again.");
+      } else {
+        setError(
+          err?.message || "Something went wrong while confirming booking"
+        );
+      }
+      setConfirmed(false);
     } finally {
       setLoading(false);
+      setDisabled(false);
     }
-  };
-  // helpers
-  const safeArrayTitles = (arr) =>
-    Array.isArray(arr) && arr.length
-      ? arr
-          .map((s) => s?.title || s)
-          .filter(Boolean)
-          .join(", ")
-      : "None";
-
-  const safeText = (value, fallback = "N/A") =>
-    value ? String(value) : fallback;
+  }, [bookingData, confirmBooking, disabled]);
 
   if (error) {
     return (
@@ -126,14 +180,14 @@ export default function ConfirmationPage() {
     );
   }
 
-  // prepare values
+  // Values for display
   const servicesText = safeArrayTitles(bookingData.selectedServices);
   const addonsText = safeArrayTitles(bookingData.selectedAddons);
   const customerName = bookingData.customerInfo?.name || "N/A";
   const customerEmail = bookingData.customerInfo?.email || "";
   const customerPhone = bookingData.customerInfo?.phone || "";
   const address = bookingData.customerInfo?.address || "No address provided";
-  const startAt = bookingData.startAtISO || null;
+  const startAt = bookingData.startAtISO || bookingData.startAt || null;
   const displayDate = startAt
     ? format(new Date(startAt), "EEEE, MMMM d, yyyy")
     : "N/A";
@@ -144,14 +198,22 @@ export default function ConfirmationPage() {
     "Not specified";
   const total =
     typeof bookingData.totalPrice === "number"
-      ? `$${bookingData.totalPrice}`
+      ? `$${bookingData.totalPrice.toFixed(2)}`
       : safeText(bookingData.totalPrice, "N/A");
 
   return (
-    <div className="min-h-screen bg-[#0A0F1C] text-white ">
-      <Header />
-      <FloatingContact />
-      <ProgressTracker currentStep={4} />
+    <div className="min-h-screen bg-[#0A0F1C] text-white">
+      <Suspense fallback={<div className="h-20 bg-gray-800 animate-pulse" />}>
+        <Header />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <FloatingContact />
+      </Suspense>
+
+      <Suspense fallback={<div className="h-6 bg-gray-700 animate-pulse" />}>
+        <ProgressTracker currentStep={4} />
+      </Suspense>
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center gap-3">
@@ -163,6 +225,7 @@ export default function ConfirmationPage() {
           </Button>
           <h1 className="text-3xl font-bold">Back to Booking</h1>
         </div>
+
         <div className="max-w-3xl mx-auto">
           {/* Success Header */}
           <div className="text-center mb-8">
@@ -177,7 +240,12 @@ export default function ConfirmationPage() {
                 ? "Your appointment has been scheduled."
                 : "Please confirm your booking details below."}
             </p>
-            {message && <p className="text-sm text-gray-300 mt-2">{message}</p>}
+            <div aria-live="polite" className="mt-2">
+              {message && <p className="text-sm text-gray-300">{message}</p>}
+              {loading && (
+                <p className="text-sm text-blue-300">Confirming booking…</p>
+              )}
+            </div>
           </div>
 
           {/* Booking Details */}
@@ -263,7 +331,7 @@ export default function ConfirmationPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             {!confirmed && (
               <Button
-                disabled={loading}
+                disabled={loading || disabled}
                 onClick={onConfirmClick}
                 className="w-full sm:w-auto bg-primary text-white hover:opacity-90 disabled:opacity-60"
               >
@@ -277,7 +345,9 @@ export default function ConfirmationPage() {
         </div>
       </div>
 
-      <Footer />
+      <Suspense fallback={<div className="h-40 bg-gray-900 animate-pulse" />}>
+        <Footer />
+      </Suspense>
     </div>
   );
 }

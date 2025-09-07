@@ -14,7 +14,7 @@ import truck1 from "./truck1.webp";
 import truck2 from "./truck2.webp";
 import truck3 from "./truck3.avif";
 import coupe1 from "./coupe1.webp";
-import coupe2 from "./coupe2.webp";
+import coupe2 from "./coupe2.jpg";
 import coupe3 from "./coupe3.webp";
 import enginewash from "./engine.jpg"
 

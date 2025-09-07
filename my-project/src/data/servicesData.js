@@ -3,15 +3,8 @@ import { serviceImages } from "../assets/services";
 
 /**
  * Updated services & addons data.
- * Prices: keep the values you provided where present; otherwise use sensible defaults.
- *
- * Structure:
- * - Detailing: Interior Only, Exterior Only, Interior + Exterior, Engine Bay Wash
- * - Paint Correction: Stage 1 / Stage 2 / Stage 3 (pricing as specified)
- * - Ceramic Coating
- * - Window Tinting
- *
- * Addons: Headlight Restoration, Engine Bay Wash (kept as add-ons too)
+ * Old services remain, but pricing and details have been updated
+ * according to the latest requirements.
  */
 
 export const servicesData = {
@@ -23,7 +16,8 @@ export const servicesData = {
       title: "Interior Only",
       description:
         "Factory reset interior: vacuum, garbage removal, mats restored & conditioned, carpets & seats steam cleaned + shampooed, plastics conditioned, streak-free glass.",
-      price: 150,
+      price: 160,
+      duration: "2–4 hours",
       features: [
         "Vacuum & garbage removal",
         "Mats restored & conditioned",
@@ -53,13 +47,19 @@ export const servicesData = {
       id: "sedan-detail-full",
       category: "Detailing",
       title: "Interior + Exterior",
-      description: "Complete detail inside & out (interior + exterior).",
-      price: 200,
+      description:
+        "Complete sedan detail inside & out. Includes full interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
+      price: 210,
+      duration: "3–5 hours",
       popular: true,
       features: [
         "Interior full detail",
-        "Exterior full detail",
-        "Paint sealant / ceramic spray",
+        "Deep clean of rims & wheel wells",
+        "Paint pre-treatment (bug, dirt, debris removal)",
+        "Foam wash + contact wash",
+        "Hand dry + 30–60 day paint sealant",
+        "Rims polished + tires dressed",
+        "Streak-free windows",
       ],
       image: serviceImages.sedan[2],
     },
@@ -68,7 +68,7 @@ export const servicesData = {
       category: "Detailing",
       title: "Engine Bay Wash",
       description: "Degrease & detail engine bay (safe for electronics).",
-      price: 80,
+      price: 55,
       features: [
         "Engine degreased",
         "Plastics dressed",
@@ -83,6 +83,7 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
       description: "Removes ~50–60% of swirls with machine polish.",
+      duration: "5-7 hrs ",
       price: 399,
       features: ["50–60% swirl removal", "Restores gloss"],
       image: serviceImages.sedan[4],
@@ -92,7 +93,8 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 2 Paint Correction",
       description: "Removes ~60–80% of swirls (Stage 1 + extra correction).",
-      price: 399 + 150,
+      duration: "5-7 hrs ",
+      price: 549,
       features: ["60–80% swirl removal", "Higher gloss finish"],
       image: serviceImages.sedan[5],
     },
@@ -101,23 +103,56 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 3 Paint Correction",
       description: "Removes ~80–99% of swirls for near-showroom finish.",
-      price: 399 + 300,
+      duration: "5-7 hrs ",
+      price: 699,
       features: ["80–99% swirl removal", "Showroom finish"],
       image: serviceImages.sedan[6],
     },
 
     // CERAMIC
     {
-      id: "sedan-ceramic",
+      id: "sedan-ceramic-1y",
       category: "Ceramic Coating",
-      title: "Ceramic Coating",
+      title: "1 Year Ceramic Coating",
       description:
-        "Durable ceramic protection. Can be applied with or without paint correction.",
-      price: 800,
+        "Includes: 1 step paint correction, full paint prep (wash, clay bar, iron decontamination), 1 year ceramic coating on all painted areas. Includes 1x maintenance wash. Carfax applicable.",
+      price: 399,
       features: [
-        "Long-lasting protection",
-        "Hydrophobic effect",
-        "Enhanced gloss",
+        "1 step paint correction",
+        "Full paint prep: wash, clay bar, iron decon",
+        "1 year ceramic coating applied",
+        "Includes 1x maintenance wash",
+        "Carfax applicable",
+      ],
+      image: serviceImages.sedan[7],
+    },
+    {
+      id: "sedan-ceramic-3y",
+      category: "Ceramic Coating",
+      title: "3 Year Ceramic Coating",
+      description:
+        "Everything in 1-year ceramic + 3 year ceramic coating applied. Includes 2x maintenance washes. Carfax applicable.",
+      price: 715,
+      features: [
+        "Includes all 1-year ceramic features",
+        "3 year ceramic coating applied",
+        "Includes 2x maintenance washes",
+        "Carfax applicable",
+      ],
+      image: serviceImages.sedan[7],
+    },
+    {
+      id: "sedan-ceramic-5y",
+      category: "Ceramic Coating",
+      title: "5 Year Ceramic Coating",
+      description:
+        "Everything in 1-year ceramic + 5 year ceramic coating applied. Includes 2x maintenance washes. Carfax applicable.",
+      price: 999,
+      features: [
+        "Includes all 1-year ceramic features",
+        "5 year ceramic coating applied",
+        "Includes 2x maintenance washes",
+        "Carfax applicable",
       ],
       image: serviceImages.sedan[7],
     },
@@ -135,8 +170,8 @@ export const servicesData = {
     },
   ],
 
+  // SUV
   suv: [
-    // keep the same structure; use prices you previously had where present
     {
       id: "suv-detail-interior",
       category: "Detailing",
@@ -144,11 +179,13 @@ export const servicesData = {
       description:
         "Deep clean of SUV interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
       price: 165,
+      duration: "2–4 hours",
       features: [
         "Vacuum & shampoo",
         "Mats restored & conditioned",
         "Carpets & seats steam cleaned + shampooed",
         "Plastics conditioned",
+        "Streak-free glass",
       ],
       image: serviceImages.suv[0],
     },
@@ -162,7 +199,9 @@ export const servicesData = {
       features: [
         "Rims & tires deep cleaned",
         "Pre-treatment & foam wash",
+        "Hand dry + paint sealant",
         "Tire shine",
+        "Streak-free windows",
       ],
       image: serviceImages.suv[1],
     },
@@ -170,13 +209,19 @@ export const servicesData = {
       id: "suv-detail-full",
       category: "Detailing",
       title: "Interior + Exterior",
-      description: "Full SUV detail inside & out.",
-      price: 225,
+      description:
+        "Full SUV detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
+      price: 235,
+      duration: "3–5 hours",
       popular: true,
       features: [
         "Interior full detail",
-        "Exterior full detail",
-        "Paint sealant",
+        "Deep clean of rims & wheel wells",
+        "Paint pre-treatment",
+        "Foam wash + contact wash",
+        "Hand dry + 30–60 day paint sealant",
+        "Rims polished + tires dressed",
+        "Streak-free windows",
       ],
       image: serviceImages.suv[2],
     },
@@ -185,17 +230,18 @@ export const servicesData = {
       category: "Detailing",
       title: "Engine Bay Wash",
       description: "Engine bay degrease & dressing.",
-      price: 90,
+      price: 65,
       features: ["Degrease", "Plastics dressed"],
       image: serviceImages.suv[3],
     },
 
-    // Paint correction
+    // Paint Correction
     {
       id: "suv-pc-1",
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
       description: "Removes ~50–60% of swirls.",
+      duration: "5-7 hrs ",
       price: 399,
       features: ["50–60% swirl removal", "Restores gloss"],
       image: serviceImages.suv[4],
@@ -205,7 +251,8 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 2 Paint Correction",
       description: "Removes ~60–80% of swirls.",
-      price: 399 + 150,
+      duration: "5-7 hrs ",
+      price: 549,
       features: ["60–80% swirl removal"],
       image: serviceImages.suv[5],
     },
@@ -214,19 +261,54 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 3 Paint Correction",
       description: "Removes ~80–99% of swirls.",
-      price: 399 + 300,
+      duration: "5-7 hrs ",
+      price: 699,
       features: ["80–99% swirl removal"],
       image: serviceImages.suv[6],
     },
 
     // Ceramic
     {
-      id: "suv-ceramic",
+      id: "suv-ceramic-1y",
       category: "Ceramic Coating",
-      title: "Ceramic Coating",
-      description: "Durable ceramic protection - with or without correction.",
-      price: 800,
-      features: ["Hydrophobic", "Long-lasting"],
+      title: "1 Year Ceramic Coating",
+      description:
+        "Includes 1 step paint correction, paint prep, and 1 year ceramic coating. Includes 1x maintenance wash. Carfax applicable.",
+      price: 399,
+      features: [
+        "1 step paint correction",
+        "Full paint prep",
+        "1 year ceramic coating",
+        "1x maintenance wash",
+      ],
+      image: serviceImages.suv[7],
+    },
+    {
+      id: "suv-ceramic-3y",
+      category: "Ceramic Coating",
+      title: "3 Year Ceramic Coating",
+      description:
+        "Includes everything from 1 year + 3 year ceramic coating. 2x maintenance washes.",
+      price: 715,
+      features: [
+        "All 1 year ceramic features",
+        "3 year ceramic coating applied",
+        "2x maintenance washes",
+      ],
+      image: serviceImages.suv[7],
+    },
+    {
+      id: "suv-ceramic-5y",
+      category: "Ceramic Coating",
+      title: "5 Year Ceramic Coating",
+      description:
+        "Includes everything from 1 year + 5 year ceramic coating. 2x maintenance washes.",
+      price: 999,
+      features: [
+        "All 1 year ceramic features",
+        "5 year ceramic coating applied",
+        "2x maintenance washes",
+      ],
       image: serviceImages.suv[7],
     },
 
@@ -242,6 +324,7 @@ export const servicesData = {
     },
   ],
 
+  // TRUCK
   truck: [
     {
       id: "truck-detail-interior",
@@ -249,8 +332,14 @@ export const servicesData = {
       title: "Interior Only",
       description:
         "Heavy-duty truck interior detail: vacuum, shampoo, mats conditioned, steam clean carpets & seats, plastics conditioned.",
-      price: 170,
-      features: ["Vacuum & shampoo", "Heavy-duty cleaning", "Plastics dressed"],
+      price: 175,
+      duration: "2–4 hours",
+      features: [
+        "Vacuum & shampoo",
+        "Heavy-duty cleaning",
+        "Mats & carpets conditioned",
+        "Plastics dressed",
+      ],
       image: serviceImages.truck[0],
     },
     {
@@ -260,17 +349,32 @@ export const servicesData = {
       description:
         "Truck exterior deep clean: rims, tires, pre-treatment, foam wash, hand dry, sealant, tire shine.",
       price: 170,
-      features: ["Rims & tires deep cleaned", "Pre-treatment & foam wash"],
+      features: [
+        "Rims & tires deep cleaned",
+        "Pre-treatment & foam wash",
+        "Hand dry + paint protection",
+        "Tire shine & polish",
+      ],
       image: serviceImages.truck[1],
     },
     {
       id: "truck-detail-full",
       category: "Detailing",
       title: "Interior + Exterior",
-      description: "Full truck detail inside & out.",
+      description:
+        "Full truck detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
       price: 250,
+      duration: "3–5 hours",
       popular: true,
-      features: ["Interior detail", "Exterior detail", "Paint protection"],
+      features: [
+        "Interior full detail",
+        "Exterior deep clean",
+        "Rims & wheel wells cleaned",
+        "Paint pre-treatment",
+        "Foam + contact wash",
+        "Paint sealant",
+        "Rims polished + tires dressed",
+      ],
       image: serviceImages.truck[2],
     },
     {
@@ -278,7 +382,7 @@ export const servicesData = {
       category: "Detailing",
       title: "Engine Bay Wash",
       description: "Engine bay degrease & dressing.",
-      price: 100,
+      price: 70,
       features: ["Degrease", "Plastics dressed"],
       image: serviceImages.truck[3],
     },
@@ -289,6 +393,7 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
       description: "Removes ~50–60% of swirls.",
+      duration: "5-7 hrs ",
       price: 399,
       features: ["50–60% swirl removal"],
       image: serviceImages.truck[4],
@@ -298,7 +403,8 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 2 Paint Correction",
       description: "Removes ~60–80% of swirls.",
-      price: 399 + 150,
+      duration: "5-7 hrs ",
+      price: 549,
       features: ["60–80% swirl removal"],
       image: serviceImages.truck[5],
     },
@@ -307,19 +413,51 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 3 Paint Correction",
       description: "Removes ~80–99% of swirls.",
-      price: 399 + 300,
+      duration: "5-7 hrs ",
+      price: 699,
       features: ["80–99% swirl removal"],
       image: serviceImages.truck[6],
     },
 
     // Ceramic
     {
-      id: "truck-ceramic",
+      id: "truck-ceramic-1y",
       category: "Ceramic Coating",
-      title: "Ceramic Coating",
-      description: "Ceramic protection for trucks (with/without correction).",
-      price: 800,
-      features: ["Hydrophobic", "Durable gloss"],
+      title: "1 Year Ceramic Coating",
+      description:
+        "Includes 1 step paint correction, prep, and 1 year ceramic coating. Includes 1x maintenance wash.",
+      price: 399,
+      features: [
+        "1 step paint correction",
+        "Full paint prep",
+        "1x maintenance wash",
+      ],
+      image: serviceImages.truck[7],
+    },
+    {
+      id: "truck-ceramic-3y",
+      category: "Ceramic Coating",
+      title: "3 Year Ceramic Coating",
+      description: "Includes 3 year ceramic coating and 2x maintenance washes.",
+      price: 715,
+      features: [
+        "All 1 year features",
+        "3 year coating",
+        "2x maintenance washes",
+      ],
+      image: serviceImages.truck[7],
+    },
+    {
+      id: "truck-ceramic-5y",
+      category: "Ceramic Coating",
+      title: "5 Year Ceramic Coating",
+      description: "Includes 5 year ceramic coating and 2x maintenance washes.",
+      price: 999,
+      features: [
+        "All 1 year features",
+        "5 year coating",
+        "2x maintenance washes",
+      ],
       image: serviceImages.truck[7],
     },
 
@@ -335,6 +473,7 @@ export const servicesData = {
     },
   ],
 
+  // COUPE
   coupe: [
     {
       id: "coupe-detail-interior",
@@ -342,8 +481,14 @@ export const servicesData = {
       title: "Interior Only",
       description:
         "Luxury coupe interior deep clean: vacuum, shampoo, mats conditioned, steam-clean seats & carpets, plastics conditioned.",
-      price: 140,
-      features: ["Vacuum & shampoo", "Luxury finish", "Plastics dressed"],
+      price: 150,
+      duration: "2–4 hours",
+      features: [
+        "Vacuum & shampoo",
+        "Luxury finish",
+        "Mats & carpets steam cleaned",
+        "Plastics dressed",
+      ],
       image: serviceImages.coupe[0],
     },
     {
@@ -360,10 +505,21 @@ export const servicesData = {
       id: "coupe-detail-full",
       category: "Detailing",
       title: "Interior + Exterior",
-      description: "Premium coupe full detail inside & out.",
-      price: 190,
+      description:
+        "Premium coupe full detail inside & out. Includes interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
+      price: 200,
+      duration: "3–5 hours",
       popular: true,
-      features: ["Interior & exterior premium detail", "Sealant/ceramic spray"],
+      features: [
+        "Interior full detail",
+        "Exterior premium clean",
+        "Rims & wheel wells cleaned",
+        "Paint pre-treatment",
+        "Foam + contact wash",
+        "Paint sealant",
+        "Rims polished + tires dressed",
+        "Streak-free windows",
+      ],
       image: serviceImages.coupe[2],
     },
     {
@@ -371,17 +527,18 @@ export const servicesData = {
       category: "Detailing",
       title: "Engine Bay Wash",
       description: "Engine bay degrease & dressing for coupes.",
-      price: 75,
+      price: 55,
       features: ["Degrease", "Dressing"],
       image: serviceImages.coupe[3],
     },
 
-    // Paint correction (note: coupe base stage1 price was 380 in earlier data)
+    // Paint Correction
     {
       id: "coupe-pc-1",
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
       description: "Removes ~50–60% of swirls.",
+      duration: "5-7 hrs ",
       price: 380,
       features: ["50–60% swirl removal"],
       image: serviceImages.coupe[4],
@@ -391,7 +548,8 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 2 Paint Correction",
       description: "Removes ~60–80% of swirls.",
-      price: 380 + 150,
+      duration: "5-7 hrs ",
+      price: 530,
       features: ["60–80% swirl removal"],
       image: serviceImages.coupe[5],
     },
@@ -400,19 +558,53 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 3 Paint Correction",
       description: "Removes ~80–99% of swirls.",
-      price: 380 + 300,
+      duration: "5-7 hrs ",
+      price: 680,
       features: ["80–99% swirl removal"],
       image: serviceImages.coupe[6],
     },
 
     // Ceramic
     {
-      id: "coupe-ceramic",
+      id: "coupe-ceramic-1y",
       category: "Ceramic Coating",
-      title: "Ceramic Coating",
-      description: "Premium ceramic coating (with/without correction).",
-      price: 750,
-      features: ["Hydrophobic", "Showroom gloss"],
+      title: "1 Year Ceramic Coating",
+      description:
+        "Includes 1 step paint correction, paint prep, and 1 year ceramic coating. Includes 1x maintenance wash.",
+      price: 399,
+      features: [
+        "1 step paint correction",
+        "Full paint prep",
+        "1 year ceramic coating",
+      ],
+      image: serviceImages.coupe[7],
+    },
+    {
+      id: "coupe-ceramic-3y",
+      category: "Ceramic Coating",
+      title: "3 Year Ceramic Coating",
+      description:
+        "Includes everything in 1 year + 3 year ceramic coating applied. Includes 2x maintenance washes.",
+      price: 715,
+      features: [
+        "All 1 year features",
+        "3 year coating",
+        "2x maintenance washes",
+      ],
+      image: serviceImages.coupe[7],
+    },
+    {
+      id: "coupe-ceramic-5y",
+      category: "Ceramic Coating",
+      title: "5 Year Ceramic Coating",
+      description:
+        "Includes everything in 1 year + 5 year ceramic coating applied. Includes 2x maintenance washes.",
+      price: 999,
+      features: [
+        "All 1 year features",
+        "5 year coating",
+        "2x maintenance washes",
+      ],
       image: serviceImages.coupe[7],
     },
 
@@ -429,29 +621,106 @@ export const servicesData = {
   ],
 };
 
+// Add-ons Data
 export const addonsData = {
   sedan: [
     {
       id: "sedan-addon-headlight",
       title: "Headlight Restoration",
+      duration: "2-3 hrs",
       price: 79.99,
     },
-    { id: "sedan-addon-engine", title: "Engine Bay Wash", price: 80 },
+    {
+      id: "sedan-addon-engine",
+      title: "Engine Bay Wash",
+      price: 55,
+      duration: "30-40 mins",
+    },
+    {
+      id: "sedan-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      price: 299,
+    },
+    { id: "sedan-addon-wheels", title: "Wheels & Calipers Coating", price: 99 },
+    {
+      id: "sedan-addon-windows",
+      title: "Windshield & Windows Coating",
+      price: 145,
+    },
   ],
   suv: [
-    { id: "suv-addon-headlight", title: "Headlight Restoration", price: 79.99 },
-    { id: "suv-addon-engine", title: "Engine Bay Wash", price: 90 },
+    {
+      id: "suv-addon-headlight",
+      title: "Headlight Restoration",
+      price: 79.99,
+      duration: "2-3 hrs",
+    },
+    {
+      id: "suv-addon-engine",
+      title: "Engine Bay Wash",
+      price: 65,
+      duration: "30-40 mins",
+    },
+    {
+      id: "suv-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      price: 299,
+    },
+    { id: "suv-addon-wheels", title: "Wheels & Calipers Coating", price: 99 },
+    {
+      id: "suv-addon-windows",
+      title: "Windshield & Windows Coating",
+      price: 145,
+    },
   ],
   truck: [
     {
       id: "truck-addon-headlight",
       title: "Headlight Restoration",
       price: 79.99,
+      duration: "2-3 hrs",
     },
-    { id: "truck-addon-engine", title: "Engine Bay Wash", price: 100 },
+    {
+      id: "truck-addon-engine",
+      title: "Engine Bay Wash",
+      price: 70,
+      duration: "30-40 mins",
+    },
+    {
+      id: "truck-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      price: 299,
+    },
+    { id: "truck-addon-wheels", title: "Wheels & Calipers Coating", price: 99 },
+    {
+      id: "truck-addon-windows",
+      title: "Windshield & Windows Coating",
+      price: 145,
+    },
   ],
   coupe: [
-    { id: "coupe-addon-headlight", title: "Headlight Restoration", price: 70 },
-    { id: "coupe-addon-engine", title: "Engine Bay Wash", price: 75 },
+    {
+      id: "coupe-addon-headlight",
+      title: "Headlight Restoration",
+      price: 70,
+      duration: "2-3 hrs",
+    },
+    {
+      id: "coupe-addon-engine",
+      title: "Engine Bay Wash",
+      price: 55,
+      duration: "30-40 mins",
+    },
+    {
+      id: "coupe-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      price: 299,
+    },
+    { id: "coupe-addon-wheels", title: "Wheels & Calipers Coating", price: 99 },
+    {
+      id: "coupe-addon-windows",
+      title: "Windshield & Windows Coating",
+      price: 145,
+    },
   ],
 };

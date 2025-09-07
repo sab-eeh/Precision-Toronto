@@ -18,7 +18,7 @@ function isOverlap(aStart, aEnd, bStart, bEnd) {
  */
 function generateSlotsForDay(
   dayStart,
-  { startHour = 9, endHour = 17, slotMinutes = 60 } = {}
+  { startHour = 8, endHour = 18, slotMinutes = 60 } = {}
 ) {
   const start = new Date(dayStart);
   start.setHours(startHour, 0, 0, 0);

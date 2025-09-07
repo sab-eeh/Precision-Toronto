@@ -1,4 +1,13 @@
-import React, { useEffect, useMemo, useState, useContext } from "react";
+// src/pages/BookingPage.jsx
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useContext,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -6,10 +15,6 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import ProgressTracker from "../components/ProgressTracker";
-import FloatingContact from "../components/FloatingContact";
-import Header from "../layout/Header";
-import Footer from "../layout/Footer";
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
@@ -22,36 +27,79 @@ import api from "../api/client";
 import { Title, Meta } from "react-head";
 import { BookingContext } from "../context/BookingContext";
 
-const BUSINESS_MINUTES_PER_SLOT = 60;
+// Lazy load non-critical layout pieces
+const Header = lazy(() => import("../layout/Header"));
+const Footer = lazy(() => import("../layout/Footer"));
+const FloatingContact = lazy(() => import("../components/FloatingContact"));
+const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
 
-function toYMD(date) {
-  const d = new Date(date);
-  return d.toISOString().slice(0, 10);
+const BUSINESS_MINUTES_PER_SLOT = 60;
+const DRAFT_KEY = "precision_booking_draft_v1";
+
+/* ---------- Helpers ---------- */
+
+// Format date to YYYY-MM-DD (local)
+function formatYMDLocal(date) {
+  if (!date) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
+
+// Parse YYYY-MM-DD into a local Date at 00:00 local time (avoid timezone shifts)
+function parseYMDToLocalDate(ymd) {
+  if (!ymd) return null;
+  const [y, m, d] = ymd.split("-").map((n) => Number(n));
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+}
+
+// Safely parse a booking-selectedDate value (handles legacy ISO or YMD)
+function parseBookingSelectedDate(val) {
+  if (!val) return null;
+  if (typeof val === "string") {
+    // YMD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return parseYMDToLocalDate(val);
+    // ISO fallback: create Date and use local YMD
+    const dt = new Date(val);
+    if (!isNaN(dt))
+      return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  }
+  if (val instanceof Date && !isNaN(val))
+    return new Date(val.getFullYear(), val.getMonth(), val.getDate());
+  return null;
+}
+
+/* ---------- Component ---------- */
 
 export default function BookingPage() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { booking, setBooking } = useContext(BookingContext);
 
-  if (!state && !booking.services?.length) {
+  // If user hasn't selected services and didn't come with state, show friendly message
+  if (!state && !(booking && booking.services && booking.services.length)) {
     return <div className="p-10 text-center">No booking data found.</div>;
   }
 
+  // If route provided services (user navigated from Services), prefer that;
+  // otherwise fall back to booking context.
   const { selectedCar, selectedServices, selectedAddons, totalPrice } =
-    state || booking;
+    state || booking || {};
 
-  const [selectedDate, setSelectedDate] = useState(
-    booking.selectedDate || null
+  // Initialize states (preferred: booking or blank)
+  const [selectedDate, setSelectedDate] = useState(() =>
+    parseBookingSelectedDate(booking?.selectedDate)
   );
   const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedTime, setSelectedTime] = useState(booking.selectedTime || "");
+  const [selectedTime, setSelectedTime] = useState(booking?.selectedTime || "");
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [customerInfo, setCustomerInfo] = useState(
-    booking.customerInfo || {
+    booking?.customerInfo || {
       name: "",
       email: "",
       phone: "",
@@ -61,7 +109,7 @@ export default function BookingPage() {
   );
 
   const [vehicleInfo, setVehicleInfo] = useState(
-    booking.vehicleInfo || {
+    booking?.vehicleInfo || {
       make: "",
       model: "",
       year: "",
@@ -70,39 +118,124 @@ export default function BookingPage() {
     }
   );
 
-  // Restore booking draft
+  /* ---------- Restore draft only when relevant ---------- 
+     We avoid restoring draft for "brand new" users (no state AND no booking.services)
+     This prevents showing old customer data to a new user.
+  */
   useEffect(() => {
-    const saved = localStorage.getItem("precision_booking_draft_v1");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setSelectedDate(
-        parsed.selectedDate ? new Date(parsed.selectedDate) : null
-      );
-      setSelectedTime(parsed.selectedTime || "");
-      setCustomerInfo(parsed.customerInfo || {});
-      setVehicleInfo(parsed.vehicleInfo || {});
-    }
-  }, []);
-
-  // Sync draft
-  useEffect(() => {
-    const draft = { selectedDate, selectedTime, customerInfo, vehicleInfo };
-    localStorage.setItem("precision_booking_draft_v1", JSON.stringify(draft));
-  }, [selectedDate, selectedTime, customerInfo, vehicleInfo]);
-
-  // Fetch slots
-  useEffect(() => {
-    (async () => {
-      setSlotsError("");
-      setAvailableSlots([]);
+    const shouldRestore = !!(
+      state ||
+      (booking && booking.services && booking.services.length)
+    );
+    if (!shouldRestore) {
+      // Remove stale draft and keep inputs blank (new user)
+      localStorage.removeItem(DRAFT_KEY);
+      setSelectedDate(null);
       setSelectedTime("");
-      if (!selectedDate) return;
+      setCustomerInfo({
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        notes: "",
+      });
+      setVehicleInfo({ make: "", model: "", year: "", color: "", license: "" });
+      return;
+    }
 
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw);
+
+      // Prefer a full startAtISO if present (more precise)
+      if (parsed?.startAtISO) {
+        const start = new Date(parsed.startAtISO);
+        if (!isNaN(start)) {
+          setSelectedDate(
+            new Date(start.getFullYear(), start.getMonth(), start.getDate())
+          );
+          // Use time label if saved or compute from ISO
+          setSelectedTime(parsed.selectedTime || format(start, "h:mm a"));
+        }
+      } else if (parsed?.selectedDateYMD) {
+        const d = parseYMDToLocalDate(parsed.selectedDateYMD);
+        if (d) setSelectedDate(d);
+        setSelectedTime(parsed.selectedTime || "");
+      } else if (parsed?.selectedDate) {
+        // legacy
+        const d = parseBookingSelectedDate(parsed.selectedDate);
+        if (d) setSelectedDate(d);
+        setSelectedTime(parsed.selectedTime || "");
+      }
+
+      setCustomerInfo(parsed.customerInfo || booking?.customerInfo || {});
+      setVehicleInfo(parsed.vehicleInfo || booking?.vehicleInfo || {});
+    } catch (err) {
+      // If parse fails, drop the draft
+      localStorage.removeItem(DRAFT_KEY);
+    }
+    // We intentionally depend on booking.services and state — restore only when they change.
+  }, [state, booking?.services]);
+
+  /* ---------- Persist draft (debounced) ---------- */
+  useEffect(() => {
+    // Only persist if user actually has services selected (so we don't create drafts for random visitors)
+    const shouldPersist = !!(
+      state ||
+      (booking && booking.services && booking.services.length)
+    );
+    if (!shouldPersist) return;
+
+    const handle = setTimeout(() => {
+      const draft = {
+        selectedDateYMD: selectedDate ? formatYMDLocal(selectedDate) : null,
+        selectedTime: selectedTime || "",
+        // keep startAtISO if present in booking (helps precise restore)
+        startAtISO: booking?.startAtISO || null,
+        customerInfo,
+        vehicleInfo,
+      };
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } catch (e) {
+        // ignore quota errors
+      }
+    }, 400);
+
+    return () => clearTimeout(handle);
+  }, [
+    selectedDate,
+    selectedTime,
+    customerInfo,
+    vehicleInfo,
+    state,
+    booking?.services,
+    booking?.startAtISO,
+  ]);
+
+  /* ---------- Fetch available slots for selectedDate ---------- */
+  useEffect(() => {
+    // reset status
+    setSlotsError("");
+    setAvailableSlots([]);
+    setSelectedTime("");
+
+    if (!selectedDate) return;
+
+    const controller = new AbortController();
+    let active = true;
+
+    (async () => {
       try {
         setLoadingSlots(true);
-        const ymd = toYMD(selectedDate);
-        const data = await api(`/api/bookings/availability?date=${ymd}`);
-        // Expect API to return: { availableSlots: [{start, end, label, booked: true/false}] }
+        const ymd = formatYMDLocal(selectedDate);
+        // The api client supports options (method/signal) in other files, so pass signal
+        const data = await api(`/api/bookings/availability?date=${ymd}`, {
+          signal: controller.signal,
+        });
+        if (!active) return;
         const slots = (data?.availableSlots || []).map((s) => ({
           start: new Date(s.start),
           end: new Date(s.end),
@@ -111,55 +244,104 @@ export default function BookingPage() {
         }));
         setAvailableSlots(slots);
       } catch (err) {
-        setSlotsError(err.message || "Failed to load availability");
+        if (err?.name === "AbortError") {
+          // aborted - ignore
+          return;
+        }
+        setSlotsError(err?.message || "Failed to load availability");
       } finally {
-        setLoadingSlots(false);
+        if (active) setLoadingSlots(false);
       }
     })();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [selectedDate]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedTime) return;
+  /* ---------- Submit handler ---------- */
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (!selectedDate || !selectedTime) return;
 
-    const selectedSlot = availableSlots.find((s) => s.label === selectedTime);
-    if (!selectedSlot) return;
+      const selectedSlot = availableSlots.find((s) => s.label === selectedTime);
+      if (!selectedSlot) return;
 
-    const bookingData = {
+      // Derive booking date from the chosen slot's local date (avoid timezone shifts)
+      const localYMD = formatYMDLocal(
+        new Date(
+          selectedSlot.start.getFullYear(),
+          selectedSlot.start.getMonth(),
+          selectedSlot.start.getDate()
+        )
+      );
+
+      const bookingData = {
+        // store date as YYYY-MM-DD local string (stable across timezones)
+        selectedDate: localYMD,
+        selectedTime,
+        customerInfo,
+        vehicleInfo,
+        selectedServices,
+        selectedAddons,
+        selectedCar,
+        totalPrice,
+        notes: customerInfo.notes || "",
+        // precise timestamp for backend & confirmation
+        startAtISO: selectedSlot.start.toISOString(),
+        slotMinutes: BUSINESS_MINUTES_PER_SLOT,
+      };
+
+      // Save to context (draft)
+      setBooking((prev) => ({ ...prev, ...bookingData }));
+
+      setSubmitting(true);
+      // Navigate to Confirmation page, passing bookingData in state (confirmation page will merge and POST)
+      navigate("/confirmation", { state: bookingData });
+    },
+    [
       selectedDate,
       selectedTime,
+      availableSlots,
       customerInfo,
       vehicleInfo,
       selectedServices,
       selectedAddons,
       selectedCar,
       totalPrice,
-      notes: customerInfo.notes,
-      startAtISO: selectedSlot.start.toISOString(),
-      slotMinutes: BUSINESS_MINUTES_PER_SLOT,
-    };
+      setBooking,
+      navigate,
+    ]
+  );
 
-    setBooking((prev) => ({ ...prev, ...bookingData }));
-    setSubmitting(true);
-    navigate("/confirmation", { state: bookingData });
-  };
-
-  const isFormValid =
-    selectedDate &&
-    selectedTime &&
-    customerInfo.name &&
-    customerInfo.email &&
-    customerInfo.phone &&
-    customerInfo.address &&
-    vehicleInfo.make &&
-    vehicleInfo.model &&
-    vehicleInfo.year;
+  /* ---------- Form validation (memoized) ---------- */
+  const isFormValid = useMemo(
+    () =>
+      selectedDate &&
+      selectedTime &&
+      customerInfo?.name &&
+      customerInfo?.email &&
+      customerInfo?.phone &&
+      customerInfo?.address &&
+      vehicleInfo?.make &&
+      vehicleInfo?.model &&
+      vehicleInfo?.year,
+    [selectedDate, selectedTime, customerInfo, vehicleInfo]
+  );
 
   const servicesSummary = useMemo(
-    () => selectedServices.map((s) => s.title).join(", "),
+    () => (selectedServices || []).map((s) => s.title).join(", "),
     [selectedServices]
   );
 
+  /* ---------- UI placeholders for slots when loading ---------- */
+  const slotsSkeleton = Array.from({ length: 6 }).map((_, i) => (
+    <div key={i} className="h-10 rounded-md bg-[#121826] animate-pulse" />
+  ));
+
+  /* ---------- Rendering ---------- */
   return (
     <>
       <Title>Book Car Detailing in Toronto | Precision Toronto</Title>
@@ -167,10 +349,19 @@ export default function BookingPage() {
         name="description"
         content="Book your car cleaning and detailing appointment with Precision Toronto."
       />
+
       <div className="min-h-screen bg-[#0A0F1C] flex flex-col text-white">
-        <Header />
-        <FloatingContact />
-        <ProgressTracker currentStep={3} />
+        <Suspense fallback={<div className="h-20 bg-gray-800 animate-pulse" />}>
+          <Header />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <FloatingContact />
+        </Suspense>
+
+        <Suspense fallback={<div className="h-6 bg-gray-700 animate-pulse" />}>
+          <ProgressTracker currentStep={3} />
+        </Suspense>
 
         <div className="container mx-auto px-4 md:px-8 py-10 flex-1">
           <div className="flex items-center gap-4 mb-10">
@@ -185,9 +376,9 @@ export default function BookingPage() {
             <div>
               <h1 className="text-3xl font-bold">Book Your Appointment</h1>
               <p className="text-gray-400 mt-2 text-sm">
-                {servicesSummary} for{" "}
+                {servicesSummary || "Selected services"} for{" "}
                 <span className="capitalize font-medium text-blue-400">
-                  {selectedCar}
+                  {selectedCar || "your vehicle"}
                 </span>
               </p>
             </div>
@@ -201,6 +392,7 @@ export default function BookingPage() {
                   <CalendarIcon className="w-5 h-5 text-blue-400" /> Select Date
                   & Time
                 </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="flex flex-col gap-2">
                     <Label>Preferred Date</Label>
@@ -210,52 +402,58 @@ export default function BookingPage() {
                       minDate={new Date()}
                       className="w-full rounded-lg bg-[#1A2234] text-white px-4 py-3 border border-gray-700"
                       placeholderText="Pick a date"
+                      dateFormat="MM/dd/yyyy"
                     />
                   </div>
 
                   <div>
                     <Label>Preferred Time</Label>
-                    {loadingSlots && (
-                      <p className="mt-3 text-sm text-blue-300">
-                        Loading slots…
-                      </p>
-                    )}
-                    {slotsError && (
-                      <p className="mt-3 text-sm text-red-400">{slotsError}</p>
-                    )}
-                    {!loadingSlots &&
-                      selectedDate &&
-                      availableSlots.length === 0 && (
-                        <p className="mt-3 text-sm text-yellow-300">
-                          No slots available for this date.
-                        </p>
+
+                    <div className="mt-3" aria-live="polite">
+                      {loadingSlots && (
+                        <p className="text-sm text-blue-300">Loading slots…</p>
                       )}
+                      {slotsError && (
+                        <p className="text-sm text-red-400">{slotsError}</p>
+                      )}
+                      {!loadingSlots &&
+                        selectedDate &&
+                        availableSlots.length === 0 && (
+                          <p className="text-sm text-yellow-300">
+                            No slots available for this date.
+                          </p>
+                        )}
+                    </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
-                      {availableSlots.map((slot) => (
-                        <Button
-                          key={slot.label}
-                          type="button"
-                          variant={
-                            selectedTime === slot.label ? "default" : "outline"
-                          }
-                          size="sm"
-                          onClick={() =>
-                            !slot.booked && setSelectedTime(slot.label)
-                          }
-                          disabled={slot.booked}
-                          className={cn(
-                            "rounded-md py-2 text-sm text-white border border-gray-700",
-                            slot.booked
-                              ? "bg-gray-600 text-gray-300 cursor-not-allowed"
-                              : selectedTime === slot.label
-                              ? "bg-blue-500 text-white"
-                              : "bg-[#1A2234] hover:bg-[#223048] text-gray-200"
-                          )}
-                        >
-                          {slot.label} {slot.booked && "(Booked)"}
-                        </Button>
-                      ))}
+                      {loadingSlots
+                        ? slotsSkeleton
+                        : availableSlots.map((slot) => (
+                            <Button
+                              key={slot.label}
+                              type="button"
+                              variant={
+                                selectedTime === slot.label
+                                  ? "default"
+                                  : "outline"
+                              }
+                              size="sm"
+                              onClick={() =>
+                                !slot.booked && setSelectedTime(slot.label)
+                              }
+                              disabled={slot.booked}
+                              className={cn(
+                                "rounded-md py-2 text-sm text-white border border-gray-700",
+                                slot.booked
+                                  ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                                  : selectedTime === slot.label
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-[#1A2234] hover:bg-[#223048] text-gray-200"
+                              )}
+                            >
+                              {slot.label} {slot.booked && "(Booked)"}
+                            </Button>
+                          ))}
                     </div>
                   </div>
                 </div>
@@ -267,13 +465,14 @@ export default function BookingPage() {
                   <MapPin className="w-5 h-5 text-blue-400" /> Customer
                   Information
                 </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <InputField
                     id="name"
                     label="Full Name *"
                     value={customerInfo.name}
                     onChange={(val) =>
-                      setCustomerInfo({ ...customerInfo, name: val })
+                      setCustomerInfo((p) => ({ ...p, name: val }))
                     }
                     required
                   />
@@ -283,7 +482,7 @@ export default function BookingPage() {
                     label="Email Address *"
                     value={customerInfo.email}
                     onChange={(val) =>
-                      setCustomerInfo({ ...customerInfo, email: val })
+                      setCustomerInfo((p) => ({ ...p, email: val }))
                     }
                     required
                   />
@@ -293,7 +492,7 @@ export default function BookingPage() {
                     label="Phone Number *"
                     value={customerInfo.phone}
                     onChange={(val) =>
-                      setCustomerInfo({ ...customerInfo, phone: val })
+                      setCustomerInfo((p) => ({ ...p, phone: val }))
                     }
                     required
                   />
@@ -302,21 +501,19 @@ export default function BookingPage() {
                     label="Service Address *"
                     value={customerInfo.address}
                     onChange={(val) =>
-                      setCustomerInfo({ ...customerInfo, address: val })
+                      setCustomerInfo((p) => ({ ...p, address: val }))
                     }
                     required
                   />
                 </div>
+
                 <div className="mt-6">
                   <Label htmlFor="notes">Special Instructions</Label>
                   <Textarea
                     id="notes"
                     value={customerInfo.notes}
                     onChange={(e) =>
-                      setCustomerInfo({
-                        ...customerInfo,
-                        notes: e.target.value,
-                      })
+                      setCustomerInfo((p) => ({ ...p, notes: e.target.value }))
                     }
                     className="mt-2 rounded-md bg-[#1A2234] text-white"
                     placeholder="Any special instructions..."
@@ -329,13 +526,14 @@ export default function BookingPage() {
                 <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-blue-400" /> Vehicle Details
                 </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <InputField
                     id="make"
                     label="Make *"
                     value={vehicleInfo.make}
                     onChange={(val) =>
-                      setVehicleInfo({ ...vehicleInfo, make: val })
+                      setVehicleInfo((p) => ({ ...p, make: val }))
                     }
                     required
                   />
@@ -344,7 +542,7 @@ export default function BookingPage() {
                     label="Model *"
                     value={vehicleInfo.model}
                     onChange={(val) =>
-                      setVehicleInfo({ ...vehicleInfo, model: val })
+                      setVehicleInfo((p) => ({ ...p, model: val }))
                     }
                     required
                   />
@@ -353,7 +551,7 @@ export default function BookingPage() {
                     label="Year *"
                     value={vehicleInfo.year}
                     onChange={(val) =>
-                      setVehicleInfo({ ...vehicleInfo, year: val })
+                      setVehicleInfo((p) => ({ ...p, year: val }))
                     }
                     required
                   />
@@ -362,7 +560,7 @@ export default function BookingPage() {
                     label="Color"
                     value={vehicleInfo.color}
                     onChange={(val) =>
-                      setVehicleInfo({ ...vehicleInfo, color: val })
+                      setVehicleInfo((p) => ({ ...p, color: val }))
                     }
                   />
                   <InputField
@@ -370,7 +568,7 @@ export default function BookingPage() {
                     label="License Plate"
                     value={vehicleInfo.license}
                     onChange={(val) =>
-                      setVehicleInfo({ ...vehicleInfo, license: val })
+                      setVehicleInfo((p) => ({ ...p, license: val }))
                     }
                   />
                 </div>
@@ -380,8 +578,14 @@ export default function BookingPage() {
               <section className="bg-[#111827] p-6 rounded-2xl">
                 <h3 className="text-xl font-semibold mb-6">Booking Summary</h3>
                 <div className="space-y-3 text-sm">
-                  <SummaryRow label="Services:" value={servicesSummary} />
-                  <SummaryRow label="Vehicle:" value={selectedCar} />
+                  <SummaryRow
+                    label="Services:"
+                    value={servicesSummary || "None"}
+                  />
+                  <SummaryRow
+                    label="Vehicle:"
+                    value={selectedCar || "Not specified"}
+                  />
                   {selectedDate && (
                     <SummaryRow
                       label="Date:"
@@ -395,7 +599,7 @@ export default function BookingPage() {
                   <div className="flex justify-between pt-4 border-t border-gray-700">
                     <span className="text-lg font-semibold">Total:</span>
                     <span className="text-lg font-bold text-blue-400">
-                      ${totalPrice}
+                      ${Number(totalPrice || 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -412,13 +616,18 @@ export default function BookingPage() {
             </form>
           </div>
         </div>
-        <Footer />
+
+        <Suspense fallback={<div className="h-40 bg-gray-900 animate-pulse" />}>
+          <Footer />
+        </Suspense>
       </div>
     </>
   );
 }
 
-function InputField({
+/* ---------- small memoized subcomponents ---------- */
+
+const InputField = React.memo(function InputField({
   id,
   label,
   value,
@@ -432,16 +641,16 @@ function InputField({
       <Input
         id={id}
         type={type}
-        value={value}
+        value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         className="mt-2 rounded-md bg-[#1A2234] text-white"
         required={required}
       />
     </div>
   );
-}
+});
 
-function SummaryRow({ label, value, highlight }) {
+const SummaryRow = React.memo(function SummaryRow({ label, value, highlight }) {
   return (
     <div className="flex justify-between">
       <span className="text-gray-400">{label}</span>
@@ -450,4 +659,4 @@ function SummaryRow({ label, value, highlight }) {
       </span>
     </div>
   );
-}
+});

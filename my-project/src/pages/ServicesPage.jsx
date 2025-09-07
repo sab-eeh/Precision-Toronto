@@ -1,6 +1,14 @@
-import React, { useState, useMemo, useEffect, useContext } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useContext,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -10,25 +18,49 @@ import {
   X,
 } from "lucide-react";
 import { Title, Meta } from "react-head";
-
 import { BookingContext } from "../context/BookingContext";
 import ServiceCard from "../components/ServiceCard";
 import Button from "../components/ui/Button";
-import FloatingContact from "../components/FloatingContact";
-import ProgressTracker from "../components/ProgressTracker";
-import Header from "../layout/Header";
-import Footer from "../layout/Footer";
+
+// ✅ Lazy load non-critical UI
+const FloatingContact = lazy(() => import("../components/FloatingContact"));
+const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
+const Header = lazy(() => import("../layout/Header"));
+const Footer = lazy(() => import("../layout/Footer"));
+
 import { servicesData, addonsData } from "../data/servicesData";
 
+// Convert "2h 30m" or "45m" to total minutes
+const parseDuration = (str) => {
+  if (!str) return null;
+  let hours = 0,
+    minutes = 0;
+  const hrMatch = str.match(/(\d+)\s*h/);
+  const minMatch = str.match(/(\d+)\s*m/);
+  if (hrMatch) hours = parseInt(hrMatch[1], 10);
+  if (minMatch) minutes = parseInt(minMatch[1], 10);
+  return hours * 60 + minutes;
+};
+
+// Convert total minutes back to "xh ym"
+const formatDuration = (mins) => {
+  if (!mins) return "Est. time";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
+
 /* Accessible horizontal scroller for mobile */
-const Carousel = ({ children, idPrefix = "carousel" }) => {
+const Carousel = React.memo(({ children, idPrefix = "carousel" }) => {
   const scrollRef = React.useRef(null);
-  const scrollBy = (dir = 1) => {
+
+  const scrollBy = useCallback((dir = 1) => {
     const el = scrollRef.current;
     if (!el) return;
     const w = el.clientWidth;
     el.scrollBy({ left: dir * w * 0.9, behavior: "smooth" });
-  };
+  }, []);
+
   return (
     <div className="relative">
       <div
@@ -44,6 +76,7 @@ const Carousel = ({ children, idPrefix = "carousel" }) => {
         ))}
       </div>
 
+      {/* Desktop arrows */}
       <button
         aria-label="Scroll left"
         onClick={() => scrollBy(-1)}
@@ -60,7 +93,7 @@ const Carousel = ({ children, idPrefix = "carousel" }) => {
       </button>
     </div>
   );
-};
+});
 
 const CATEGORIES = [
   "Detailing",
@@ -72,10 +105,10 @@ const CATEGORIES = [
 const ServicesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const prefersReducedMotion = useReducedMotion();
 
   const {
     booking,
-    setBooking,
     toggleService,
     toggleAddon,
     incrementService,
@@ -88,11 +121,12 @@ const ServicesPage = () => {
   const [step, setStep] = useState("chooseCategory");
   const [activeCategory, setActiveCategory] = useState("Detailing");
 
-  // Scroll to hash if present
+  // Smooth scroll to hash if present
   useEffect(() => {
     if (location.hash) {
       const el = document.getElementById(location.hash.replace("#", ""));
-      el?.scrollIntoView({ behavior: "smooth" });
+      if (el)
+        requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth" }));
     }
   }, [location]);
 
@@ -120,45 +154,63 @@ const ServicesPage = () => {
     return map;
   }, [allServices]);
 
-  const goToServices = (category) => {
+  // ⏱ Calculate total duration
+  const totalDurationMins = useMemo(() => {
+    let total = 0;
+    (booking.services || []).forEach((s) => {
+      const mins = parseDuration(s.duration);
+      if (mins) total += mins * (s.qty || 1);
+    });
+    (booking.addons || []).forEach((a) => {
+      const mins = parseDuration(a.duration);
+      if (mins) total += mins * (a.qty || 1);
+    });
+    return total;
+  }, [booking.services, booking.addons]);
+
+  const formattedDuration = formatDuration(totalDurationMins);
+
+  // Handlers (memoized)
+  const goToServices = useCallback((category) => {
     setActiveCategory(category);
     setStep("pickServices");
-    setTimeout(() => {
+    requestAnimationFrame(() =>
       document
         .getElementById("services-section")
-        ?.scrollIntoView({ behavior: "smooth" });
-    }, 60);
-  };
+        ?.scrollIntoView({ behavior: "smooth" })
+    );
+  }, []);
 
-  const goToAddons = () => {
+  const goToAddons = useCallback(() => {
     setStep("addons");
-    setTimeout(() => {
+    requestAnimationFrame(() =>
       document
         .getElementById("addons-section")
-        ?.scrollIntoView({ behavior: "smooth" });
-    }, 60);
-  };
+        ?.scrollIntoView({ behavior: "smooth" })
+    );
+  }, []);
 
-  const goToSummary = () => {
+  const goToSummary = useCallback(() => {
     setStep("summary");
-    setTimeout(() => {
+    requestAnimationFrame(() =>
       document
         .getElementById("summary-section")
-        ?.scrollIntoView({ behavior: "smooth" });
-    }, 60);
-  };
+        ?.scrollIntoView({ behavior: "smooth" })
+    );
+  }, []);
 
-  const handleContinueToBooking = () => {
-    // Do NOT confirm booking here — just pass draft state forward
+  const handleContinueToBooking = useCallback(() => {
     navigate("/booking", {
       state: {
         selectedCar: booking.carType,
         selectedServices: booking.services || [],
         selectedAddons: booking.addons || [],
         totalPrice,
+        totalDuration: totalDurationMins, // minutes
+        formattedDuration, // human-friendly string
       },
     });
-  };
+  }, [navigate, booking, totalPrice, totalDurationMins, formattedDuration]);
 
   return (
     <>
@@ -169,9 +221,17 @@ const ServicesPage = () => {
       />
 
       <div className="min-h-screen bg-gradient-to-b from-[#0A0F11] to-[#101518] text-white">
-        <Header />
-        <FloatingContact />
-        <ProgressTracker currentStep={2} />
+        <Suspense fallback={<div className="h-20 bg-gray-900 animate-pulse" />}>
+          <Header />
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <FloatingContact />
+        </Suspense>
+
+        <Suspense fallback={<div className="h-6 bg-gray-800 animate-pulse" />}>
+          <ProgressTracker currentStep={2} />
+        </Suspense>
 
         <main className="max-w-6xl mx-auto px-4 py-10">
           <div className="mb-6 flex items-center gap-3">
@@ -301,8 +361,9 @@ const ServicesPage = () => {
                           ${Number(addon.price).toFixed(2)}
                         </span>
                       </div>
+
                       <p className="text-sm text-gray-300 mb-4">
-                        Add {addon.title.toLowerCase()} to your booking.
+                        {addon.duration ? `⏱ ${addon.duration}` : "⏱ Est. time"}
                       </p>
 
                       {!active ? (
@@ -381,6 +442,9 @@ const ServicesPage = () => {
                               {s.description}
                             </div>
                           )}
+                          <div className="text-sm text-gray-400 mt-1">
+                            ⏱ {s.duration || "Est. time"}
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -433,6 +497,9 @@ const ServicesPage = () => {
                       >
                         <div className="flex-1 min-w-0 text-gray-300">
                           {a.title}
+                          <div className="text-sm text-gray-400 mt-1">
+                            ⏱ {a.duration || "Est. time"}
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -474,9 +541,14 @@ const ServicesPage = () => {
                   </ul>
                 </div>
 
+                {/* Totals */}
                 <div className="flex justify-between items-center font-bold text-xl">
                   <span>Total</span>
                   <span>${totalPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center font-semibold text-lg mt-2">
+                  <span>Estimated Time</span>
+                  <span>{formattedDuration}</span>
                 </div>
               </div>
 
@@ -497,7 +569,9 @@ const ServicesPage = () => {
           )}
         </main>
 
-        <Footer />
+        <Suspense fallback={<div className="h-40 bg-gray-900 animate-pulse" />}>
+          <Footer />
+        </Suspense>
       </div>
     </>
   );

@@ -7,6 +7,7 @@ const ServiceCard = ({
   id,
   title,
   description,
+  duration,
   price,
   features = [],
   image,
@@ -72,7 +73,9 @@ const ServiceCard = ({
         <div className="mt-auto">
           <div className="flex items-center justify-between mb-3">
             <span className="text-2xl font-bold text-blue-400">${price}</span>
-            <span className="text-sm text-gray-400">est. time</span>
+            <p className="text-sm text-gray-400">
+              {duration ? `⏱ ${duration}` : "⏱ Est. time"}
+            </p>
           </div>
 
           <Button

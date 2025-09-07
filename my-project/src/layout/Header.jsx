@@ -1,6 +1,5 @@
-// src/components/Header.jsx
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useRef, memo } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Phone,
   Mail,
@@ -13,22 +12,19 @@ import {
 } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { PrefetchLink } from "../App"; // ✅ import PrefetchLink
 
-// ✅ Nav Links (outside component to prevent re-creation)
+// ✅ Nav Links
 const NAV_LINKS = [
   { to: "/", label: "Home" },
-  { to: "/About", label: "About Us" },
-  { to: "/Gallery", label: "Gallery" },
-  { to: "/Contact", label: "Contact Us" },
+  { to: "/about", label: "About Us" },
+  { to: "/gallery", label: "Gallery" },
+  { to: "/contact", label: "Contact Us" },
 ];
 
-// ✅ Contact Info for reusability
+// ✅ Contact Info
 const CONTACT_INFO = [
-  {
-    icon: Mail,
-    text: "precisiontoronto@gmail.com",
-    color: "text-blue-400",
-  },
+  { icon: Mail, text: "precisiontoronto@gmail.com", color: "text-blue-400" },
   {
     icon: MapPin,
     text: "Serving Greater Toronto Area",
@@ -39,21 +35,46 @@ const CONTACT_INFO = [
 
 // ✅ Animation Variants
 const headerVariants = {
-  visible: { y: 0, transition: { duration: 0.4, ease: "easeInOut" } },
-  hidden: { y: -120, transition: { duration: 0.4, ease: "easeInOut" } },
+  visible: { y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  hidden: { y: -120, transition: { duration: 0.35, ease: "easeIn" } },
 };
 
 const mobileMenuVariants = {
-  hidden: { opacity: 0, y: -20 },
+  hidden: { opacity: 0, y: -15 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3, ease: "easeInOut" },
+    transition: { duration: 0.3, ease: "easeOut", staggerChildren: 0.05 },
   },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
+  exit: { opacity: 0, y: -15, transition: { duration: 0.25, ease: "easeIn" } },
 };
 
-const Header = React.memo(() => {
+const itemVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { opacity: 1, x: 0 },
+};
+
+// ✅ Memoized components
+const NavLinkItem = memo(({ to, label, isActive, onClick }) => (
+  <PrefetchLink
+    to={to}
+    onClick={onClick}
+    className={`font-medium transition-colors ${
+      isActive ? "text-blue-400" : "text-gray-200 hover:text-blue-300"
+    }`}
+  >
+    {label}
+  </PrefetchLink>
+));
+
+const ContactItem = memo(({ Icon, text, color }) => (
+  <div className="flex items-center gap-2">
+    <Icon className={`w-4 h-4 ${color}`} />
+    <span>{text}</span>
+  </div>
+));
+
+const Header = memo(() => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
@@ -62,17 +83,20 @@ const Header = React.memo(() => {
 
   const isActive = (path) => location.pathname === path;
 
-  // ✅ Optimized scroll handler with requestAnimationFrame
+  // ✅ Auto-close mobile menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  // ✅ Optimized scroll handler
   useEffect(() => {
     const handleScroll = () => {
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
-          if (currentScrollY > lastScrollY.current && currentScrollY > 80) {
-            setShowHeader(false); // hide on scroll down
-          } else {
-            setShowHeader(true); // show on scroll up
-          }
+          setShowHeader(
+            !(currentScrollY > lastScrollY.current && currentScrollY > 80)
+          );
           lastScrollY.current = currentScrollY;
           ticking.current = false;
         });
@@ -97,10 +121,7 @@ const Header = React.memo(() => {
             {/* Left: Contact Info */}
             <div className="flex items-center gap-6">
               {CONTACT_INFO.map(({ icon: Icon, text, color }) => (
-                <div key={text} className="flex items-center gap-2">
-                  <Icon className={`w-4 h-4 ${color}`} />
-                  <span>{text}</span>
-                </div>
+                <ContactItem key={text} Icon={Icon} text={text} color={color} />
               ))}
             </div>
 
@@ -113,6 +134,7 @@ const Header = React.memo(() => {
               </div>
               <a
                 href="https://www.instagram.com/precision.to"
+                aria-label="Instagram"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:scale-110 transition-transform text-blue-400"
@@ -121,6 +143,7 @@ const Header = React.memo(() => {
               </a>
               <a
                 href="https://wa.me/16476857153"
+                aria-label="WhatsApp"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:scale-110 transition-transform text-blue-400"
@@ -129,11 +152,12 @@ const Header = React.memo(() => {
               </a>
               <a
                 href="https://www.tiktok.com/@precision.to"
+                aria-label="TikTok"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:scale-110 transition-transform text-blue-400"
               >
-                <FaTiktok  className="w-4 h-4" />
+                <FaTiktok className="w-4 h-4" />
               </a>
             </div>
           </div>
@@ -143,35 +167,29 @@ const Header = React.memo(() => {
       {/* Main Header */}
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-2">
         {/* Logo */}
-        <Link to="/" className="flex items-center">
+        <PrefetchLink to="/" className="flex items-center">
           <img
             src="/logo.png"
             alt="Precision Toronto Logo"
             className="w-36 h-auto mx-auto rounded-full shadow-lg"
             loading="lazy"
           />
-        </Link>
+        </PrefetchLink>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-10">
           {NAV_LINKS.map((link) => (
-            <Link
+            <NavLinkItem
               key={link.label}
-              to={link.to}
-              className={`font-medium transition-colors ${
-                isActive(link.to)
-                  ? "text-blue-400"
-                  : "text-gray-200 hover:text-blue-300"
-              }`}
-            >
-              {link.label}
-            </Link>
+              {...link}
+              isActive={isActive(link.to)}
+            />
           ))}
         </nav>
 
         {/* Right Side */}
         <div className="flex items-center gap-4">
-          <Link to="/" className="hidden md:block">
+          <PrefetchLink to="/" className="hidden md:block">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -179,10 +197,11 @@ const Header = React.memo(() => {
             >
               Book Now
             </motion.button>
-          </Link>
+          </PrefetchLink>
 
           {/* Mobile Toggle */}
           <button
+            aria-label="Toggle menu"
             className="md:hidden p-2 rounded-md border border-[#2A2F36] hover:bg-[#FFD700]/10 transition"
             onClick={() => setMenuOpen((prev) => !prev)}
           >
@@ -206,25 +225,24 @@ const Header = React.memo(() => {
             className="md:hidden w-full bg-[#14181E] border-t border-[#1F242C] shadow-lg absolute left-0 z-40"
           >
             <div className="px-6 py-6 space-y-6">
-              <ul className="space-y-5">
+              <motion.ul
+                className="space-y-5"
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+              >
                 {NAV_LINKS.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      to={link.to}
+                  <motion.li key={link.label} variants={itemVariants}>
+                    <NavLinkItem
+                      {...link}
+                      isActive={isActive(link.to)}
                       onClick={() => setMenuOpen(false)}
-                      className={`block font-medium text-lg transition-colors ${
-                        isActive(link.to)
-                          ? "text-blue-400"
-                          : "text-gray-200 hover:text-blue-300"
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
+                    />
+                  </motion.li>
                 ))}
-              </ul>
+              </motion.ul>
 
-              {/* Contact Info (reused) */}
+              {/* Contact Info */}
               <div className="pt-6 border-t border-[#1F242C] space-y-4 text-gray-300">
                 <div className="flex items-center gap-2 text-[#FFD700]">
                   <Star className="w-4 h-4 fill-current" />
@@ -232,14 +250,16 @@ const Header = React.memo(() => {
                   <span className="text-gray-400">Google Reviews</span>
                 </div>
                 {CONTACT_INFO.slice(-2).map(({ icon: Icon, text, color }) => (
-                  <div key={text} className="flex items-center gap-2">
-                    <Icon className={`w-4 h-4 ${color}`} />
-                    <span>{text}</span>
-                  </div>
+                  <ContactItem
+                    key={text}
+                    Icon={Icon}
+                    text={text}
+                    color={color}
+                  />
                 ))}
               </div>
 
-              <Link to="/" onClick={() => setMenuOpen(false)}>
+              <PrefetchLink to="/" onClick={() => setMenuOpen(false)}>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -247,7 +267,7 @@ const Header = React.memo(() => {
                 >
                   Book Now
                 </motion.button>
-              </Link>
+              </PrefetchLink>
             </div>
           </motion.div>
         )}

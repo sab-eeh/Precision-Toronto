@@ -7,6 +7,7 @@ import React, {
   lazy,
   Suspense,
   useContext,
+  memo,
 } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 import { BookingContext } from "../context/BookingContext";
 
-// ⬇️ Centralized image imports from a single folder barrel (see instructions in chat)
+// centralized assets (barrel file)
 import {
   heroBackground,
   section1,
@@ -30,7 +31,7 @@ import {
   logo,
 } from "../assets/home";
 
-// ⬇️ Lazy-load heavy/interactive UI
+// lazy heavy bits
 const CarModelViewer = lazy(() => import("../components/ui/CarModelViewer"));
 const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
 const BeforeAfterSlider = lazy(() => import("../components/BeforeAfterSlider"));
@@ -38,16 +39,113 @@ const FloatingContact = lazy(() => import("../components/FloatingContact"));
 const Header = lazy(() => import("../layout/Header"));
 const Footer = lazy(() => import("../layout/Footer"));
 
-// Simple skeletons for lazy components
+// lightweight skeletons
 const Skeleton = ({ className = "" }) => (
-  <div className={`animate-pulse bg-white/10 rounded-2xl ${className}`} />
+  <div className={`animate-pulse bg-white/6 rounded-2xl ${className}`} />
 );
 
+// ---------- Memoized UI pieces ----------
+const FeatureCard = memo(function FeatureCard({
+  Icon,
+  title,
+  description,
+  anim,
+}) {
+  return (
+    <motion.div
+      className="p-6 rounded-2xl bg-black/45 border border-white/8 shadow-md hover:shadow-blue-500/20 transition-all"
+      {...anim}
+      viewport={{ once: true }}
+    >
+      <Icon
+        className="w-10 h-10 text-blue-400 mx-auto mb-4"
+        aria-hidden="true"
+      />
+      <h3 className="font-semibold text-sm md:text-base text-blue-400 uppercase tracking-wide">
+        {title}
+      </h3>
+      <p className="mt-1 text-xs md:text-sm text-gray-400 leading-relaxed">
+        {description}
+      </p>
+    </motion.div>
+  );
+});
+
+const CarCard = memo(function CarCard({ car, onSelect, anim, fallback }) {
+  const handleClick = useCallback(
+    () => onSelect(car.type),
+    [onSelect, car.type]
+  );
+  return (
+    <motion.button
+      type="button"
+      onClick={handleClick}
+      className="text-left rounded-2xl p-5 bg-white/5 backdrop-blur-md border border-white/8 shadow-lg hover:shadow-blue-400/20 hover:ring-2 hover:ring-cyan-400/30 transition"
+      {...anim}
+      viewport={{ once: true }}
+      style={{ willChange: "transform, opacity" }}
+    >
+      <div className="h-56 flex items-center justify-center">
+        <Suspense fallback={fallback}>
+          <CarModelViewer
+            modelPath={car.modelPath}
+            modelType={car.type}
+            quality="auto"
+          />
+        </Suspense>
+      </div>
+
+      <div className="text-center mt-5">
+        <h3 className="text-lg font-semibold">{car.label}</h3>
+        <p className="text-sm text-gray-400">{car.desc}</p>
+      </div>
+    </motion.button>
+  );
+});
+
+const CarouselItem = memo(function CarouselItem({
+  car,
+  onSelect,
+  anim,
+  fallback,
+}) {
+  const handleClick = useCallback(
+    () => onSelect(car.type),
+    [onSelect, car.type]
+  );
+  return (
+    <motion.button
+      type="button"
+      key={car.type}
+      onClick={handleClick}
+      className="text-left rounded-2xl p-6 bg-gradient-to-br from-[#1a1f23] to-[#101518] backdrop-blur-lg border border-white/10 shadow-xl transition"
+      {...anim}
+      style={{ willChange: "transform, opacity" }}
+    >
+      <div className="h-56 flex items-center justify-center">
+        <Suspense fallback={fallback}>
+          <CarModelViewer
+            modelPath={car.modelPath}
+            modelType={car.type}
+            quality="low"
+          />
+        </Suspense>
+      </div>
+      <div className="text-center mt-5">
+        <h3 className="text-xl font-semibold text-white">{car.label}</h3>
+        <p className="text-sm text-gray-400 mt-1">{car.desc}</p>
+      </div>
+    </motion.button>
+  );
+});
+
+// ---------- HomePage ----------
 const HomePage = ({ onCarSelect }) => {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
+  const { booking, setBooking } = useContext(BookingContext);
 
-  // Static data memoized to avoid re-allocations
+  // static lists memoized
   const features = useMemo(
     () => [
       {
@@ -60,11 +158,7 @@ const HomePage = ({ onCarSelect }) => {
         title: "Time Efficient",
         description: "Quick turnaround without compromising quality",
       },
-      {
-        icon: MapPin,
-        title: "Mobile Service",
-        description: "We come to you",
-      },
+      { icon: MapPin, title: "Mobile Service", description: "We come to you" },
       {
         icon: Star,
         title: "5-Star Reviews",
@@ -104,9 +198,12 @@ const HomePage = ({ onCarSelect }) => {
     []
   );
 
+  // UI state
   const [currentSlide, setCurrentSlide] = useState(0);
-  const { booking, setBooking } = useContext(BookingContext);
+  const [mountedHeavy, setMountedHeavy] = useState(false); // progressive hydration
+  const [modelsPreloaded, setModelsPreloaded] = useState(false);
 
+  // handlers memoized
   const handleCarSelect = useCallback(
     (carType) => {
       if (onCarSelect) onCarSelect(carType);
@@ -117,53 +214,124 @@ const HomePage = ({ onCarSelect }) => {
   );
 
   const nextSlide = useCallback(
-    () => setCurrentSlide((prev) => (prev + 1) % cars.length),
+    () => setCurrentSlide((p) => (p + 1) % cars.length),
     [cars.length]
   );
   const prevSlide = useCallback(
-    () => setCurrentSlide((prev) => (prev - 1 + cars.length) % cars.length),
+    () => setCurrentSlide((p) => (p - 1 + cars.length) % cars.length),
     [cars.length]
   );
 
-  // 🧠 Idle-time preloading for 3D models (works if CarModelViewer exposes a static preload or if drei is present)
+  // Fade-up animation props (respect reduced motion)
+  const fadeUp = useMemo(
+    () =>
+      prefersReducedMotion
+        ? {}
+        : {
+            initial: { opacity: 0, y: 30 },
+            whileInView: { opacity: 1, y: 0 },
+            transition: { duration: 0.6, ease: "easeOut" },
+            viewport: { once: true, margin: "-10%" },
+          },
+    [prefersReducedMotion]
+  );
+
+  // progressive hydration: mount heavy content after small delay or on first interaction
   useEffect(() => {
-    const modelPaths = cars.map((c) => c.modelPath);
+    if (mountedHeavy) return;
+    let t = setTimeout(() => setMountedHeavy(true), 700); // adjust as needed
+    const onFirstInteraction = () => {
+      clearTimeout(t);
+      setMountedHeavy(true);
+      window.removeEventListener("mousemove", onFirstInteraction);
+      window.removeEventListener("touchstart", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
+    };
 
-    const preloadGLTFs = async () => {
-      try {
-        // If CarModelViewer exports a static preload(paths: string[])
-        const mod = await import("../components/ui/CarModelViewer");
-        if (typeof mod.default?.preload === "function") {
-          mod.default.preload(modelPaths);
-          return;
-        }
-      } catch {}
+    window.addEventListener("mousemove", onFirstInteraction, { passive: true });
+    window.addEventListener("touchstart", onFirstInteraction, {
+      passive: true,
+    });
+    window.addEventListener("keydown", onFirstInteraction, { passive: true });
 
-      // Fallback: try drei's useGLTF.preload
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("mousemove", onFirstInteraction);
+      window.removeEventListener("touchstart", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
+    };
+  }, [mountedHeavy]);
+
+  // idle-time + interaction-based model preloading
+  useEffect(() => {
+    if (modelsPreloaded) return;
+
+    const preloadModels = async () => {
       try {
+        // prefer drei's useGLTF.preload if available
         const drei = await import("@react-three/drei");
         if (typeof drei.useGLTF?.preload === "function") {
-          modelPaths.forEach((p) => drei.useGLTF.preload(p));
+          cars.forEach((c) => drei.useGLTF.preload(c.modelPath));
+          setModelsPreloaded(true);
+          return;
         }
-      } catch {}
+      } catch (e) {
+        // ignore if drei not present
+      }
+
+      // fallback: fetch and cache model files (fetch only minimal hint to warm browser cache)
+      try {
+        await Promise.all(
+          cars.map((c) =>
+            fetch(c.modelPath, {
+              method: "GET",
+              mode: "no-cors",
+              cache: "force-cache",
+            }).catch(() => null)
+          )
+        );
+        setModelsPreloaded(true);
+      } catch {
+        /* noop */
+      }
     };
 
     const idle = (cb) =>
       "requestIdleCallback" in window
         ? window.requestIdleCallback(cb)
-        : setTimeout(cb, 150);
-    idle(preloadGLTFs);
-  }, [cars]);
+        : setTimeout(cb, 250);
+    idle(preloadModels);
 
-  // Animation helpers
-  const fadeUp = prefersReducedMotion
-    ? {}
-    : {
-        initial: { opacity: 0, y: 40 },
-        whileInView: { opacity: 1, y: 0 },
-        transition: { duration: 0.6, ease: "easeOut" },
-        viewport: { once: true, margin: "-10%" },
-      };
+    // also preload after first user gesture
+    const onFirstGesture = () => {
+      preloadModels();
+      window.removeEventListener("mousemove", onFirstGesture);
+      window.removeEventListener("touchstart", onFirstGesture);
+      window.removeEventListener("keydown", onFirstGesture);
+    };
+
+    window.addEventListener("mousemove", onFirstGesture, {
+      passive: true,
+      once: true,
+    });
+    window.addEventListener("touchstart", onFirstGesture, {
+      passive: true,
+      once: true,
+    });
+    window.addEventListener("keydown", onFirstGesture, {
+      passive: true,
+      once: true,
+    });
+
+    return () => {
+      window.removeEventListener("mousemove", onFirstGesture);
+      window.removeEventListener("touchstart", onFirstGesture);
+      window.removeEventListener("keydown", onFirstGesture);
+    };
+  }, [cars, modelsPreloaded]);
+
+  // small optimized fallbacks we reuse
+  const carFallback = <Skeleton className="h-56 w-full" />;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0A0F11] via-[#0E1417] to-[#0A0F11] text-white overflow-x-hidden">
@@ -178,14 +346,13 @@ const HomePage = ({ onCarSelect }) => {
         <Header />
       </Suspense>
 
-      {/* Floating Contact */}
+      {/* Floating Contact (non-critical) */}
       <Suspense fallback={null}>
         <FloatingContact />
       </Suspense>
 
-      {/* HERO */}
+      {/* HERO (LCP image as <img>) */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden sm:py-4 md:py-6">
-        {/* Use an <img> for LCP instead of CSS background so the browser can prioritize & lazy/eager load */}
         <img
           src={heroBackground}
           alt="High-end car detailing background"
@@ -206,15 +373,20 @@ const HomePage = ({ onCarSelect }) => {
                 transition: { duration: 1, ease: "easeOut" },
               })}
         >
-          <Link to="/" className="flex justify-center">
+          <Link
+            to="/"
+            className="flex justify-center"
+            aria-label="Precision Toronto home"
+          >
             <img
               src={logo}
               alt="Precision Toronto Logo"
               width={176}
               height={176}
-              className="w-46 md:w-56 h-auto mx-auto rounded-full shadow-lg sm:pt-5 md:pt-5 lg:pt-0"
-              loading="lazy"
+              className="w-46 md:w-56 h-auto mx-auto rounded-full shadow-lg"
+              loading="eager"
               decoding="async"
+              fetchPriority="high"
             />
           </Link>
 
@@ -224,27 +396,18 @@ const HomePage = ({ onCarSelect }) => {
 
           {/* Features */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 mt-12 mb-12">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <motion.div
-                  key={feature.title}
-                  className="p-6 rounded-2xl bg-black/50 border border-white/10 shadow-md hover:shadow-blue-500/30 transition-all"
-                  {...fadeUp}
-                >
-                  <Icon
-                    className="w-10 h-10 text-blue-400 mx-auto mb-4"
-                    aria-hidden="true"
-                  />
-                  <h3 className="font-semibold text-sm md:text-base text-blue-400 uppercase tracking-wide">
-                    {feature.title}
-                  </h3>
-                  <p className="mt-1 text-xs md:text-sm text-gray-400 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              );
-            })}
+            {features.map((f, i) => (
+              <FeatureCard
+                key={f.title}
+                Icon={f.icon}
+                title={f.title}
+                description={f.description}
+                anim={{
+                  ...fadeUp,
+                  transition: { ...(fadeUp.transition || {}), delay: i * 0.08 },
+                }}
+              />
+            ))}
           </div>
 
           <motion.button
@@ -254,15 +417,15 @@ const HomePage = ({ onCarSelect }) => {
               })
             }
             className="px-10 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full shadow-xl transition-all sm:mb-7 lg:mb-0"
-            whileHover={prefersReducedMotion ? undefined : { scale: 1.08 }}
-            whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
+            whileHover={prefersReducedMotion ? undefined : { scale: 1.06 }}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
           >
             Get Started
           </motion.button>
         </motion.div>
       </section>
 
-      {/* Progress Tracker */}
+      {/* Progress Tracker - non-critical, lazy */}
       <Suspense
         fallback={
           <div className="px-6">
@@ -288,76 +451,51 @@ const HomePage = ({ onCarSelect }) => {
             </p>
           </div>
 
-          {/* Desktop Grid */}
+          {/* Desktop grid */}
           <div className="hidden lg:grid grid-cols-4 gap-8">
-            {cars.map((car, index) => (
-              <motion.button
-                type="button"
+            {cars.map((car, idx) => (
+              <CarCard
                 key={car.type}
-                className="text-left rounded-2xl p-5 bg-white/5 backdrop-blur-md border border-white/10 shadow-lg hover:shadow-blue-400/20 hover:ring-2 hover:ring-cyan-400/30 transition"
-                onClick={() => handleCarSelect(car.type)}
-                {...fadeUp}
-                style={{ transitionDelay: `${index * 120}ms` }}
-              >
-                <div className="h-56 flex items-center justify-center">
-                  <Suspense fallback={<Skeleton className="h-56 w-full" />}>
-                    <CarModelViewer
-                      modelPath={car.modelPath}
-                      modelType={car.type}
-                      quality="auto"
-                    />
-                  </Suspense>
-                </div>
-                <div className="text-center mt-5">
-                  <h3 className="text-lg font-semibold">{car.label}</h3>
-                  <p className="text-sm text-gray-400">{car.desc}</p>
-                </div>
-              </motion.button>
+                car={car}
+                onSelect={handleCarSelect}
+                anim={{
+                  ...fadeUp,
+                  transition: {
+                    ...(fadeUp.transition || {}),
+                    delay: idx * 0.12,
+                  },
+                }}
+                fallback={carFallback}
+              />
             ))}
           </div>
 
-          {/* Mobile / Tablet Carousel */}
+          {/* Mobile carousel */}
           <div className="block lg:hidden relative max-w-sm mx-auto">
             <AnimatePresence mode="wait">
-              <motion.button
-                type="button"
+              <CarouselItem
                 key={cars[currentSlide].type}
-                className="text-left rounded-2xl p-6 bg-gradient-to-br from-[#1a1f23] to-[#101518] backdrop-blur-lg border border-white/10 shadow-xl transition"
-                onClick={() => handleCarSelect(cars[currentSlide].type)}
-                initial={prefersReducedMotion ? false : { opacity: 0, y: 50 }}
-                animate={
-                  prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }
+                car={cars[currentSlide]}
+                onSelect={handleCarSelect}
+                anim={
+                  prefersReducedMotion
+                    ? {}
+                    : {
+                        initial: { opacity: 0, y: 50 },
+                        animate: { opacity: 1, y: 0 },
+                        exit: { opacity: 0, y: -50 },
+                        transition: { duration: 0.45 },
+                      }
                 }
-                exit={
-                  prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -50 }
-                }
-                transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
-              >
-                <div className="h-56 flex items-center justify-center">
-                  <Suspense fallback={<Skeleton className="h-56 w-full" />}>
-                    <CarModelViewer
-                      modelPath={cars[currentSlide].modelPath}
-                      modelType={cars[currentSlide].type}
-                      quality="auto"
-                    />
-                  </Suspense>
-                </div>
-                <div className="text-center mt-5">
-                  <h3 className="text-xl font-semibold text-white">
-                    {cars[currentSlide].label}
-                  </h3>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {cars[currentSlide].desc}
-                  </p>
-                </div>
-              </motion.button>
+                fallback={carFallback}
+              />
             </AnimatePresence>
 
             <div className="flex items-center justify-between mt-6 relative">
               <button
                 onClick={prevSlide}
                 aria-label="Previous vehicle"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white shadow-lg backdrop-blur-md transition"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-white/12 hover:bg-white/25 text-white shadow-lg backdrop-blur-md transition"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -379,7 +517,7 @@ const HomePage = ({ onCarSelect }) => {
               <button
                 onClick={nextSlide}
                 aria-label="Next vehicle"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white shadow-lg backdrop-blur-md transition"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-white/12 hover:bg-white/25 text-white shadow-lg backdrop-blur-md transition"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -388,25 +526,27 @@ const HomePage = ({ onCarSelect }) => {
         </div>
       </section>
 
-      {/* Before & After */}
+      {/* Before & After grid (images lazy) */}
       <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11] py-20">
         <motion.h2
           className="text-3xl md:text-4xl font-bold text-blue-400 text-center mb-6"
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
         >
           Stunning Before & After Results
         </motion.h2>
+
         <motion.p
           className="text-gray-400 text-center max-w-2xl mx-auto mb-12 px-4 leading-relaxed"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          viewport={{ once: true }}
         >
           Witness the difference precision makes — from worn-out finishes to
-          showroom-level brilliance. Every transformation reflects our passion
-          for detail and perfection.
+          showroom-level brilliance.
         </motion.p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 container mx-auto px-6">
@@ -414,27 +554,28 @@ const HomePage = ({ onCarSelect }) => {
             <motion.div
               key={idx}
               className="relative overflow-hidden rounded-xl shadow-lg group"
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: idx * 0.1 }}
+              transition={{ duration: 0.4, delay: idx * 0.08 }}
+              viewport={{ once: true }}
             >
-              {/* Before */}
               <img
                 src={pair.before}
                 alt="Before detailing"
                 className="w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 group-hover:opacity-0 transition-opacity duration-700"
                 loading="lazy"
+                decoding="async"
               />
               <span className="absolute top-3 left-3 bg-blue-600 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
                 Before
               </span>
 
-              {/* After */}
               <img
                 src={pair.after}
                 alt="After detailing"
                 className="w-full h-64 md:h-72 lg:h-80 object-cover"
                 loading="lazy"
+                decoding="async"
               />
               <span className="absolute top-3 right-3 bg-blue-800 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
                 After
@@ -444,9 +585,9 @@ const HomePage = ({ onCarSelect }) => {
         </div>
       </section>
 
-      {/* About & Why Choose Us */}
+      {/* About / Why choose us */}
       <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
-        <section className="py-20 px-6 relative">
+        <div className="py-20 px-6 relative">
           <div className="container mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
             <motion.div className="lg:w-1/2" {...fadeUp}>
               <h1 className="text-4xl font-bold text-white mb-6">
@@ -477,7 +618,14 @@ const HomePage = ({ onCarSelect }) => {
 
             <motion.div
               className="lg:w-1/2 grid grid-cols-2 gap-4 md:gap-6"
-              {...fadeUp}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0, y: 30 },
+                    whileInView: { opacity: 1, y: 0 },
+                    transition: { duration: 0.6, delay: 0.08 },
+                  })}
+              viewport={{ once: true }}
             >
               <img
                 src={section1}
@@ -499,52 +647,21 @@ const HomePage = ({ onCarSelect }) => {
               />
             </motion.div>
           </div>
-        </section>
-
-        {/* <section className="py-20 px-6 relative">
-          <div className="container mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
-            <motion.div className="lg:w-1/2" {...fadeUp}>
-              <img
-                src={section3}
-                alt="Why Choose Us"
-                className="w-full aspect-[4/3] object-cover rounded-2xl shadow-xl hover:scale-105 transition"
-                loading="lazy"
-                decoding="async"
-              />
-            </motion.div>
-
-            <motion.div className="lg:w-1/2" {...fadeUp}>
-              <h2 className="text-4xl font-bold text-white mb-6">
-                Why <span className="text-blue-400">Choose Us</span>
-              </h2>
-              <p className="text-gray-300 leading-relaxed text-lg">
-                At{" "}
-                <span className="font-semibold text-white">
-                  Precision Toronto
-                </span>
-                , we believe detailing is more than just cleaning—it’s about
-                care, protection, and bringing out the best in your vehicle. Our
-                expert team uses premium products and proven techniques to
-                deliver results that enhance both appearance and longevity.
-              </p>
-              <p className="text-gray-300 leading-relaxed text-lg mt-6">
-                Whether it’s a daily commuter, a cherished classic, or a luxury
-                performance car, we treat every vehicle with the same level of
-                respect and precision. Our goal is simple: restore beauty,
-                preserve value, and provide an exceptional detailing experience
-                that leaves every customer confident and satisfied.
-              </p>
-            </motion.div>
-          </div>
-        </section> */}
+        </div>
       </section>
 
-      {/* Before/After */}
+      {/* BeforeAfterSlider (heavy) - mount only when progressive hydration allows */}
       <section className="py-20 px-6 bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
         <div className="max-w-5xl mx-auto">
-          <Suspense fallback={<Skeleton className="h-[420px] w-full" />}>
-            <BeforeAfterSlider />
-          </Suspense>
+          {mountedHeavy ? (
+            <Suspense fallback={<Skeleton className="h-[420px] w-full" />}>
+              <BeforeAfterSlider />
+            </Suspense>
+          ) : (
+            <div className="h-[420px] w-full">
+              <Skeleton className="h-[420px] w-full" />
+            </div>
+          )}
         </div>
       </section>
 
