@@ -5,7 +5,7 @@ import { useGLTF } from "@react-three/drei";
 const modelSettings = {
   sedan: { scale: 94, y: -0.8 },
   suv: { scale: 0.28, y: -0.2 },
-  coupe: { scale: 0.78, y: -0.2 },
+  coupe: { scale: 86, y: -.8 },
   truck: { scale: 7, y: -1},
 };
 

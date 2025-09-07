@@ -12,11 +12,11 @@ import suv2 from "./suv2.webp";
 import suv3 from "./suv3.webp";
 import truck1 from "./truck1.webp";
 import truck2 from "./truck2.webp";
-import truck3 from "./truck3.webp";
+import truck3 from "./truck3.avif";
 import coupe1 from "./coupe1.webp";
 import coupe2 from "./coupe2.webp";
 import coupe3 from "./coupe3.webp";
-import enginewash from "./engine.webp"
+import enginewash from "./engine.jpg"
 
 export const serviceImages = {
   sedan: [sedan1, sedan2, sedan3, enginewash , pc1 , pc2 , pc3 , ceramic , tint  ],

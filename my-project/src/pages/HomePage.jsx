@@ -6,7 +6,7 @@ import React, {
   useState,
   lazy,
   Suspense,
-  useContext
+  useContext,
 } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -26,6 +26,7 @@ import {
   section1,
   section2,
   section3,
+  beforeAfterPairs,
   logo,
 } from "../assets/home";
 
@@ -52,7 +53,7 @@ const HomePage = ({ onCarSelect }) => {
       {
         icon: Shield,
         title: "Premium Protection",
-        description: "Ceramic coating and paint protection",
+        description: "Protecting and maintaining your vehicle",
       },
       {
         icon: Clock,
@@ -62,7 +63,7 @@ const HomePage = ({ onCarSelect }) => {
       {
         icon: MapPin,
         title: "Mobile Service",
-        description: "We come to your location in Toronto",
+        description: "We come to you",
       },
       {
         icon: Star,
@@ -109,7 +110,7 @@ const HomePage = ({ onCarSelect }) => {
   const handleCarSelect = useCallback(
     (carType) => {
       if (onCarSelect) onCarSelect(carType);
-      setBooking({ ...booking, carType })
+      setBooking({ ...booking, carType });
       navigate("/services");
     },
     [navigate, onCarSelect, booking, setBooking]
@@ -248,11 +249,9 @@ const HomePage = ({ onCarSelect }) => {
 
           <motion.button
             onClick={() =>
-              document
-                .getElementById("car-selection")
-                ?.scrollIntoView({
-                  behavior: prefersReducedMotion ? "auto" : "smooth",
-                })
+              document.getElementById("car-selection")?.scrollIntoView({
+                behavior: prefersReducedMotion ? "auto" : "smooth",
+              })
             }
             className="px-10 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full shadow-xl transition-all sm:mb-7 lg:mb-0"
             whileHover={prefersReducedMotion ? undefined : { scale: 1.08 }}
@@ -389,6 +388,62 @@ const HomePage = ({ onCarSelect }) => {
         </div>
       </section>
 
+      {/* Before & After */}
+      <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11] py-20">
+        <motion.h2
+          className="text-3xl md:text-4xl font-bold text-blue-400 text-center mb-6"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          Stunning Before & After Results
+        </motion.h2>
+        <motion.p
+          className="text-gray-400 text-center max-w-2xl mx-auto mb-12 px-4 leading-relaxed"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          Witness the difference precision makes — from worn-out finishes to
+          showroom-level brilliance. Every transformation reflects our passion
+          for detail and perfection.
+        </motion.p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 container mx-auto px-6">
+          {beforeAfterPairs.map((pair, idx) => (
+            <motion.div
+              key={idx}
+              className="relative overflow-hidden rounded-xl shadow-lg group"
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: idx * 0.1 }}
+            >
+              {/* Before */}
+              <img
+                src={pair.before}
+                alt="Before detailing"
+                className="w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 group-hover:opacity-0 transition-opacity duration-700"
+                loading="lazy"
+              />
+              <span className="absolute top-3 left-3 bg-blue-600 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
+                Before
+              </span>
+
+              {/* After */}
+              <img
+                src={pair.after}
+                alt="After detailing"
+                className="w-full h-64 md:h-72 lg:h-80 object-cover"
+                loading="lazy"
+              />
+              <span className="absolute top-3 right-3 bg-blue-800 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
+                After
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* About & Why Choose Us */}
       <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
         <section className="py-20 px-6 relative">
@@ -403,16 +458,20 @@ const HomePage = ({ onCarSelect }) => {
                 <span className="font-semibold text-white">
                   Precision Toronto
                 </span>
-                , we redefine automotive detailing as a luxury experience. Every
-                service we provide is tailored to elevate your vehicle to
-                showroom condition, using only the highest-quality products and
-                cutting-edge techniques.
+                , we elevate automotive detailing into a luxury experience.
+                Every vehicle we touch is treated with precision, care, and
+                world-class techniques designed to restore its true beauty.
               </p>
               <p className="text-gray-300 leading-relaxed text-lg mt-6">
-                From flawless paint correction to deep interior restoration, our
-                attention to detail ensures your car reflects elegance and
-                prestige. We specialize in luxury, exotic, and performance
-                vehicles—treating each one with precision and respect.
+                From flawless paint correction to meticulous interior
+                restoration, we specialize in luxury, exotic, and performance
+                cars—delivering showroom-level results that highlight elegance
+                and prestige.
+              </p>
+              <p className="text-gray-300 leading-relaxed text-lg mt-6">
+                Our mission is simple: to transform your vehicle into a
+                reflection of perfection, combining passion with innovation in
+                every detail.
               </p>
             </motion.div>
 
@@ -423,7 +482,7 @@ const HomePage = ({ onCarSelect }) => {
               <img
                 src={section1}
                 alt="Luxury detailing"
-                className="w-full h-[260px] md:h-[280px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
+                className="w-full h-[260px] md:h-[380px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
                 loading="lazy"
                 decoding="async"
                 width={640}
@@ -432,7 +491,7 @@ const HomePage = ({ onCarSelect }) => {
               <img
                 src={section2}
                 alt="Interior cleaning"
-                className="w-full h-[260px] md:h-[280px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
+                className="w-full h-[260px] md:h-[380px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
                 loading="lazy"
                 decoding="async"
                 width={640}
@@ -442,7 +501,7 @@ const HomePage = ({ onCarSelect }) => {
           </div>
         </section>
 
-        <section className="py-20 px-6 relative">
+        {/* <section className="py-20 px-6 relative">
           <div className="container mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
             <motion.div className="lg:w-1/2" {...fadeUp}>
               <img
@@ -477,7 +536,7 @@ const HomePage = ({ onCarSelect }) => {
               </p>
             </motion.div>
           </div>
-        </section>
+        </section> */}
       </section>
 
       {/* Before/After */}

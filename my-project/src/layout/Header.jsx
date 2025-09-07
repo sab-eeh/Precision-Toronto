@@ -26,7 +26,7 @@ const NAV_LINKS = [
 const CONTACT_INFO = [
   {
     icon: Mail,
-    text: "info@precisiontoronto.com",
+    text: "precisiontoronto@gmail.com",
     color: "text-blue-400",
   },
   {

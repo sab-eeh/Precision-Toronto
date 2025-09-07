@@ -69,7 +69,7 @@ const Contact = () => {
                   </label>
                   <input
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="your@example.com"
                     className="w-full px-4 py-3 rounded-lg bg-[#0B1315] border border-gray-700 text-white focus:ring-2 focus:ring-blue-400 outline-none transition"
                   />
                 </div>
@@ -123,7 +123,7 @@ const Contact = () => {
                 <Mail className="w-6 h-6 text-blue-400" />
                 <div>
                   <p className="font-medium text-white">Email</p>
-                  <p className="text-gray-400">info@precisiontoronto.com</p>
+                  <p className="text-gray-400">precisiontoronto@gmail.com</p>
                 </div>
               </div>
 

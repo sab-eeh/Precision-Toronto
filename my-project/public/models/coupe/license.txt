@@ -1,11 +1,11 @@
 Model Information:
-* title:	Porsche Mission E
-* source:	https://sketchfab.com/3d-models/porsche-mission-e-0265b34846cc4380bfb6f5d73203f063
-* author:	kevin (ケビン) (https://sketchfab.com/sohyalebret)
+* title:	2020 BMW M8 Coupe
+* source:	https://sketchfab.com/3d-models/2020-bmw-m8-coupe-f69bc7c528804552b2ff032d7c1e9fb4
+* author:	Outlaw Games™ (https://sketchfab.com/WarEntertainment)
 
 Model License:
-* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
-* requirements:	Author must be credited. Commercial use is allowed.
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
 
 If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
-This work is based on "Porsche Mission E" (https://sketchfab.com/3d-models/porsche-mission-e-0265b34846cc4380bfb6f5d73203f063) by kevin (ケビン) (https://sketchfab.com/sohyalebret) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+This work is based on "2020 BMW M8 Coupe" (https://sketchfab.com/3d-models/2020-bmw-m8-coupe-f69bc7c528804552b2ff032d7c1e9fb4) by Outlaw Games™ (https://sketchfab.com/WarEntertainment) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)

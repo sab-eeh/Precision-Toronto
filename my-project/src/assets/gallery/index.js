@@ -22,6 +22,15 @@ export const beforeAfterPairs = [
   { before: before3, after: after3 },
 ];
 
+import post1 from "./post1.webp"
+import post2 from "./post2.webp"
+import post3 from "./post3.webp"
+
+
+export const posts = [
+  post1, post2 , post3
+]
+
 import video1 from "./video-1.mp4"
 import video2 from "./video-2.mp4"
 import video3 from "./video-3.mp4"

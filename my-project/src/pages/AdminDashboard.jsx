@@ -18,16 +18,19 @@ import {
   Filter,
   X,
   Check,
+  Download,
+  FilePlus,
 } from "lucide-react";
 
 /**
- * Admin dashboard — redesigned
+ * AdminDashboard (responsive, enhanced)
  *
- * Notes:
- * - Uses Tailwind classes (assumes Tailwind is configured).
- * - Hides scrollbars visually but allows scrolling on overflow.
- * - Approve / toggle-service actions send PUT to /bookings/:id with updated payload.
- *   Adjust backend expectations if needed.
+ * - Keeps your dark theme and original logic.
+ * - Improves responsiveness so elements won't overlap on small screens.
+ * - Adds: summary cards, bulk select & delete, export CSV, clearer wrapping/truncation.
+ * - Uses plain React + Tailwind classes.
+ *
+ * Replace original AdminDashboard.jsx with this file.
  */
 
 const API = "http://localhost:5000/api";
@@ -95,7 +98,6 @@ function uniqueById(items) {
   return Array.from(map.values());
 }
 
-/* Helper: compute per-service scheduled times using booking.startAt and service.duration (min) */
 function computeServiceSchedule(startAtISO, services = []) {
   if (!startAtISO || !Array.isArray(services)) return [];
   const start = new Date(startAtISO);
@@ -117,7 +119,6 @@ function computeServiceSchedule(startAtISO, services = []) {
   return out;
 }
 
-/* Helper: is booking "new"? (within last X minutes) */
 function isNewBooking(createdAt, minutes = 10) {
   if (!createdAt) return false;
   const created = new Date(createdAt);
@@ -140,10 +141,14 @@ export default function AdminDashboard() {
   const [pageSize, setPageSize] = useState(10);
 
   const [toast, setToast] = useState(null);
-  const [expandedBookingId, setExpandedBookingId] = useState(null); // inline detail panel
-  const [modalEditing, setModalEditing] = useState(null); // for edit modal (if used)
+  const [expandedBookingId, setExpandedBookingId] = useState(null);
+  const [modalEditing, setModalEditing] = useState(null);
 
-  // auth gate + fetch
+  // New enhanced state:
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [selectAllOnPage, setSelectAllOnPage] = useState(false);
+
+  // auth gate + initial fetch
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
     if (!token) {
@@ -180,12 +185,14 @@ export default function AdminDashboard() {
     try {
       setRefreshing(true);
       await fetchBookings();
+      setToast({ type: "success", message: "Refreshed" });
+    } catch (e) {
+      setToast({ type: "error", message: "Refresh failed" });
     } finally {
       setRefreshing(false);
     }
   }
 
-  // Approve booking (set status => confirmed)
   async function approveBooking(b) {
     if (!b?._id) return;
     try {
@@ -209,23 +216,19 @@ export default function AdminDashboard() {
     }
   }
 
-  // Toggle individual service done flag and persist booking.services
   async function toggleServiceDone(booking, serviceIndex) {
     try {
       const services = Array.isArray(booking.services)
         ? [...booking.services]
         : [];
-      // ensure service exists
       if (!services[serviceIndex]) return;
       const current = !!services[serviceIndex].done;
       services[serviceIndex] = { ...services[serviceIndex], done: !current };
 
-      // optimistic update locally
       setBookings((prev) =>
         prev.map((b) => (b._id === booking._id ? { ...b, services } : b))
       );
 
-      // send to server — backend must accept updated services array
       const res = await fetch(`${API}/bookings/${booking._id}`, {
         method: "PUT",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
@@ -244,7 +247,6 @@ export default function AdminDashboard() {
         type: "error",
         message: e.message || "Service update failed",
       });
-      // refetch to get consistent state
       fetchBookings();
     }
   }
@@ -261,10 +263,110 @@ export default function AdminDashboard() {
       if (!res.ok) throw new Error(data?.message || "Delete failed");
       setBookings((prev) => prev.filter((b) => b._id !== id));
       setToast({ type: "success", message: "Booking deleted" });
+      setSelectedIds((s) => {
+        const next = new Set(s);
+        next.delete(id);
+        return next;
+      });
     } catch (e) {
       console.error("Delete error:", e);
       setToast({ type: "error", message: e.message || "Delete failed" });
     }
+  }
+
+  // Bulk delete
+  async function bulkDeleteSelected() {
+    if (selectedIds.size === 0) {
+      setToast({ type: "error", message: "No bookings selected" });
+      return;
+    }
+    if (
+      !window.confirm(
+        `Delete ${selectedIds.size} selected booking(s)? This cannot be undone.`
+      )
+    )
+      return;
+    try {
+      // try to delete in parallel (adjust backend if you have batch delete)
+      const ids = Array.from(selectedIds);
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`${API}/bookings/${id}`, {
+            method: "DELETE",
+            headers: authHeaders(),
+          })
+        )
+      );
+      setBookings((prev) => prev.filter((b) => !selectedIds.has(b._id)));
+      setSelectedIds(new Set());
+      setSelectAllOnPage(false);
+      setToast({ type: "success", message: "Selected bookings deleted" });
+    } catch (e) {
+      console.error("Bulk delete error:", e);
+      setToast({ type: "error", message: "Bulk delete failed" });
+    }
+  }
+
+  // Export visible (filtered) bookings to CSV
+  function exportCSV(items) {
+    if (!items || items.length === 0) {
+      setToast({ type: "error", message: "No data to export" });
+      return;
+    }
+    const headers = [
+      "ID",
+      "Client",
+      "Phone",
+      "Email",
+      "Vehicle",
+      "Services",
+      "StartAt",
+      "EndAt",
+      "Status",
+      "TotalPrice",
+    ];
+    const rows = items.map((b) => {
+      const vehicle = b?.vehicle
+        ? [b.vehicle.make, b.vehicle.model, b.vehicle.year]
+            .filter(Boolean)
+            .join(" ")
+        : "";
+      const servicesTitles =
+        Array.isArray(b?.services) && b.services.length
+          ? b.services
+              .map((s) => s?.title)
+              .filter(Boolean)
+              .join("; ")
+          : "";
+      return [
+        b._id,
+        b.customerName || "",
+        b.phone || "",
+        b.email || "",
+        vehicle,
+        servicesTitles,
+        b.startAt || "",
+        b.endAt || "",
+        b.status || "",
+        typeof b.totalPrice === "number" ? b.totalPrice : "",
+      ];
+    });
+    const csv = [headers, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bookings_export_${new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/[:T]/g, "-")}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setToast({ type: "success", message: "Export started" });
   }
 
   // Filters + sort + paginate
@@ -322,28 +424,82 @@ export default function AdminDashboard() {
     setPage(1);
   }, [q, statusFilter, sortKey, sortDir, pageSize]);
 
-  // UI: hide native scrollbars but allow scroll (no visible scrollbar)
-  // Tailwind doesn't have direct utilities for ::-webkit-scrollbar, so we include inline styles where needed.
+  // Update page selection when pageItems change
+  useEffect(() => {
+    if (selectAllOnPage) {
+      const next = new Set(selectedIds);
+      pageItems.forEach((b) => next.add(b._id));
+      setSelectedIds(next);
+    } else {
+      // ensure if selectAllOnPage is false, we do not remove existing cross-page selections
+      // but we don't auto-clear anything here.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageItems]);
+
+  // Toggle one selection
+  function toggleSelect(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // Toggle select all on current page
+  function toggleSelectAllOnPage() {
+    if (selectAllOnPage) {
+      // unselect page items
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageItems.forEach((b) => next.delete(b._id));
+        return next;
+      });
+      setSelectAllOnPage(false);
+    } else {
+      // select page items
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageItems.forEach((b) => next.add(b._id));
+        return next;
+      });
+      setSelectAllOnPage(true);
+    }
+  }
+
+  // Summary calculations
+  const summary = useMemo(() => {
+    const total = bookings.reduce((s, b) => s + (Number(b.totalPrice) || 0), 0);
+    const counts = bookings.reduce((acc, b) => {
+      acc[b.status] = (acc[b.status] || 0) + 1;
+      return acc;
+    }, {});
+    return { totalRevenue: total, counts, totalBookings: bookings.length };
+  }, [bookings]);
+
+  // Prevent overlap & long text - utility class usage in markup
+
   return (
     <div
       className="min-h-screen bg-gradient-to-bl from-gray-950 via-gray-900 to-gray-800 text-gray-100"
-      style={{
-        // Ensure no horizontal scrollbar visually
-        overflowX: "hidden",
-      }}
+      style={{ overflowX: "hidden" }}
     >
       {/* TOP HEADER */}
-      <header className="flex items-center justify-between px-4 md:px-8 py-3 border-b border-gray-800">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-8 py-3 border-b border-gray-800 gap-3">
         <div className="flex items-center gap-4">
           <div className="text-sm text-gray-400 hidden md:block">
             Welcome back, Haris
           </div>
-          <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-700/60 to-violet-700/40 border border-gray-800 text-sm font-semibold">
+          <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-700/60 to-violet-700/40 border border-gray-800 text-sm font-semibold whitespace-nowrap">
             Haris Dashboard
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ml-auto">
+          <div className="hidden sm:block text-sm text-gray-400 mr-2">
+            Logged as Admin
+          </div>
           <button
             onClick={() => {
               localStorage.removeItem("adminToken");
@@ -360,35 +516,62 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* CONTENT */}
+      {/* MAIN */}
       <main className="p-4 md:p-6">
-        {/* Controls */}
-        <section className="mb-5">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Bookings</h1>
-              <p className="text-gray-400 text-sm mt-1">
-                Live bookings — approve, schedule and track service progress.
-              </p>
+        {/* Title + summary cards */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Bookings</h1>
+            <p className="text-gray-400 text-sm mt-1 max-w-xl">
+              Live bookings — approve, schedule and track service progress. Use
+              the controls to filter, sort, export or perform bulk actions.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 w-full lg:w-auto mt-2 lg:mt-0">
+            <div className="px-3 py-2 rounded-xl bg-gray-900/40 border border-gray-800 text-xs text-gray-300 flex items-center gap-3 min-w-[160px]">
+              <div className="text-sm font-semibold">
+                {summary.totalBookings}
+              </div>
+              <div className="text-[11px] text-gray-400">Total bookings</div>
             </div>
 
-            <div className="flex flex-wrap gap-2 items-center">
-              <div className="relative">
+            <div className="px-3 py-2 rounded-xl bg-gray-900/40 border border-gray-800 text-xs text-gray-300 flex items-center gap-3 min-w-[160px]">
+              <div className="text-sm font-semibold">
+                ${summary.totalRevenue.toFixed(2)}
+              </div>
+              <div className="text-[11px] text-gray-400">Revenue</div>
+            </div>
+
+            <div className="px-3 py-2 rounded-xl bg-gray-900/40 border border-gray-800 text-xs text-gray-300 flex items-center gap-3 min-w-[160px]">
+              <div className="text-sm font-semibold">
+                {summary.counts.pending || 0}
+              </div>
+              <div className="text-[11px] text-gray-400">Pending</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <section className="mb-5">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search name, vehicle, phone, service…"
-                  className="pl-9 pr-3 py-2 rounded-xl bg-gray-900 border border-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                  className="pl-9 pr-3 py-2 rounded-xl bg-gray-900 border border-gray-800 text-sm w-full focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                 />
               </div>
 
-              <div className="relative">
+              <div className="relative w-full">
                 <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-9 pr-8 py-2 rounded-xl bg-gray-900 border border-gray-800 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                  className="pl-9 pr-8 py-2 rounded-xl bg-gray-900 border border-gray-800 text-sm w-full appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                 >
                   <option value="all">All statuses</option>
                   {STATUS_OPTIONS.map((s) => (
@@ -399,7 +582,7 @@ export default function AdminDashboard() {
                 </select>
               </div>
 
-              <div className="relative">
+              <div className="relative w-full">
                 <select
                   value={`${sortKey}:${sortDir}`}
                   onChange={(e) => {
@@ -407,7 +590,7 @@ export default function AdminDashboard() {
                     setSortKey(k);
                     setSortDir(d);
                   }}
-                  className="pl-3 pr-8 py-2 rounded-xl bg-gray-900 border border-gray-800 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                  className="pl-3 pr-8 py-2 rounded-xl bg-gray-900 border border-gray-800 text-sm w-full appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                 >
                   <option value="startAt:desc">Newest first</option>
                   <option value="startAt:asc">Oldest first</option>
@@ -419,11 +602,11 @@ export default function AdminDashboard() {
                 </select>
               </div>
 
-              <div className="relative">
+              <div className="flex gap-2">
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="pl-3 pr-8 py-2 rounded-xl bg-gray-900 border border-gray-800 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                  className="pl-3 pr-8 py-2 rounded-xl bg-gray-900 border border-gray-800 text-sm w-1/2 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                 >
                   {[10, 20, 50, 100].map((n) => (
                     <option key={n} value={n}>
@@ -431,34 +614,75 @@ export default function AdminDashboard() {
                     </option>
                   ))}
                 </select>
+
+                <button
+                  onClick={refresh}
+                  disabled={refreshing}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800/70 text-sm disabled:opacity-60 w-1/2 justify-center"
+                  title="Refresh"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+                  />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Right side bulk/export */}
+            <div className="flex items-center gap-2 mt-2 md:mt-0">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-400 hidden sm:inline">
+                  Selected:
+                </label>
+                <div className="text-sm font-medium">{selectedIds.size}</div>
               </div>
 
               <button
-                onClick={refresh}
-                disabled={refreshing}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800/70 text-sm disabled:opacity-60"
-                title="Refresh"
+                onClick={() => exportCSV(filtered)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800/60 text-sm"
+                title="Export all filtered"
               >
-                <RefreshCw
-                  className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
-                />
-                Refresh
+                <Download className="h-4 w-4" />
+                Export
+              </button>
+
+              <button
+                onClick={() => exportCSV(pageItems)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800/60 text-sm"
+                title="Export page"
+              >
+                <FilePlus className="h-4 w-4" />
+                Export page
+              </button>
+
+              <button
+                onClick={bulkDeleteSelected}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-red-700 hover:bg-red-600 text-white text-sm"
+                title="Delete selected"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
               </button>
             </div>
           </div>
         </section>
 
-        {/* Bookings list: responsive grid. Large: table-like, Mobile: cards */}
-        <section
-          className="space-y-4"
-          style={{
-            // hide scrollbar visuals globally for this container
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-        >
-          {/* HEADER ROW (desktop) */}
+        {/* Bookings list header (desktop table header) */}
+        <section className="space-y-4">
           <div className="hidden lg:grid grid-cols-12 gap-4 items-center px-3 py-2 text-xs text-gray-400 border-b border-gray-800">
+            <div className="col-span-1 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={
+                  pageItems.every((b) => selectedIds.has(b._id)) &&
+                  pageItems.length > 0
+                }
+                onChange={toggleSelectAllOnPage}
+                className="w-4 h-4 rounded bg-gray-800 border border-gray-700"
+                aria-label="Select all on page"
+              />
+            </div>
             <div className="col-span-3 flex items-center gap-2">Client</div>
             <div className="col-span-2">Vehicle</div>
             <div className="col-span-2">Services</div>
@@ -470,15 +694,11 @@ export default function AdminDashboard() {
 
           {/* Body */}
           {loading ? (
-            // skeletons
             Array.from({ length: pageSize }).map((_, i) => (
               <div
                 key={i}
                 className="animate-pulse rounded-2xl bg-gray-900/40 border border-gray-800 p-4"
-              >
-                <div className="h-4 w-3/4 bg-gray-800 rounded mb-2" />
-                <div className="h-3 w-1/2 bg-gray-800 rounded" />
-              </div>
+              />
             ))
           ) : pageItems.length === 0 ? (
             <div className="rounded-2xl border border-gray-800 p-6 text-center text-gray-400">
@@ -502,25 +722,36 @@ export default function AdminDashboard() {
               const mins = minutesBetween(b.startAt, b.endAt);
               const isNew = isNewBooking(b.createdAt || b.createdAtAt, 15);
               const expanded = expandedBookingId === b._id;
-
-              // compute per-service schedule
               const sched = computeServiceSchedule(b.startAt, b.services || []);
+              const checked = selectedIds.has(b._id);
 
               return (
                 <article
                   key={b._id}
-                  className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/40 to-gray-900/10 p-4 grid grid-cols-1 lg:grid-cols-12 gap-4"
+                  className="rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900/40 to-gray-900/10 p-4 space-y-3"
                 >
-                  {/* Desktop columns */}
-                  <div className="col-span-3 flex items-start gap-3">
+                  {/* Selection checkbox */}
+                  <div className="flex items-start">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleSelect(b._id)}
+                      className="w-4 h-4 rounded bg-gray-800 border border-gray-700"
+                      aria-label={`Select booking ${b._id}`}
+                    />
+                  </div>
+
+                  {/* Client info */}
+                  <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-tr from-indigo-700 to-violet-600 flex items-center justify-center text-white font-semibold">
                       {b.customerName
                         ? b.customerName.slice(0, 1).toUpperCase()
                         : "U"}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium">
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium truncate">
                           {b.customerName || "N/A"}
                         </h3>
                         {isNew && (
@@ -534,54 +765,51 @@ export default function AdminDashboard() {
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">
+                      <div className="text-xs text-gray-400 mt-1 truncate">
                         {b.phone || ""} {b.email ? `• ${b.email}` : ""}
                       </div>
                     </div>
                   </div>
 
-                  <div className="col-span-2 flex items-center gap-2 text-sm text-gray-300">
-                    <Car className="h-4 w-4 text-gray-400" />
-                    <div>{vehicle}</div>
-                  </div>
-
-                  <div className="col-span-2 text-sm text-gray-300 hidden lg:flex items-center">
-                    <Wrench className="h-4 w-4 text-gray-400 mr-2" />
-                    <div className="line-clamp-2">{servicesTitles}</div>
-                  </div>
-
-                  <div className="col-span-2 flex items-center text-sm text-gray-300">
-                    <Calendar className="h-4 w-4 text-gray-400 mr-2" />
-                    <div>{range}</div>
-                  </div>
-
-                  <div className="col-span-1 flex items-center text-sm text-gray-300">
-                    <Clock className="h-4 w-4 text-gray-400 mr-2" />
-                    <div>{mins ? `${mins} min` : "—"}</div>
-                  </div>
-
-                  <div className="col-span-1 flex items-center text-sm text-gray-300">
-                    <DollarSign className="h-4 w-4 text-gray-400 mr-2" />
-                    <div className="font-medium">
-                      {typeof b.totalPrice === "number"
-                        ? `$${b.totalPrice}`
-                        : "—"}
+                  {/* Vehicle, services, time, duration, total */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-sm text-gray-300">
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{vehicle}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{servicesTitles}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{range}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span>{mins ? `${mins} min` : "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="font-medium truncate">
+                        {typeof b.totalPrice === "number"
+                          ? `$${b.totalPrice}`
+                          : "—"}
+                      </span>
                     </div>
                   </div>
 
-                  {/* ACTIONS column */}
-                  <div className="col-span-1 flex items-center justify-end gap-2">
-                    {/* approve button shown when pending */}
+                  {/* Action buttons */}
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
                     {b.status === "pending" ? (
                       <button
                         onClick={() => approveBooking(b)}
-                        className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-900 font-semibold text-xs shadow"
-                        title="Approve booking"
+                        className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-900 font-semibold text-xs shadow"
                       >
                         Approve
                       </button>
                     ) : (
-                      <span className="px-3 py-1.5 rounded-xl text-xs bg-gray-800/60 border border-gray-700">
+                      <span className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl text-xs bg-gray-800/60 border border-gray-700 text-center">
                         {b.status}
                       </span>
                     )}
@@ -590,34 +818,24 @@ export default function AdminDashboard() {
                       onClick={() =>
                         setExpandedBookingId(expanded ? null : b._id)
                       }
-                      className="px-3 py-1.5 rounded-xl bg-gray-900/60 border border-gray-800 hover:bg-gray-800/70 text-sm"
-                      title="View details"
+                      className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-gray-900/60 border border-gray-800 hover:bg-gray-800/70 text-sm"
                     >
                       {expanded ? "Close" : "Details"}
                     </button>
 
                     <button
                       onClick={() => deleteBooking(b._id)}
-                      className="px-2 py-1.5 rounded-xl bg-red-700 hover:bg-red-600 text-white text-xs"
-                      title="Delete booking"
+                      className="flex-1 sm:flex-none px-3 py-1.5 rounded-xl bg-red-700 hover:bg-red-600 text-white text-xs"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 inline mr-1" />
+                      Delete
                     </button>
                   </div>
 
-                  {/* small-card mobile: show basic service list below */}
-                  <div className="lg:hidden col-span-12 text-sm text-gray-300 mt-2">
-                    <div className="flex items-center gap-2">
-                      <Wrench className="h-4 w-4 text-gray-400" />
-                      <div className="truncate">{servicesTitles}</div>
-                    </div>
-                  </div>
-
-                  {/* EXPANDED DETAILS PANEL */}
+                  {/* Expanded panel */}
                   {expanded && (
-                    <div className="col-span-12 mt-3 rounded-xl bg-gray-900/40 border border-gray-800 p-4">
+                    <div className="mt-3 rounded-xl bg-gray-900/40 border border-gray-800 p-4 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Left: user & vehicle */}
                         <div className="space-y-2">
                           <h4 className="text-sm text-gray-300 font-semibold">
                             Client
@@ -645,8 +863,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        {/* Middle: services timeline */}
-                        <div className="md:col-span-2">
+                        <div className="md:col-span-2 space-y-3">
                           <div className="flex items-center justify-between">
                             <h4 className="text-sm text-gray-300 font-semibold">
                               Services
@@ -656,7 +873,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          <div className="mt-3 space-y-3">
+                          <div className="space-y-3">
                             {sched.length === 0 ? (
                               <div className="text-sm text-gray-400">
                                 No services listed.
@@ -679,9 +896,9 @@ export default function AdminDashboard() {
                                 return (
                                   <div
                                     key={idx}
-                                    className="flex items-start gap-3 p-3 rounded-lg bg-gray-900/30 border border-gray-800"
+                                    className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-900/30 border border-gray-800"
                                   >
-                                    <div className="w-8 flex items-center justify-center">
+                                    <div className="flex items-center gap-2 md:w-1/4">
                                       <div
                                         className={`w-3 h-3 rounded-full ${
                                           isDone
@@ -693,70 +910,53 @@ export default function AdminDashboard() {
                                             : "bg-gray-500"
                                         }`}
                                       ></div>
+                                      <div className="text-sm text-gray-100 font-medium">
+                                        {s.title || s.name || "Service"}
+                                      </div>
                                     </div>
 
                                     <div className="flex-1">
-                                      <div className="flex items-center justify-between gap-3">
-                                        <div>
-                                          <div className="font-medium text-gray-100">
-                                            {s.title || s.name || "Service"}
-                                          </div>
-                                          <div className="text-xs text-gray-400">
-                                            {s.description || s.note || ""}
-                                          </div>
-                                        </div>
-                                        <div className="text-xs text-gray-400 text-right">
-                                          <div>
-                                            {new Date(
-                                              s._schedStart
-                                            ).toLocaleTimeString([], {
-                                              hour: "2-digit",
-                                              minute: "2-digit",
-                                            })}{" "}
-                                            -{" "}
-                                            {new Date(
-                                              s._schedEnd
-                                            ).toLocaleTimeString([], {
-                                              hour: "2-digit",
-                                              minute: "2-digit",
-                                            })}
-                                          </div>
-                                          <div className="mt-1">
-                                            {s._durationMin
-                                              ? `${s._durationMin} min`
-                                              : ""}
-                                          </div>
-                                        </div>
+                                      <div className="text-xs text-gray-400">
+                                        {s.description || s.note || ""}
                                       </div>
+                                      <div className="text-xs text-gray-400">
+                                        {new Date(
+                                          s._schedStart
+                                        ).toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}{" "}
+                                        -{" "}
+                                        {new Date(
+                                          s._schedEnd
+                                        ).toLocaleTimeString([], {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
+                                        {s._durationMin
+                                          ? ` • ${s._durationMin} min`
+                                          : ""}
+                                      </div>
+                                    </div>
 
-                                      <div className="mt-2 flex items-center gap-2">
-                                        <span
-                                          className="px-2 py-0.5 rounded-full text-xs font-semibold"
-                                          style={{
-                                            background: isDone
-                                              ? "rgba(16,185,129,0.12)"
-                                              : "rgba(148,163,184,0.06)",
-                                          }}
-                                        >
-                                          {stateLabel}
-                                        </span>
-
-                                        <button
-                                          onClick={() =>
-                                            toggleServiceDone(b, idx)
-                                          }
-                                          className={`text-xs px-2 py-1 rounded-xl ${
-                                            isDone
-                                              ? "bg-emerald-600 hover:bg-emerald-500"
-                                              : "bg-gray-800/60 hover:bg-gray-800/80"
-                                          } text-white`}
-                                        >
-                                          {isDone ? "Mark undone" : "Mark done"}
-                                        </button>
-
-                                        <div className="ml-auto text-xs text-gray-400">
-                                          {s.price ? `$${s.price}` : ""}
-                                        </div>
+                                    <div className="flex items-center gap-2 mt-2 md:mt-0 md:ml-auto">
+                                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-800/50">
+                                        {stateLabel}
+                                      </span>
+                                      <button
+                                        onClick={() =>
+                                          toggleServiceDone(b, idx)
+                                        }
+                                        className={`text-xs px-2 py-1 rounded-xl ${
+                                          isDone
+                                            ? "bg-emerald-600 hover:bg-emerald-500"
+                                            : "bg-gray-800/60 hover:bg-gray-800/80"
+                                        } text-white`}
+                                      >
+                                        {isDone ? "Mark undone" : "Mark done"}
+                                      </button>
+                                      <div className="text-xs text-gray-400">
+                                        {s.price ? `$${s.price}` : ""}
                                       </div>
                                     </div>
                                   </div>
@@ -765,8 +965,8 @@ export default function AdminDashboard() {
                             )}
                           </div>
 
-                          {/* Booking notes & admin actions */}
-                          <div className="mt-4 flex flex-col md:flex-row items-start md:items-center gap-3 justify-between">
+                          {/* Notes + buttons */}
+                          <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between mt-4">
                             <div className="flex-1">
                               <h4 className="text-sm text-gray-300 font-semibold">
                                 Notes
@@ -776,10 +976,9 @@ export default function AdminDashboard() {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <button
                                 onClick={() => {
-                                  // open edit modal inline: reuse modalEditing
                                   setModalEditing({
                                     ...b,
                                     _localStartAt: toDatetimeLocalValue(
@@ -789,20 +988,18 @@ export default function AdminDashboard() {
                                     _note: b.notes || b.internalNotes || "",
                                   });
                                 }}
-                                className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm"
+                                className="flex-1 sm:flex-none px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm"
                               >
                                 Edit booking
                               </button>
-
                               <button
                                 onClick={() => {
-                                  // quick confirm / toggle
                                   if (b.status !== "confirmed")
                                     approveBooking(b);
                                 }}
-                                className={`px-3 py-2 rounded-xl text-sm ${
+                                className={`flex-1 sm:flex-none px-3 py-2 rounded-xl text-sm ${
                                   b.status === "confirmed"
-                                    ? "bg-gray-800/60"
+                                    ? "bg-gray-800/60 text-gray-300"
                                     : "bg-emerald-600 hover:bg-emerald-500 text-white"
                                 }`}
                               >
@@ -823,7 +1020,7 @@ export default function AdminDashboard() {
 
           {/* Pagination footer */}
           {!loading && filtered.length > 0 && (
-            <div className="flex items-center justify-between gap-3 px-3 py-2 border-t border-gray-800">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-3 px-3 py-2 border-t border-gray-800 mt-2">
               <div className="text-xs text-gray-400">
                 Showing{" "}
                 <span className="text-gray-200">
@@ -985,7 +1182,6 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={async () => {
-                  // perform save
                   if (!modalEditing._id) return;
                   try {
                     const payload = { status: modalEditing._localStatus };
