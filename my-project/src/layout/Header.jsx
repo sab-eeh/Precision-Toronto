@@ -27,7 +27,7 @@ const MOBILE_LINKS = [
   { to: "/about", label: "About Us" },
   { to: "", state: { scrollTo: "car-selection" }, label: "Pick a Service" },
   { to: "/connect", label: "Connect with Us" },
-  { to: "", label: "Google Reviews" },
+  { to: "",  state: { scrollTo: "reviews" }, label: "Google Reviews" },
   { to: "/contact", label: "Contact Us" },
 ];
 
