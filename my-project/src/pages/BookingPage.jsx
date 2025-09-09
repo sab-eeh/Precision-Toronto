@@ -85,8 +85,15 @@ export default function BookingPage() {
 
   // If route provided services (user navigated from Services), prefer that;
   // otherwise fall back to booking context.
-  const { selectedCar, selectedServices, selectedAddons, totalPrice } =
-    state || booking || {};
+
+  const {
+    selectedCar,
+    selectedServices,
+    selectedAddons,
+    totalPrice,
+    durationSummary,
+    formattedDurations,
+  } = state || booking || {};
 
   // Initialize states (preferred: booking or blank)
   const [selectedDate, setSelectedDate] = useState(() =>
@@ -291,7 +298,9 @@ export default function BookingPage() {
         notes: customerInfo.notes || "",
         // precise timestamp for backend & confirmation
         startAtISO: selectedSlot.start.toISOString(),
-        slotMinutes: BUSINESS_MINUTES_PER_SLOT,
+        slotMinutes: durationSummary?.avg || BUSINESS_MINUTES_PER_SLOT,
+        durationSummary,
+        formattedDurations,
       };
 
       // Save to context (draft)
@@ -595,6 +604,12 @@ export default function BookingPage() {
                   )}
                   {selectedTime && (
                     <SummaryRow label="Time:" value={selectedTime} highlight />
+                  )}
+                  {formattedDurations?.avg && (
+                    <SummaryRow
+                      label="Estimated Duration:"
+                      value={`${formattedDurations.min} – ${formattedDurations.max} (avg ${formattedDurations.avg})`}
+                    />
                   )}
                   <div className="flex justify-between pt-4 border-t border-gray-700">
                     <span className="text-lg font-semibold">Total:</span>

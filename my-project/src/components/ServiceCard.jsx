@@ -2,6 +2,7 @@
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
 import Button from "../components/ui/Button";
+import { getDisplayDuration } from "../utils/duration"; // ✅ import
 
 const ServiceCard = ({
   id,
@@ -47,14 +48,14 @@ const ServiceCard = ({
         />
       </div>
 
-      {/* Card Content */}
+      {/* Content */}
       <div className="p-5 flex flex-col flex-1">
         <header className="text-center mb-4">
           <h3 className="text-lg font-semibold text-white">{title}</h3>
           <p className="text-sm text-gray-400 mt-1">{description}</p>
         </header>
 
-        {/* Features list grows naturally */}
+        {/* Features */}
         <div className="flex-1">
           <ul className="space-y-2 mb-4">
             {features.slice(0, 5).map((f, idx) => (
@@ -69,12 +70,12 @@ const ServiceCard = ({
           </ul>
         </div>
 
-        {/* Footer stays pinned to bottom */}
+        {/* Footer */}
         <div className="mt-auto">
           <div className="flex items-center justify-between mb-3">
             <span className="text-2xl font-bold text-blue-400">${price}</span>
             <p className="text-sm text-gray-400">
-              {duration ? `⏱ ${duration}` : "⏱ Est. time"}
+              {duration ? `⏱ ${getDisplayDuration(duration)}` : "⏱ Est. time"}
             </p>
           </div>
 

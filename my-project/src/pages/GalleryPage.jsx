@@ -42,10 +42,10 @@ const Gallery = () => {
 
   return (
     <>
-      <Title>Gallery | Precision Toronto</Title>
+      <Title>Connect With Us | Precision Toronto</Title>
       <Meta
         name="description"
-        content="Explore our detailing gallery with videos, before & after transformations, and premium car care visuals."
+        content="Explore our detailing videos, before & after transformations, and premium car care visuals."
       />
 
       <div className="bg-[#0B1315] text-gray-300 overflow-hidden">
@@ -69,7 +69,7 @@ const Gallery = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-4 leading-tight">
-              Our <span className="text-blue-500">Gallery</span>
+              <span className="text-blue-500">Connect with us</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
               See our detailing expertise in action — from immersive videos to

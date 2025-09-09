@@ -3,16 +3,30 @@ const { addMinutes, generateSlotsForDay, isOverlap } = require("../utils/time");
 const sendEmail = require("../utils/emails");
 const sendSMS = require("../utils/sms");
 
-/** Compute total duration from selected services */
-function computeDurationMinutes(services = [], fallback = 60) {
-  const total = services.reduce(
+// Business rules
+const MAX_DAY_MINUTES = 600; // 10 hours per day
+const BUSINESS_START_HOUR = 8; // 8 AM
+const BUSINESS_END_HOUR = 20; // 8 PM
+
+/**
+ * Compute total duration from selected services & addons
+ */
+function computeDurationMinutes(services = [], addons = [], fallback = 60) {
+  const totalServices = services.reduce(
     (sum, s) => sum + (Number(s.durationMinutes) || 0),
     0
   );
+  const totalAddons = addons.reduce(
+    (sum, a) => sum + (Number(a.durationMinutes) || 0),
+    0
+  );
+  const total = totalServices + totalAddons;
   return total > 0 ? total : fallback;
 }
 
-/** Normalize payload from frontend → backend shape */
+/**
+ * Normalize payload from frontend → backend shape
+ */
 function normalizePayload(body) {
   const {
     customerInfo,
@@ -43,18 +57,26 @@ function normalizePayload(body) {
     services: (selectedServices || []).map((s) => ({
       serviceId: s._id || null,
       title: s.title,
-      price: s.price,
-      durationMinutes: s.durationMinutes || 60,
+      price: Number(s.price) || 0,
+      durationMinutes: Number(s.durationMinutes) || 60,
     })),
 
-    addons: selectedAddons || [],
-    totalPrice,
+    addons: (selectedAddons || []).map((a) => ({
+      addonId: a._id || null,
+      title: a.title,
+      price: Number(a.price) || 0,
+      durationMinutes: Number(a.durationMinutes) || 30,
+    })),
+
+    totalPrice: Number(totalPrice) || 0,
     startAt,
     notes,
   };
 }
 
-/** Create Booking */
+/**
+ * Create Booking
+ */
 const createBooking = async (req, res) => {
   try {
     const data = normalizePayload(req.body);
@@ -72,10 +94,10 @@ const createBooking = async (req, res) => {
         .json({ success: false, message: "Invalid startAt date" });
     }
 
-    const durationMinutes = computeDurationMinutes(data.services, 60);
+    const durationMinutes = computeDurationMinutes(data.services, data.addons);
     const end = addMinutes(start, durationMinutes);
 
-    // Check overlap (any booking not cancelled)
+    // Check overlap with existing bookings
     const overlapping = await Booking.findOne({
       status: { $ne: "cancelled" },
       $expr: {
@@ -95,11 +117,12 @@ const createBooking = async (req, res) => {
       ...data,
       startAt: start,
       endAt: end,
+      durationMinutes,
       status: "confirmed",
       source: "web",
     });
 
-    // Async notifications (do not block response)
+    // Send notifications (async, don’t block response)
     notifyCustomer(booking);
     notifyAdmin(booking);
 
@@ -112,7 +135,9 @@ const createBooking = async (req, res) => {
   }
 };
 
-/** List all bookings (admin) */
+/**
+ * List all bookings (admin)
+ */
 const listBookings = async (req, res) => {
   try {
     const bookings = await Booking.find().sort({ startAt: -1 });
@@ -123,7 +148,9 @@ const listBookings = async (req, res) => {
   }
 };
 
-/** Get single booking */
+/**
+ * Get single booking
+ */
 const getBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
@@ -139,13 +166,15 @@ const getBooking = async (req, res) => {
   }
 };
 
-/** Update booking (admin) */
+/**
+ * Update booking (admin)
+ */
 const updateBooking = async (req, res) => {
   try {
-    const updates = req.body;
+    const updates = normalizePayload(req.body);
 
-    // If updating time, ensure no overlap
-    if (updates.startAt || updates.services) {
+    // If updating time/services, recalc endAt
+    if (updates.startAt || updates.services || updates.addons) {
       const booking = await Booking.findById(req.params.id);
       if (!booking) {
         return res
@@ -156,10 +185,13 @@ const updateBooking = async (req, res) => {
       const newStart = updates.startAt
         ? new Date(updates.startAt)
         : booking.startAt;
-      const servicesForDuration = updates.services || booking.services;
-      const durationMinutes = computeDurationMinutes(servicesForDuration, 60);
+      const durationMinutes = computeDurationMinutes(
+        updates.services || booking.services,
+        updates.addons || booking.addons
+      );
       const newEnd = addMinutes(newStart, durationMinutes);
 
+      // Check overlap
       const overlapping = await Booking.findOne({
         _id: { $ne: booking._id },
         status: { $ne: "cancelled" },
@@ -176,7 +208,9 @@ const updateBooking = async (req, res) => {
         });
       }
 
+      updates.startAt = newStart;
       updates.endAt = newEnd;
+      updates.durationMinutes = durationMinutes;
     }
 
     const updated = await Booking.findByIdAndUpdate(req.params.id, updates, {
@@ -194,7 +228,9 @@ const updateBooking = async (req, res) => {
   }
 };
 
-/** Cancel booking */
+/**
+ * Cancel booking
+ */
 const cancelBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
@@ -212,7 +248,9 @@ const cancelBooking = async (req, res) => {
   }
 };
 
-/** Delete booking (admin) */
+/**
+ * Delete booking (admin)
+ */
 const deleteBooking = async (req, res) => {
   try {
     const booking = await Booking.findByIdAndDelete(req.params.id);
@@ -228,49 +266,83 @@ const deleteBooking = async (req, res) => {
   }
 };
 
-/** Availability slots for a given day */
+/**
+ * Availability slots for a given day
+ */
 const getAvailability = async (req, res) => {
   try {
-    const { date } = req.query; // yyyy-mm-dd
+    const { date, durationMinutes = 60 } = req.query;
     if (!date) {
       return res
         .status(422)
         .json({ success: false, message: "Missing date query param" });
     }
 
+    const serviceDuration = Number(durationMinutes);
+
+    // Day range
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
 
+    // Fetch bookings for that day
     const bookings = await Booking.find({
       startAt: { $gte: dayStart, $lt: dayEnd },
       status: { $ne: "cancelled" },
     });
 
-    const SLOT_MINUTES = 60;
-    const slots = generateSlotsForDay(dayStart, { slotMinutes: SLOT_MINUTES });
+    // Compute booked minutes
+    const totalBookedMinutes = bookings.reduce((sum, b) => {
+      const dur = (b.endAt - b.startAt) / 60000;
+      return sum + dur;
+    }, 0);
+
+    const isFullyBooked = totalBookedMinutes >= MAX_DAY_MINUTES;
+
+    // Generate slots
+    const slots = generateSlotsForDay(dayStart, {
+      startHour: BUSINESS_START_HOUR,
+      endHour: BUSINESS_END_HOUR,
+      slotMinutes: 60,
+    });
 
     const slotsWithStatus = slots.map((slot) => {
+      const slotEndIfServiceAdded = addMinutes(slot.start, serviceDuration);
+
+      const businessDayEnd = new Date(slot.start);
+      businessDayEnd.setHours(BUSINESS_END_HOUR, 0, 0, 0);
+
+      const exceedsDay = slotEndIfServiceAdded > businessDayEnd;
+
       const isBooked = bookings.some((b) =>
         isOverlap(slot.start, slot.end, b.startAt, b.endAt)
       );
+
       return {
         start: slot.start,
         end: slot.end,
-        label: slot.start.toISOString(), // frontend formats this into "h:mm a"
-        booked: isBooked,
+        label: slot.start.toISOString(),
+        booked: isBooked || isFullyBooked || exceedsDay,
       };
     });
 
-    res.json({ success: true, availableSlots: slotsWithStatus });
+    return res.json({
+      success: true,
+      availableSlots: slotsWithStatus,
+      fullyBooked: isFullyBooked,
+      totalBookedMinutes,
+      remainingMinutes: Math.max(0, MAX_DAY_MINUTES - totalBookedMinutes),
+    });
   } catch (err) {
     console.error("Availability error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-/** Notifications */
+/**
+ * Notifications
+ */
 async function notifyCustomer(booking) {
   const bookingDate = new Date(booking.startAt).toLocaleString();
   if (booking.email) {

@@ -121,7 +121,7 @@ function App() {
               }
             />
             <Route
-              path="/gallery"
+              path="/connect"
               element={
                 <PageWrapper>
                   <Gallery />

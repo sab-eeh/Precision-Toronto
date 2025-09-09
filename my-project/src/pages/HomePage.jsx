@@ -9,7 +9,7 @@ import React, {
   useContext,
   memo,
 } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   Star,
@@ -30,6 +30,7 @@ import {
   beforeAfterPairs,
   logo,
 } from "../assets/home";
+import ReviewsCarousel from "../components/ReviewsCarousel";
 
 // lazy heavy bits
 const CarModelViewer = lazy(() => import("../components/ui/CarModelViewer"));
@@ -144,6 +145,15 @@ const HomePage = ({ onCarSelect }) => {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const { booking, setBooking } = useContext(BookingContext);
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      const section = document.getElementById(location.state.scrollTo);
+      section?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [location]);
 
   // static lists memoized
   const features = useMemo(
@@ -345,12 +355,10 @@ const HomePage = ({ onCarSelect }) => {
       >
         <Header />
       </Suspense>
-
       {/* Floating Contact (non-critical) */}
       <Suspense fallback={null}>
         <FloatingContact />
       </Suspense>
-
       {/* HERO (LCP image as <img>) */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden sm:py-4 md:py-6">
         <img
@@ -424,7 +432,6 @@ const HomePage = ({ onCarSelect }) => {
           </motion.button>
         </motion.div>
       </section>
-
       {/* Progress Tracker - non-critical, lazy */}
       <Suspense
         fallback={
@@ -435,7 +442,6 @@ const HomePage = ({ onCarSelect }) => {
       >
         <ProgressTracker currentStep={1} />
       </Suspense>
-
       {/* Car Selection */}
       <section
         id="car-selection"
@@ -525,7 +531,6 @@ const HomePage = ({ onCarSelect }) => {
           </div>
         </div>
       </section>
-
       {/* Before & After grid (images lazy) */}
       <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11] py-20">
         <motion.h2
@@ -584,7 +589,6 @@ const HomePage = ({ onCarSelect }) => {
           ))}
         </div>
       </section>
-
       {/* About / Why choose us */}
       <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
         <div className="py-20 px-6 relative">
@@ -594,6 +598,7 @@ const HomePage = ({ onCarSelect }) => {
                 About Us{" "}
                 <span className="text-blue-400">– Precision Toronto</span>
               </h1>
+
               <p className="text-gray-300 leading-relaxed text-lg">
                 At{" "}
                 <span className="font-semibold text-white">
@@ -614,6 +619,16 @@ const HomePage = ({ onCarSelect }) => {
                 reflection of perfection, combining passion with innovation in
                 every detail.
               </p>
+
+              {/* 👇 Added Button */}
+              <div className="mt-8 flex justify-center lg:justify-start">
+                <Link
+                  to="/about"
+                  className="inline-block px-6 py-3 text-lg font-semibold text-white bg-blue-500 hover:bg-blue-600 rounded-xl shadow-md transition"
+                >
+                  Learn More
+                </Link>
+              </div>
             </motion.div>
 
             <motion.div
@@ -630,7 +645,7 @@ const HomePage = ({ onCarSelect }) => {
               <img
                 src={section1}
                 alt="Luxury detailing"
-                className="w-full h-[260px] md:h-[380px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
+                className="w-full h-[300px] md:h-[420px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
                 loading="lazy"
                 decoding="async"
                 width={640}
@@ -639,7 +654,7 @@ const HomePage = ({ onCarSelect }) => {
               <img
                 src={section2}
                 alt="Interior cleaning"
-                className="w-full h-[260px] md:h-[380px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
+                className="w-full h-[300px] md:h-[420px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
                 loading="lazy"
                 decoding="async"
                 width={640}
@@ -649,7 +664,6 @@ const HomePage = ({ onCarSelect }) => {
           </div>
         </div>
       </section>
-
       {/* BeforeAfterSlider (heavy) - mount only when progressive hydration allows */}
       <section className="py-20 px-6 bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
         <div className="max-w-5xl mx-auto">
@@ -665,6 +679,9 @@ const HomePage = ({ onCarSelect }) => {
         </div>
       </section>
 
+      {/* Reviews */}
+      <ReviewsCarousel/>
+      
       {/* Footer */}
       <Suspense
         fallback={

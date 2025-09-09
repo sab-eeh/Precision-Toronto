@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Phone,
   Mail,
@@ -12,13 +12,22 @@ import {
 } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { PrefetchLink } from "../App"; // ✅ import PrefetchLink
+import { PrefetchLink } from "../App"; // ✅ your prefetch wrapper
 
 // ✅ Nav Links
-const NAV_LINKS = [
+const DESKTOP_LINKS = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About Us" },
-  { to: "/gallery", label: "Gallery" },
+  { to: "/connect", label: "Connect with Us" },
+  { to: "/contact", label: "Contact Us" },
+];
+
+const MOBILE_LINKS = [
+  { to: "/", label: "Home" },
+  { to: "/about", label: "About Us" },
+  { to: "", state: { scrollTo: "car-selection" }, label: "Pick a Service" },
+  { to: "/connect", label: "Connect with Us" },
+  { to: "", label: "Google Reviews" },
   { to: "/contact", label: "Contact Us" },
 ];
 
@@ -54,18 +63,48 @@ const itemVariants = {
   visible: { opacity: 1, x: 0 },
 };
 
+// ✅ Scroll helper
+const scrollToSection = (id) => {
+  const section = document.getElementById(id);
+  if (section) {
+    section.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
 // ✅ Memoized components
-const NavLinkItem = memo(({ to, label, isActive, onClick }) => (
-  <PrefetchLink
-    to={to}
-    onClick={onClick}
-    className={`font-medium transition-colors ${
-      isActive ? "text-blue-400" : "text-gray-200 hover:text-blue-300"
-    }`}
-  >
-    {label}
-  </PrefetchLink>
-));
+const NavLinkItem = memo(({ to, label, state, isActive, onClick }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleClick = (e) => {
+    e.preventDefault();
+
+    if (state?.scrollTo) {
+      if (location.pathname === "/") {
+        // already home → just scroll
+        scrollToSection(state.scrollTo);
+      } else {
+        // navigate home, then scroll
+        navigate("/", { state });
+      }
+    } else if (to) {
+      navigate(to, { state });
+    }
+
+    if (onClick) onClick(); // close menu
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`font-medium transition-colors ${
+        isActive ? "text-blue-400" : "text-gray-200 hover:text-blue-300"
+      }`}
+    >
+      {label}
+    </button>
+  );
+});
 
 const ContactItem = memo(({ Icon, text, color }) => (
   <div className="flex items-center gap-2">
@@ -87,6 +126,13 @@ const Header = memo(() => {
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
+
+  // ✅ Scroll if coming with state.scrollTo
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      scrollToSection(location.state.scrollTo);
+    }
+  }, [location]);
 
   // ✅ Optimized scroll handler
   useEffect(() => {
@@ -177,23 +223,21 @@ const Header = memo(() => {
         </PrefetchLink>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-10">
-          {NAV_LINKS.map((link) => (
-            <NavLinkItem
-              key={link.label}
-              {...link}
-              isActive={isActive(link.to)}
-            />
-          ))}
-        </nav>
-
-        {/* Right Side */}
         <div className="flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-10">
+            {DESKTOP_LINKS.map((link) => (
+              <NavLinkItem
+                key={link.label}
+                {...link}
+                isActive={isActive(link.to)}
+              />
+            ))}
+          </nav>
           <PrefetchLink to="/" className="hidden md:block">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-blue-400 text-black px-5 py-2 rounded-lg shadow-md"
+              className="bg-blue-400 text-black px-5 py-2 mx-4 rounded-lg shadow-md"
             >
               Book Now
             </motion.button>
@@ -231,7 +275,7 @@ const Header = memo(() => {
                 animate="visible"
                 exit="hidden"
               >
-                {NAV_LINKS.map((link) => (
+                {MOBILE_LINKS.map((link) => (
                   <motion.li key={link.label} variants={itemVariants}>
                     <NavLinkItem
                       {...link}
@@ -243,6 +287,16 @@ const Header = memo(() => {
               </motion.ul>
 
               {/* Contact Info */}
+              <PrefetchLink to="/" onClick={() => setMenuOpen(false)}>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-blue-400 text-black w-full py-2 my-4 rounded-lg shadow-md"
+                >
+                  Book Now
+                </motion.button>
+              </PrefetchLink>
+
               <div className="pt-6 border-t border-[#1F242C] space-y-4 text-gray-300">
                 <div className="flex items-center gap-2 text-[#FFD700]">
                   <Star className="w-4 h-4 fill-current" />
@@ -258,16 +312,6 @@ const Header = memo(() => {
                   />
                 ))}
               </div>
-
-              <PrefetchLink to="/" onClick={() => setMenuOpen(false)}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-blue-400 text-black w-full py-2 rounded-lg shadow-md"
-                >
-                  Book Now
-                </motion.button>
-              </PrefetchLink>
             </div>
           </motion.div>
         )}

@@ -29,26 +29,7 @@ const Header = lazy(() => import("../layout/Header"));
 const Footer = lazy(() => import("../layout/Footer"));
 
 import { servicesData, addonsData } from "../data/servicesData";
-
-// Convert "2h 30m" or "45m" to total minutes
-const parseDuration = (str) => {
-  if (!str) return null;
-  let hours = 0,
-    minutes = 0;
-  const hrMatch = str.match(/(\d+)\s*h/);
-  const minMatch = str.match(/(\d+)\s*m/);
-  if (hrMatch) hours = parseInt(hrMatch[1], 10);
-  if (minMatch) minutes = parseInt(minMatch[1], 10);
-  return hours * 60 + minutes;
-};
-
-// Convert total minutes back to "xh ym"
-const formatDuration = (mins) => {
-  if (!mins) return "Est. time";
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-};
+import { parseDuration, formatDuration } from "../utils/duration";
 
 /* Accessible horizontal scroller for mobile */
 const Carousel = React.memo(({ children, idPrefix = "carousel" }) => {
@@ -155,20 +136,32 @@ const ServicesPage = () => {
   }, [allServices]);
 
   // ⏱ Calculate total duration
-  const totalDurationMins = useMemo(() => {
-    let total = 0;
+  // ⏱ Total duration (min, max, avg)
+  const totalDuration = useMemo(() => {
+    let total = { min: 0, max: 0 };
     (booking.services || []).forEach((s) => {
-      const mins = parseDuration(s.duration);
-      if (mins) total += mins * (s.qty || 1);
+      const d = parseDuration(s.duration);
+      if (d) {
+        total.min += d.min * (s.qty || 1);
+        total.max += d.max * (s.qty || 1);
+      }
     });
     (booking.addons || []).forEach((a) => {
-      const mins = parseDuration(a.duration);
-      if (mins) total += mins * (a.qty || 1);
+      const d = parseDuration(a.duration);
+      if (d) {
+        total.min += d.min * (a.qty || 1);
+        total.max += d.max * (a.qty || 1);
+      }
     });
-    return total;
+    const avg = Math.round((total.min + total.max) / 2);
+    return { ...total, avg };
   }, [booking.services, booking.addons]);
 
-  const formattedDuration = formatDuration(totalDurationMins);
+  const formattedDurations = {
+    min: formatDuration(totalDuration.min),
+    max: formatDuration(totalDuration.max),
+    avg: formatDuration(totalDuration.avg),
+  };
 
   // Handlers (memoized)
   const goToServices = useCallback((category) => {
@@ -206,11 +199,11 @@ const ServicesPage = () => {
         selectedServices: booking.services || [],
         selectedAddons: booking.addons || [],
         totalPrice,
-        totalDuration: totalDurationMins, // minutes
-        formattedDuration, // human-friendly string
+        durationSummary: totalDuration, // minutes {min, max, avg}
+        formattedDurations, // strings
       },
     });
-  }, [navigate, booking, totalPrice, totalDurationMins, formattedDuration]);
+  }, [navigate, booking, totalPrice, totalDuration, formattedDurations]);
 
   return (
     <>
@@ -546,9 +539,11 @@ const ServicesPage = () => {
                   <span>Total</span>
                   <span>${totalPrice.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center font-semibold text-lg mt-2">
-                  <span>Estimated Time</span>
-                  <span>{formattedDuration}</span>
+                <div className="flex flex-col gap-1 font-semibold text-lg mt-2">
+                  <div className="flex justify-between">
+                    <span>Average Time </span>
+                    <span>{formattedDurations.avg}</span>
+                  </div>
                 </div>
               </div>
 

@@ -1,15 +1,34 @@
 const mongoose = require("mongoose");
 
+/**
+ * Service Item Schema
+ */
 const ServiceItemSchema = new mongoose.Schema(
   {
     serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service" },
     title: { type: String, trim: true, required: true },
     price: { type: Number, min: 0, required: true },
-    durationMinutes: { type: Number, min: 1, default: 60 },
+    durationMinutes: { type: Number, min: 1, default: 60 }, // default 1 hour
   },
   { _id: false }
 );
 
+/**
+ * Addon Item Schema
+ */
+const AddonItemSchema = new mongoose.Schema(
+  {
+    addonId: { type: mongoose.Schema.Types.ObjectId, ref: "Addon" },
+    title: { type: String, trim: true, required: true },
+    price: { type: Number, min: 0, required: true },
+    durationMinutes: { type: Number, min: 1, default: 30 }, // default 30 mins
+  },
+  { _id: false }
+);
+
+/**
+ * Vehicle Schema
+ */
 const VehicleSchema = new mongoose.Schema(
   {
     type: {
@@ -26,6 +45,9 @@ const VehicleSchema = new mongoose.Schema(
   { _id: false }
 );
 
+/**
+ * Booking Schema
+ */
 const BookingSchema = new mongoose.Schema(
   {
     customerName: { type: String, required: true, maxlength: 120 },
@@ -42,12 +64,17 @@ const BookingSchema = new mongoose.Schema(
       required: true,
     },
 
-    addons: { type: Array, default: [] },
+    addons: {
+      type: [AddonItemSchema],
+      default: [],
+    },
 
     totalPrice: { type: Number, min: 0, required: true },
 
     startAt: { type: Date, required: true, index: true },
     endAt: { type: Date, required: true, index: true },
+
+    durationMinutes: { type: Number, min: 1, default: 60 }, // total duration for booking
 
     notes: { type: String, maxlength: 1000 },
 
