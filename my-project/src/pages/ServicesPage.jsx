@@ -1,3 +1,4 @@
+// src/pages/ServicesPage.jsx
 import React, {
   useState,
   useMemo,
@@ -22,7 +23,6 @@ import { BookingContext } from "../context/BookingContext";
 import ServiceCard from "../components/ServiceCard";
 import Button from "../components/ui/Button";
 
-// ✅ Lazy load non-critical UI
 const FloatingContact = lazy(() => import("../components/FloatingContact"));
 const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
 const Header = lazy(() => import("../layout/Header"));
@@ -57,7 +57,6 @@ const Carousel = React.memo(({ children, idPrefix = "carousel" }) => {
         ))}
       </div>
 
-      {/* Desktop arrows */}
       <button
         aria-label="Scroll left"
         onClick={() => scrollBy(-1)}
@@ -102,7 +101,6 @@ const ServicesPage = () => {
   const [step, setStep] = useState("chooseCategory");
   const [activeCategory, setActiveCategory] = useState("Detailing");
 
-  // Smooth scroll to hash if present
   useEffect(() => {
     if (location.hash) {
       const el = document.getElementById(location.hash.replace("#", ""));
@@ -112,6 +110,7 @@ const ServicesPage = () => {
   }, [location]);
 
   const selectedCarType = booking.carType || "sedan";
+
   const allServices = useMemo(
     () =>
       Array.isArray(servicesData[selectedCarType])
@@ -119,13 +118,22 @@ const ServicesPage = () => {
         : [],
     [selectedCarType]
   );
-  const availableAddons = useMemo(
-    () =>
-      Array.isArray(addonsData[selectedCarType])
-        ? addonsData[selectedCarType]
-        : [],
-    [selectedCarType]
-  );
+
+  // General add-ons (for the Add-ons page)
+  const generalAddons = useMemo(() => {
+    const all = Array.isArray(addonsData[selectedCarType])
+      ? addonsData[selectedCarType]
+      : [];
+    return all.filter((a) => a.type === "general");
+  }, [selectedCarType]);
+
+  // Ceramic add-ons (to show under Ceramic Coating services)
+  const ceramicAddons = useMemo(() => {
+    const all = Array.isArray(addonsData[selectedCarType])
+      ? addonsData[selectedCarType]
+      : [];
+    return all.filter((a) => a.type === "ceramic");
+  }, [selectedCarType]);
 
   const servicesByCategory = useMemo(() => {
     const map = {};
@@ -135,8 +143,7 @@ const ServicesPage = () => {
     return map;
   }, [allServices]);
 
-  // ⏱ Calculate total duration
-  // ⏱ Total duration (min, max, avg)
+  // durations
   const totalDuration = useMemo(() => {
     let total = { min: 0, max: 0 };
     (booking.services || []).forEach((s) => {
@@ -163,7 +170,6 @@ const ServicesPage = () => {
     avg: formatDuration(totalDuration.avg),
   };
 
-  // Handlers (memoized)
   const goToServices = useCallback((category) => {
     setActiveCategory(category);
     setStep("pickServices");
@@ -199,8 +205,8 @@ const ServicesPage = () => {
         selectedServices: booking.services || [],
         selectedAddons: booking.addons || [],
         totalPrice,
-        durationSummary: totalDuration, // minutes {min, max, avg}
-        formattedDurations, // strings
+        durationSummary: totalDuration,
+        formattedDurations,
       },
     });
   }, [navigate, booking, totalPrice, totalDuration, formattedDurations]);
@@ -313,6 +319,89 @@ const ServicesPage = () => {
                   ))}
                 </div>
 
+                {/* If we're in Ceramic Coating category, show ceramic-specific add-ons right here */}
+                {activeCategory === "Ceramic Coating" &&
+                  ceramicAddons.length > 0 && (
+                    <div className="mt-10">
+                      <h4 className="text-xl font-semibold mb-4">
+                        Ceramic Add-ons
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                        {ceramicAddons.map((addon) => {
+                          const id = addon.id ?? addon.title;
+                          const active = !!(booking.addons || []).find(
+                            (a) => a.id === id
+                          );
+                          const activeItem = (booking.addons || []).find(
+                            (a) => a.id === id
+                          );
+
+                          return (
+                            <div
+                              key={id}
+                              className={`p-5 rounded-2xl transition shadow border ${
+                                active
+                                  ? "bg-blue-600 text-white border-blue-400"
+                                  : "bg-gray-800 text-gray-200 border-gray-700"
+                              }`}
+                            >
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold">{addon.title}</h4>
+                                <span className="font-bold">
+                                  ${Number(addon.price).toFixed(2)}
+                                </span>
+                              </div>
+
+                              <p className="text-sm text-gray-300 mb-4">
+                                {addon.duration
+                                  ? `⏱ ${addon.duration}`
+                                  : "⏱ Est. time"}
+                              </p>
+
+                              {!active ? (
+                                <Button
+                                  onClick={() => toggleAddon({ ...addon, id })}
+                                  className="w-full"
+                                  variant="secondary"
+                                >
+                                  Add
+                                </Button>
+                              ) : (
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      size="icon"
+                                      onClick={() => decrementAddon(id)}
+                                      aria-label="Decrease"
+                                    >
+                                      <Minus size={16} />
+                                    </Button>
+                                    <span className="min-w-[2ch] text-center font-semibold">
+                                      {activeItem?.qty ?? 1}
+                                    </span>
+                                    <Button
+                                      size="icon"
+                                      onClick={() => incrementAddon(id)}
+                                      aria-label="Increase"
+                                    >
+                                      <Plus size={16} />
+                                    </Button>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => toggleAddon({ id })}
+                                  >
+                                    <X size={16} className="mr-1" /> Remove
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                 <div className="flex justify-end gap-3">
                   <Button
                     disabled={!(booking.services && booking.services.length)}
@@ -325,12 +414,12 @@ const ServicesPage = () => {
             )}
           </section>
 
-          {/* Add-ons */}
+          {/* Add-ons (general only) */}
           {step === "addons" && (
             <section id="addons-section" className="mb-12">
               <h3 className="text-2xl font-semibold mb-4">Add-ons</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                {availableAddons.map((addon) => {
+                {generalAddons.map((addon) => {
                   const id = addon.id ?? addon.title;
                   const active = !!(booking.addons || []).find(
                     (a) => a.id === id

@@ -590,7 +590,7 @@ const HomePage = ({ onCarSelect }) => {
         </div>
       </section>
       {/* About / Why choose us */}
-      <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
+      {/* <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
         <div className="py-20 px-6 relative">
           <div className="container mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
             <motion.div className="lg:w-1/2" {...fadeUp}>
@@ -619,8 +619,6 @@ const HomePage = ({ onCarSelect }) => {
                 reflection of perfection, combining passion with innovation in
                 every detail.
               </p>
-
-              {/* 👇 Added Button */}
               <div className="mt-8 flex justify-center lg:justify-start">
                 <Link
                   to="/about"
@@ -663,7 +661,7 @@ const HomePage = ({ onCarSelect }) => {
             </motion.div>
           </div>
         </div>
-      </section>
+      </section> */}
       {/* BeforeAfterSlider (heavy) - mount only when progressive hydration allows */}
       <section className="py-20 px-6 bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
         <div className="max-w-5xl mx-auto">
