@@ -1,15 +1,53 @@
-import React from "react";
+import React, { useState, lazy } from "react";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
-import { lazy } from "react";
-const Map = lazy(() => import("../components/GoogleMap"));
-const FloatingContact = lazy(() => import("../components/FloatingContact"));
-
 import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { Meta, Title } from "react-head";
 
+const Map = lazy(() => import("../components/GoogleMap"));
+const FloatingContact = lazy(() => import("../components/FloatingContact"));
+
 const Contact = () => {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatus("");
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setStatus("✅ Message sent successfully!");
+        setForm({ name: "", email: "", phone: "", message: "" });
+      } else {
+        setStatus("❌ Failed to send. Try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <Title>Contact Precision Toronto | Book Car Detailing in Toronto</Title>
@@ -54,14 +92,18 @@ const Contact = () => {
               <h2 className="text-2xl font-semibold text-white mb-6">
                 Send Us a Message
               </h2>
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Full Name
                   </label>
                   <input
                     type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
                     placeholder="Your name"
+                    required
                     className="w-full px-4 py-3 rounded-lg bg-[#0B1315] border border-gray-700 text-white focus:ring-2 focus:ring-blue-400 outline-none transition"
                   />
                 </div>
@@ -72,7 +114,11 @@ const Contact = () => {
                   </label>
                   <input
                     type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
                     placeholder="your@example.com"
+                    required
                     className="w-full px-4 py-3 rounded-lg bg-[#0B1315] border border-gray-700 text-white focus:ring-2 focus:ring-blue-400 outline-none transition"
                   />
                 </div>
@@ -83,6 +129,9 @@ const Contact = () => {
                   </label>
                   <input
                     type="tel"
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
                     placeholder="(123) 456-7890"
                     className="w-full px-4 py-3 rounded-lg bg-[#0B1315] border border-gray-700 text-white focus:ring-2 focus:ring-blue-400 outline-none transition"
                   />
@@ -93,19 +142,36 @@ const Contact = () => {
                     Message
                   </label>
                   <textarea
+                    name="message"
+                    value={form.message}
+                    onChange={handleChange}
                     rows={5}
                     placeholder="Write your message..."
+                    required
                     className="w-full px-4 py-3 rounded-lg bg-[#0B1315] border border-gray-700 text-white focus:ring-2 focus:ring-blue-400 outline-none transition resize-none"
                   ></textarea>
                 </div>
+
+                {status && (
+                  <p
+                    className={`text-sm ${
+                      status.startsWith("✅")
+                        ? "text-green-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {status}
+                  </p>
+                )}
 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-3 rounded-lg shadow-md transition-all"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-3 rounded-lg shadow-md transition-all disabled:opacity-50"
                 >
-                  Send Message
+                  {loading ? "Sending..." : "Send Message"}
                 </motion.button>
               </form>
             </motion.div>
@@ -134,7 +200,7 @@ const Contact = () => {
                 <Phone className="w-6 h-6 text-blue-400" />
                 <div>
                   <p className="font-medium text-white">Phone</p>
-                  <p className="text-gray-400"> +1 647-685-7153</p>
+                  <p className="text-gray-400">+1 647-685-7153</p>
                 </div>
               </div>
 

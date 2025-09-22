@@ -503,7 +503,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => {
               localStorage.removeItem("adminToken");
-              navigate("/admin-login");
+              navigate("/admin/login");
             }}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900/60 hover:bg-gray-900/80 border border-gray-800 transition"
             title="Logout"

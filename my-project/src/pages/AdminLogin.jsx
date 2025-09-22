@@ -63,14 +63,7 @@ function AdminLogin() {
         >
           Login
         </button>
-        <div className="mt-4 text-center">
-          <Link
-            to="/admin/forgot-password"
-            className="text-sm text-blue-300 hover:underline"
-          >
-            Forgot Password?
-          </Link>
-        </div>
+      
       </form>
     </div>
   );

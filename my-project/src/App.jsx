@@ -20,8 +20,6 @@ const BookingPage = lazy(() => import("./pages/BookingPage"));
 const ConfirmationPage = lazy(() => import("./pages/ConfirmationPage"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // ✅ Prefetch helper map
 const prefetchMap = {
@@ -34,8 +32,6 @@ const prefetchMap = {
   "/confirmation": () => import("./pages/ConfirmationPage"),
   "/admin/login": () => import("./pages/AdminLogin"),
   "/admin/dashboard": () => import("./pages/AdminDashboard"),
-  "/admin/forgot-password": () => import("./pages/ForgotPassword"),
-  "/admin/reset-password": () => import("./pages/ResetPassword"),
 };
 
 // ✅ Custom Link with prefetching
@@ -173,22 +169,6 @@ function App() {
               element={
                 <PageWrapper>
                   <AdminDashboard />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/admin/forgot-password"
-              element={
-                <PageWrapper>
-                  <ForgotPassword />
-                </PageWrapper>
-              }
-            />
-            <Route
-              path="/admin/reset-password"
-              element={
-                <PageWrapper>
-                  <ResetPassword />
                 </PageWrapper>
               }
             />

@@ -61,12 +61,11 @@ const Footer = () => {
             <h3 className="text-lg font-semibold text-white">Services</h3>
             <ul className="space-y-2 text-sm">
               {[
-                "Basic Wash & Dry",
-                "Full Detail Package",
-                "Ceramic Coating",
-                "Interior Deep Clean",
+                "Full Detailing",
                 "Paint Correction",
-                "Mobile Service",
+                "Ceramic Coating",
+                "Window Tinting",
+                "Headlight Restoration",
               ].map((service, idx) => (
                 <li key={idx}>
                   <a href="#" className="hover:text-blue-400 transition-colors">
