@@ -6,14 +6,13 @@ import React, {
   memo,
   useCallback,
 } from "react";
-import { Routes, Route, useLocation, Link } from "react-router-dom";
-import { Meta } from "react-head";
+import { Routes, Route, useLocation, Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ✅ Lazy-loaded pages
 const HomePage = lazy(() => import("./pages/HomePage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
-const Gallery = lazy(() => import("./pages/GalleryPage"));
+const GalleryPage = lazy(() => import("./pages/GalleryPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
 const ServicesPage = lazy(() => import("./pages/ServicesPage"));
 const BookingPage = lazy(() => import("./pages/BookingPage"));
@@ -56,29 +55,29 @@ const PrefetchLink = ({ to, children, ...props }) => {
 const ScrollToTop = memo(() => {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
   return null;
 });
 
-// ✅ Loader
+// ✅ Minimal Loader (not blocking full screen)
 const Loader = memo(() => (
-  <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
+  <div className="flex justify-center items-center h-32">
     <motion.div
-      className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full"
+      className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"
       animate={{ rotate: 360 }}
-      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+      transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
     />
   </div>
 ));
 
-// ✅ Page transition
+// ✅ Page transition wrapper
 const PageWrapper = ({ children }) => (
   <motion.div
-    initial={{ opacity: 0, y: 15 }}
+    initial={{ opacity: 0.5, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -15 }}
-    transition={{ duration: 0.35, ease: "easeInOut" }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.25, ease: "easeOut" }}
     className="min-h-screen"
   >
     {children}
@@ -89,14 +88,19 @@ function App() {
   const [selectedCar, setSelectedCar] = useState(null);
   const location = useLocation();
 
+  // ✅ Preload idle routes (after homepage load)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      ["/about", "/services", "/contact"].forEach((path) => {
+        if (prefetchMap[path]) prefetchMap[path]();
+      });
+    }, 2000); // preload in background
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <>
-      {/* Global SEO */}
-      <Meta charSet="utf-8" />
-      <Meta name="viewport" content="width=device-width, initial-scale=1" />
-
       <ScrollToTop />
-
       <Suspense fallback={<Loader />}>
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
@@ -117,10 +121,10 @@ function App() {
               }
             />
             <Route
-              path="/connect"
+              path="/gallery"
               element={
                 <PageWrapper>
-                  <Gallery />
+                  <GalleryPage />
                 </PageWrapper>
               }
             />
@@ -172,6 +176,9 @@ function App() {
                 </PageWrapper>
               }
             />
+
+            {/* ✅ Fix wrong route (/connect -> /gallery) */}
+            <Route path="/connect" element={<Navigate to="/gallery" />} />
           </Routes>
         </AnimatePresence>
       </Suspense>

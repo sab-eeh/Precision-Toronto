@@ -8,6 +8,7 @@ import React, {
   Suspense,
   useContext,
   memo,
+  useRef,
 } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -30,20 +31,58 @@ import {
   beforeAfterPairs,
   logo,
 } from "../assets/home";
-import ReviewsCarousel from "../components/ReviewsCarousel";
 
-// lazy heavy bits
-const CarModelViewer = lazy(() => import("../components/ui/CarModelViewer"));
-const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
-const BeforeAfterSlider = lazy(() => import("../components/BeforeAfterSlider"));
-const FloatingContact = lazy(() => import("../components/FloatingContact"));
+// lazy heavy bits (webpack magic comments to hint prefetch/preload where available)
+const CarModelViewer = lazy(() =>
+  import(
+    /* webpackChunkName: "car-model-viewer", webpackPrefetch: true */ "../components/ui/CarModelViewer"
+  )
+);
+const ProgressTracker = lazy(() =>
+  import(
+    /* webpackChunkName: "progress-tracker" */ "../components/ProgressTracker"
+  )
+);
+const BeforeAfterSlider = lazy(() =>
+  import(
+    /* webpackChunkName: "before-after-slider" */ "../components/BeforeAfterSlider"
+  )
+);
+const FloatingContact = lazy(() =>
+  import(
+    /* webpackChunkName: "floating-contact" */ "../components/FloatingContact"
+  )
+);
 const Header = lazy(() => import("../layout/Header"));
 const Footer = lazy(() => import("../layout/Footer"));
+const ReviewsCarousel = lazy(() => import("../components/ReviewsCarousel"));
 
 // lightweight skeletons
 const Skeleton = ({ className = "" }) => (
   <div className={`animate-pulse bg-white/6 rounded-2xl ${className}`} />
 );
+
+// ---------- utility hook: on-screen ----------
+function useOnScreen(ref, rootMargin = "0px") {
+  const [isIntersecting, setIntersecting] = useState(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIntersecting(true);
+            obs.disconnect();
+          }
+        });
+      },
+      { rootMargin }
+    );
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [ref, rootMargin]);
+  return isIntersecting;
+}
 
 // ---------- Memoized UI pieces ----------
 const FeatureCard = memo(function FeatureCard({
@@ -145,15 +184,18 @@ const HomePage = ({ onCarSelect }) => {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const { booking, setBooking } = useContext(BookingContext);
-
   const location = useLocation();
 
-  useEffect(() => {
-    if (location.state?.scrollTo) {
-      const section = document.getElementById(location.state.scrollTo);
-      section?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [location]);
+  // refs for lazy-mount areas
+  const progressRef = useRef(null);
+  const beforeAfterRef = useRef(null);
+  const reviewsRef = useRef(null);
+  const floatingContactRef = useRef(null);
+
+  const progressOnScreen = useOnScreen(progressRef, "200px");
+  const beforeAfterOnScreen = useOnScreen(beforeAfterRef, "300px");
+  const reviewsOnScreen = useOnScreen(reviewsRef, "300px");
+  const floatingContactOnScreen = useOnScreen(floatingContactRef, "800px");
 
   // static lists memoized
   const features = useMemo(
@@ -232,24 +274,22 @@ const HomePage = ({ onCarSelect }) => {
     [cars.length]
   );
 
-  // Fade-up animation props (respect reduced motion)
-  const fadeUp = useMemo(
-    () =>
-      prefersReducedMotion
-        ? {}
-        : {
-            initial: { opacity: 0, y: 30 },
-            whileInView: { opacity: 1, y: 0 },
-            transition: { duration: 0.6, ease: "easeOut" },
-            viewport: { once: true, margin: "-10%" },
-          },
-    [prefersReducedMotion]
-  );
+  // Respect user reduced motion preference
+  const fadeUp = useMemo(() => {
+    if (prefersReducedMotion) return {};
+    return {
+      initial: { opacity: 0, y: 20 },
+      whileInView: { opacity: 1, y: 0 },
+      transition: { duration: 0.45, ease: "easeOut" },
+      viewport: { once: true, margin: "-10%" },
+    };
+  }, [prefersReducedMotion]);
 
   // progressive hydration: mount heavy content after small delay or on first interaction
   useEffect(() => {
     if (mountedHeavy) return;
-    let t = setTimeout(() => setMountedHeavy(true), 700); // adjust as needed
+    let t = setTimeout(() => setMountedHeavy(true), 450); // shorter delay for snappier feel
+
     const onFirstInteraction = () => {
       clearTimeout(t);
       setMountedHeavy(true);
@@ -272,73 +312,75 @@ const HomePage = ({ onCarSelect }) => {
     };
   }, [mountedHeavy]);
 
-  // idle-time + interaction-based model preloading
+  // model preloading: connection-aware + idle callback
   useEffect(() => {
     if (modelsPreloaded) return;
 
+    // ignore preloading on slow connections (save mobile data)
+    const connection =
+      navigator.connection ||
+      navigator.mozConnection ||
+      navigator.webkitConnection;
+    const effectiveType = connection?.effectiveType || "";
+    const slow =
+      effectiveType.includes("2g") ||
+      effectiveType.includes("slow-2g") ||
+      connection?.saveData;
+
+    if (slow) {
+      setModelsPreloaded(true); // mark as skipped to avoid repeated checks
+      return;
+    }
+
     const preloadModels = async () => {
       try {
-        // prefer drei's useGLTF.preload if available
-        const drei = await import("@react-three/drei");
-        if (typeof drei.useGLTF?.preload === "function") {
-          cars.forEach((c) => drei.useGLTF.preload(c.modelPath));
+        // try drei's preload if available
+        const drei = await import("@react-three/drei").catch(() => null);
+        if (drei?.useGLTF?.preload) {
+          cars.forEach((c) => {
+            try {
+              drei.useGLTF.preload(c.modelPath);
+            } catch (e) {
+              /* ignore */
+            }
+          });
           setModelsPreloaded(true);
           return;
         }
-      } catch (e) {
-        // ignore if drei not present
+      } catch {
+        // no-op
       }
 
-      // fallback: fetch and cache model files (fetch only minimal hint to warm browser cache)
+      // fallback: gentle fetch to warm cache, but avoid no-cors (less useful) and wrap in try/catch
       try {
         await Promise.all(
           cars.map((c) =>
-            fetch(c.modelPath, {
-              method: "GET",
-              mode: "no-cors",
-              cache: "force-cache",
-            }).catch(() => null)
+            fetch(c.modelPath, { method: "GET", cache: "force-cache" }).catch(
+              () => null
+            )
           )
         );
-        setModelsPreloaded(true);
       } catch {
         /* noop */
+      } finally {
+        setModelsPreloaded(true);
       }
     };
 
     const idle = (cb) =>
       "requestIdleCallback" in window
-        ? window.requestIdleCallback(cb)
-        : setTimeout(cb, 250);
+        ? window.requestIdleCallback(cb, { timeout: 600 })
+        : setTimeout(cb, 300);
     idle(preloadModels);
-
-    // also preload after first user gesture
-    const onFirstGesture = () => {
-      preloadModels();
-      window.removeEventListener("mousemove", onFirstGesture);
-      window.removeEventListener("touchstart", onFirstGesture);
-      window.removeEventListener("keydown", onFirstGesture);
-    };
-
-    window.addEventListener("mousemove", onFirstGesture, {
-      passive: true,
-      once: true,
-    });
-    window.addEventListener("touchstart", onFirstGesture, {
-      passive: true,
-      once: true,
-    });
-    window.addEventListener("keydown", onFirstGesture, {
-      passive: true,
-      once: true,
-    });
-
-    return () => {
-      window.removeEventListener("mousemove", onFirstGesture);
-      window.removeEventListener("touchstart", onFirstGesture);
-      window.removeEventListener("keydown", onFirstGesture);
-    };
   }, [cars, modelsPreloaded]);
+
+  // handle location-based scroll (keep existing behavior)
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      const section = document.getElementById(location.state.scrollTo);
+      section?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [location]);
 
   // small optimized fallbacks we reuse
   const carFallback = <Skeleton className="h-56 w-full" />;
@@ -355,10 +397,16 @@ const HomePage = ({ onCarSelect }) => {
       >
         <Header />
       </Suspense>
-      {/* Floating Contact (non-critical) */}
-      <Suspense fallback={null}>
-        <FloatingContact />
-      </Suspense>
+
+      {/* Floating Contact - mount only if user likely to see / after hydration */}
+      <div ref={floatingContactRef} aria-hidden>
+        {floatingContactOnScreen && mountedHeavy ? (
+          <Suspense fallback={null}>
+            <FloatingContact />
+          </Suspense>
+        ) : null}
+      </div>
+
       {/* HERO (LCP image as <img>) */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden sm:py-4 md:py-6">
         <img
@@ -376,9 +424,9 @@ const HomePage = ({ onCarSelect }) => {
           {...(prefersReducedMotion
             ? {}
             : {
-                initial: { opacity: 0, y: 40 },
+                initial: { opacity: 0, y: 24 },
                 animate: { opacity: 1, y: 0 },
-                transition: { duration: 1, ease: "easeOut" },
+                transition: { duration: 0.8, ease: "easeOut" },
               })}
         >
           <Link
@@ -404,18 +452,32 @@ const HomePage = ({ onCarSelect }) => {
 
           {/* Features */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 mt-12 mb-12">
-            {features.map((f, i) => (
-              <FeatureCard
-                key={f.title}
-                Icon={f.icon}
-                title={f.title}
-                description={f.description}
-                anim={{
-                  ...fadeUp,
-                  transition: { ...(fadeUp.transition || {}), delay: i * 0.08 },
-                }}
-              />
-            ))}
+            {features.map((f, i) => {
+              // memoize per-index anim to avoid re-creating objects
+              const anim = useMemo(
+                () =>
+                  prefersReducedMotion
+                    ? {}
+                    : {
+                        ...fadeUp,
+                        transition: {
+                          ...(fadeUp.transition || {}),
+                          delay: i * 0.06,
+                        },
+                      },
+                // eslint-disable-next-line react-hooks/exhaustive-deps
+                [i, prefersReducedMotion]
+              );
+              return (
+                <FeatureCard
+                  key={f.title}
+                  Icon={f.icon}
+                  title={f.title}
+                  description={f.description}
+                  anim={anim}
+                />
+              );
+            })}
           </div>
 
           <motion.button
@@ -425,23 +487,31 @@ const HomePage = ({ onCarSelect }) => {
               })
             }
             className="px-10 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full shadow-xl transition-all sm:mb-7 lg:mb-0"
-            whileHover={prefersReducedMotion ? undefined : { scale: 1.06 }}
-            whileTap={prefersReducedMotion ? undefined : { scale: 0.96 }}
+            whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
           >
             Get Started
           </motion.button>
         </motion.div>
       </section>
-      {/* Progress Tracker - non-critical, lazy */}
-      <Suspense
-        fallback={
-          <div className="px-6">
-            <Skeleton className="h-6 w-64" />
-          </div>
-        }
-      >
-        <ProgressTracker currentStep={1} />
-      </Suspense>
+
+      {/* Progress Tracker - lazy mount when its region is near viewport */}
+      <div ref={progressRef}>
+        {progressOnScreen ? (
+          <Suspense
+            fallback={
+              <div className="px-6">
+                <Skeleton className="h-6 w-64" />
+              </div>
+            }
+          >
+            <ProgressTracker currentStep={1} />
+          </Suspense>
+        ) : (
+          <div className="px-6 py-4" />
+        )}
+      </div>
+
       {/* Car Selection */}
       <section
         id="car-selection"
@@ -459,21 +529,32 @@ const HomePage = ({ onCarSelect }) => {
 
           {/* Desktop grid */}
           <div className="hidden lg:grid grid-cols-4 gap-8">
-            {cars.map((car, idx) => (
-              <CarCard
-                key={car.type}
-                car={car}
-                onSelect={handleCarSelect}
-                anim={{
-                  ...fadeUp,
-                  transition: {
-                    ...(fadeUp.transition || {}),
-                    delay: idx * 0.12,
-                  },
-                }}
-                fallback={carFallback}
-              />
-            ))}
+            {cars.map((car, idx) => {
+              const anim = useMemo(
+                () =>
+                  prefersReducedMotion
+                    ? {}
+                    : {
+                        ...fadeUp,
+                        transition: {
+                          ...(fadeUp.transition || {}),
+                          delay: idx * 0.08,
+                        },
+                      },
+                // eslint-disable-next-line react-hooks/exhaustive-deps
+                [idx, prefersReducedMotion]
+              );
+
+              return (
+                <CarCard
+                  key={car.type}
+                  car={car}
+                  onSelect={handleCarSelect}
+                  anim={anim}
+                  fallback={carFallback}
+                />
+              );
+            })}
           </div>
 
           {/* Mobile carousel */}
@@ -487,10 +568,10 @@ const HomePage = ({ onCarSelect }) => {
                   prefersReducedMotion
                     ? {}
                     : {
-                        initial: { opacity: 0, y: 50 },
+                        initial: { opacity: 0, y: 28 },
                         animate: { opacity: 1, y: 0 },
-                        exit: { opacity: 0, y: -50 },
-                        transition: { duration: 0.45 },
+                        exit: { opacity: 0, y: -28 },
+                        transition: { duration: 0.36 },
                       }
                 }
                 fallback={carFallback}
@@ -531,13 +612,14 @@ const HomePage = ({ onCarSelect }) => {
           </div>
         </div>
       </section>
+
       {/* Before & After grid (images lazy) */}
       <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11] py-20">
         <motion.h2
           className="text-3xl md:text-4xl font-bold text-blue-400 text-center mb-6"
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.45 }}
           viewport={{ once: true }}
         >
           Stunning Before & After Results
@@ -545,9 +627,9 @@ const HomePage = ({ onCarSelect }) => {
 
         <motion.p
           className="text-gray-400 text-center max-w-2xl mx-auto mb-12 px-4 leading-relaxed"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
+          transition={{ duration: 0.45, delay: 0.08 }}
           viewport={{ once: true }}
         >
           Witness the difference precision makes — from worn-out finishes to
@@ -559,15 +641,15 @@ const HomePage = ({ onCarSelect }) => {
             <motion.div
               key={idx}
               className="relative overflow-hidden rounded-xl shadow-lg group"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.96 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: idx * 0.08 }}
+              transition={{ duration: 0.36, delay: idx * 0.05 }}
               viewport={{ once: true }}
             >
               <img
                 src={pair.before}
                 alt="Before detailing"
-                className="w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 group-hover:opacity-0 transition-opacity duration-700"
+                className="w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 group-hover:opacity-0 transition-opacity duration-600"
                 loading="lazy"
                 decoding="async"
               />
@@ -589,83 +671,14 @@ const HomePage = ({ onCarSelect }) => {
           ))}
         </div>
       </section>
-      {/* About / Why choose us */}
-      {/* <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
-        <div className="py-20 px-6 relative">
-          <div className="container mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
-            <motion.div className="lg:w-1/2" {...fadeUp}>
-              <h1 className="text-4xl font-bold text-white mb-6">
-                About Us{" "}
-                <span className="text-blue-400">– Precision Toronto</span>
-              </h1>
 
-              <p className="text-gray-300 leading-relaxed text-lg">
-                At{" "}
-                <span className="font-semibold text-white">
-                  Precision Toronto
-                </span>
-                , we elevate automotive detailing into a luxury experience.
-                Every vehicle we touch is treated with precision, care, and
-                world-class techniques designed to restore its true beauty.
-              </p>
-              <p className="text-gray-300 leading-relaxed text-lg mt-6">
-                From flawless paint correction to meticulous interior
-                restoration, we specialize in luxury, exotic, and performance
-                cars—delivering showroom-level results that highlight elegance
-                and prestige.
-              </p>
-              <p className="text-gray-300 leading-relaxed text-lg mt-6">
-                Our mission is simple: to transform your vehicle into a
-                reflection of perfection, combining passion with innovation in
-                every detail.
-              </p>
-              <div className="mt-8 flex justify-center lg:justify-start">
-                <Link
-                  to="/about"
-                  className="inline-block px-6 py-3 text-lg font-semibold text-white bg-blue-500 hover:bg-blue-600 rounded-xl shadow-md transition"
-                >
-                  Learn More
-                </Link>
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="lg:w-1/2 grid grid-cols-2 gap-4 md:gap-6"
-              {...(prefersReducedMotion
-                ? {}
-                : {
-                    initial: { opacity: 0, y: 30 },
-                    whileInView: { opacity: 1, y: 0 },
-                    transition: { duration: 0.6, delay: 0.08 },
-                  })}
-              viewport={{ once: true }}
-            >
-              <img
-                src={section1}
-                alt="Luxury detailing"
-                className="w-full h-[300px] md:h-[420px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
-                loading="lazy"
-                decoding="async"
-                width={640}
-                height={280}
-              />
-              <img
-                src={section2}
-                alt="Interior cleaning"
-                className="w-full h-[300px] md:h-[420px] object-cover rounded-2xl shadow-lg hover:scale-105 transition"
-                loading="lazy"
-                decoding="async"
-                width={640}
-                height={280}
-              />
-            </motion.div>
-          </div>
-        </div>
-      </section> */}
-      {/* BeforeAfterSlider (heavy) - mount only when progressive hydration allows */}
-      <section className="py-20 px-6 bg-gradient-to-b from-[#0F1518] to-[#0A0F11]">
+      {/* BeforeAfterSlider (heavy) - mount only when on-screen to avoid early cost */}
+      <div
+        ref={beforeAfterRef}
+        className="py-20 px-6 bg-gradient-to-b from-[#0F1518] to-[#0A0F11]"
+      >
         <div className="max-w-5xl mx-auto">
-          {mountedHeavy ? (
+          {beforeAfterOnScreen && mountedHeavy ? (
             <Suspense fallback={<Skeleton className="h-[420px] w-full" />}>
               <BeforeAfterSlider />
             </Suspense>
@@ -675,11 +688,25 @@ const HomePage = ({ onCarSelect }) => {
             </div>
           )}
         </div>
-      </section>
+      </div>
 
-      {/* Reviews */}
-      <ReviewsCarousel/>
-      
+      {/* Reviews (lazy mount) */}
+      <div ref={reviewsRef}>
+        {reviewsOnScreen && mountedHeavy ? (
+          <Suspense
+            fallback={
+              <div className="py-10 px-6">
+                <Skeleton className="h-36 w-full" />
+              </div>
+            }
+          >
+            <ReviewsCarousel />
+          </Suspense>
+        ) : (
+          <div className="py-10" />
+        )}
+      </div>
+
       {/* Footer */}
       <Suspense
         fallback={
