@@ -24,7 +24,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const prefetchMap = {
   "/": () => import("./pages/HomePage"),
   "/about": () => import("./pages/AboutPage"),
-  "/gallery": () => import("./pages/GalleryPage"),
+  "/connect": () => import("./pages/GalleryPage"),
   "/contact": () => import("./pages/ContactPage"),
   "/services": () => import("./pages/ServicesPage"),
   "/booking": () => import("./pages/BookingPage"),
@@ -121,7 +121,7 @@ function App() {
               }
             />
             <Route
-              path="/gallery"
+              path="/connect"
               element={
                 <PageWrapper>
                   <GalleryPage />

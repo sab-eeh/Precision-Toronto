@@ -12,9 +12,10 @@ import {
 } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { PrefetchLink } from "../App"; // ✅ your prefetch wrapper
+import { PrefetchLink } from "../App";
 
-// ✅ Nav Links
+// =================== Constants =================== //
+
 const DESKTOP_LINKS = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About Us" },
@@ -32,7 +33,6 @@ const MOBILE_LINKS = [
   { to: "/about", label: "About Us" },
 ];
 
-// ✅ Contact Info
 const CONTACT_INFO = [
   { icon: Mail, text: "precisiontoronto@gmail.com", color: "text-blue-400" },
   {
@@ -43,7 +43,6 @@ const CONTACT_INFO = [
   { icon: Phone, text: "+1 647-685-7153", color: "text-blue-400" },
 ];
 
-// ✅ Animation Variants
 const headerVariants = {
   visible: { y: 0, transition: { duration: 0.35, ease: "easeOut" } },
   hidden: { y: -120, transition: { duration: 0.35, ease: "easeIn" } },
@@ -54,9 +53,9 @@ const mobileMenuVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3, ease: "easeOut", staggerChildren: 0.05 },
+    transition: { duration: 0.3, staggerChildren: 0.05 },
   },
-  exit: { opacity: 0, y: -15, transition: { duration: 0.25, ease: "easeIn" } },
+  exit: { opacity: 0, y: -15, transition: { duration: 0.25 } },
 };
 
 const itemVariants = {
@@ -64,15 +63,15 @@ const itemVariants = {
   visible: { opacity: 1, x: 0 },
 };
 
-// ✅ Scroll helper
+// =================== Helpers =================== //
+
 const scrollToSection = (id) => {
   const section = document.getElementById(id);
-  if (section) {
-    section.scrollIntoView({ behavior: "smooth" });
-  }
+  if (section) section.scrollIntoView({ behavior: "smooth" });
 };
 
-// ✅ Memoized components
+// =================== Memoized Components =================== //
+
 const NavLinkItem = memo(({ to, label, state, isActive, onClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,18 +80,14 @@ const NavLinkItem = memo(({ to, label, state, isActive, onClick }) => {
     e.preventDefault();
 
     if (state?.scrollTo) {
-      if (location.pathname === "/") {
-        // already home → just scroll
-        scrollToSection(state.scrollTo);
-      } else {
-        // navigate home, then scroll
-        navigate("/", { state });
-      }
+      location.pathname === "/"
+        ? scrollToSection(state.scrollTo)
+        : navigate("/", { state });
     } else if (to) {
       navigate(to, { state });
     }
 
-    if (onClick) onClick(); // close menu
+    onClick?.();
   };
 
   return (
@@ -114,46 +109,50 @@ const ContactItem = memo(({ Icon, text, color }) => (
   </div>
 ));
 
-const Header = memo(() => {
-  const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [showHeader, setShowHeader] = useState(true);
-  const lastScrollY = useRef(0);
+// =================== Custom Hook =================== //
+
+const useScrollDirection = (threshold = 80) => {
+  const [show, setShow] = useState(true);
+  const lastY = useRef(0);
   const ticking = useRef(false);
 
-  const isActive = (path) => location.pathname === path;
-
-  // ✅ Auto-close mobile menu on route change
   useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
-
-  // ✅ Scroll if coming with state.scrollTo
-  useEffect(() => {
-    if (location.state?.scrollTo) {
-      scrollToSection(location.state.scrollTo);
-    }
-  }, [location]);
-
-  // ✅ Optimized scroll handler
-  useEffect(() => {
-    const handleScroll = () => {
+    const onScroll = () => {
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          setShowHeader(
-            !(currentScrollY > lastScrollY.current && currentScrollY > 80)
-          );
-          lastScrollY.current = currentScrollY;
+          const currentY = window.scrollY;
+          setShow(!(currentY > lastY.current && currentY > threshold));
+          lastY.current = currentY;
           ticking.current = false;
         });
         ticking.current = true;
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [threshold]);
+
+  return show;
+};
+
+// =================== Header Component =================== //
+
+const Header = memo(() => {
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const showHeader = useScrollDirection();
+
+  const isActive = (path) => location.pathname === path;
+
+  // Close mobile menu on route change
+  useEffect(() => setMenuOpen(false), [location.pathname]);
+
+  // Scroll if coming with state.scrollTo
+  useEffect(
+    () => location.state?.scrollTo && scrollToSection(location.state.scrollTo),
+    [location]
+  );
 
   return (
     <motion.header
@@ -161,52 +160,45 @@ const Header = memo(() => {
       animate={showHeader ? "visible" : "hidden"}
       className="bg-[#14181E]/95 backdrop-blur-md sticky top-0 z-50 shadow-md"
     >
-      {/* Top Bar (Desktop) */}
+      {/* Desktop Top Bar */}
       <div className="hidden md:block border-b border-[#1F242C]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between py-2 text-sm text-gray-300">
-            {/* Left: Contact Info */}
-            <div className="flex items-center gap-6">
-              {CONTACT_INFO.map(({ icon: Icon, text, color }) => (
-                <ContactItem key={text} Icon={Icon} text={text} color={color} />
-              ))}
-            </div>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-2 text-sm text-gray-300">
+          <div className="flex items-center gap-6">
+            {CONTACT_INFO.map(({ icon, text, color }) => (
+              <ContactItem key={text} Icon={icon} text={text} color={color} />
+            ))}
+          </div>
 
-            {/* Right: Reviews + Social */}
-            <div className="flex items-center gap-5">
-              <div className="flex items-center gap-2 text-[#FFD700]">
-                <Star className="w-4 h-4 fill-current" />
-                <span className="font-semibold">4.9/5</span>
-                <span className="text-gray-400">Google Reviews</span>
-              </div>
-              <a
-                href="https://www.instagram.com/precision.to"
-                aria-label="Instagram"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:scale-110 transition-transform text-blue-400"
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a
-                href="https://wa.me/16476857153"
-                aria-label="WhatsApp"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:scale-110 transition-transform text-blue-400"
-              >
-                <MessageCircle className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.tiktok.com/@precision.to"
-                aria-label="TikTok"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:scale-110 transition-transform text-blue-400"
-              >
-                <FaTiktok className="w-4 h-4" />
-              </a>
+          <div className="flex items-center gap-5">
+            <div className="flex items-center gap-2 text-[#FFD700]">
+              <Star className="w-4 h-4 fill-current" />
+              <span className="font-semibold">4.9/5</span>
+              <span className="text-gray-400">Google Reviews</span>
             </div>
+            <a
+              href="https://www.instagram.com/precision.to"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:scale-110 transition-transform text-blue-400"
+            >
+              <Instagram className="w-5 h-5" />
+            </a>
+            <a
+              href="https://wa.me/16476857153"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:scale-110 transition-transform text-blue-400"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </a>
+            <a
+              href="https://www.tiktok.com/@precision.to"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:scale-110 transition-transform text-blue-400"
+            >
+              <FaTiktok className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </div>
@@ -234,6 +226,7 @@ const Header = memo(() => {
               />
             ))}
           </nav>
+
           <PrefetchLink to="/" className="hidden md:block">
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -248,7 +241,7 @@ const Header = memo(() => {
           <button
             aria-label="Toggle menu"
             className="md:hidden p-2 rounded-md border border-[#2A2F36] hover:bg-[#FFD700]/10 transition"
-            onClick={() => setMenuOpen((prev) => !prev)}
+            onClick={() => setMenuOpen(!menuOpen)}
           >
             {menuOpen ? (
               <X className="w-6 h-6 text-blue-400" />
@@ -259,7 +252,7 @@ const Header = memo(() => {
         </div>
       </div>
 
-      {/* Mobile Dropdown */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -269,24 +262,8 @@ const Header = memo(() => {
             exit="exit"
             className="md:hidden w-full bg-[#14181E] border-t border-[#1F242C] shadow-lg absolute left-0 z-40"
           >
-            
             <div className="px-6 py-6 space-y-6">
-              <motion.ul
-                className="space-y-5"
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-              >
-                {/* Contact Info */}
-            {/* <PrefetchLink to="/" onClick={() => setMenuOpen(false)}>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-blue-400 text-black w-full py-2 my-4 rounded-lg shadow-md"
-              >
-                Book Now
-              </motion.button>
-            </PrefetchLink> */}
+              <motion.ul className="space-y-5">
                 {MOBILE_LINKS.map((link) => (
                   <motion.li key={link.label} variants={itemVariants}>
                     <NavLinkItem
