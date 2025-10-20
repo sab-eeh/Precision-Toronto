@@ -22,17 +22,10 @@ import {
 } from "lucide-react";
 import { BookingContext } from "../context/BookingContext";
 
-// centralized assets (barrel file)
-import {
-  heroBackground,
-  section1,
-  section2,
-  section3,
-  beforeAfterPairs,
-  logo,
-} from "../assets/home";
+// ---------- centralized assets (barrel file) ----------
+import { heroBackground, beforeAfterPairs, logo } from "../assets/home";
 
-// lazy heavy bits (webpack magic comments to hint prefetch/preload where available)
+// ---------- lazy heavy bits ----------
 const CarModelViewer = lazy(() =>
   import(
     /* webpackChunkName: "car-model-viewer", webpackPrefetch: true */ "../components/ui/CarModelViewer"
@@ -57,34 +50,88 @@ const Header = lazy(() => import("../layout/Header"));
 const Footer = lazy(() => import("../layout/Footer"));
 const ReviewsCarousel = lazy(() => import("../components/ReviewsCarousel"));
 
-// lightweight skeletons
-const Skeleton = ({ className = "" }) => (
-  <div className={`animate-pulse bg-white/6 rounded-2xl ${className}`} />
-);
+// ---------- tiny skeleton ----------
+const Skeleton = memo(function Skeleton({ className = "" }) {
+  return (
+    <div className={`animate-pulse bg-white/10 rounded-2xl ${className}`} />
+  );
+});
 
-// ---------- utility hook: on-screen ----------
-function useOnScreen(ref, rootMargin = "0px") {
-  const [isIntersecting, setIntersecting] = useState(false);
+// ---------- constants (memoized by module) ----------
+const FEATURES = Object.freeze([
+  {
+    icon: Shield,
+    title: "Premium Protection",
+    description: "Protecting and maintaining your vehicle",
+  },
+  {
+    icon: Clock,
+    title: "Time Efficient",
+    description: "Quick turnaround without compromising quality",
+  },
+  { icon: MapPin, title: "Mobile Service", description: "We come to you" },
+  {
+    icon: Star,
+    title: "5-Star Reviews",
+    description: "Trusted by 500+ satisfied customers",
+  },
+]);
+
+const CARS = Object.freeze([
+  {
+    type: "sedan",
+    label: "Sedan",
+    desc: "Perfect for daily drivers",
+    modelPath: "/models/sedan/scene.gltf",
+  },
+  {
+    type: "suv",
+    label: "SUV",
+    desc: "Ideal for family vehicles",
+    modelPath: "/models/suv/scene.gltf",
+  },
+  {
+    type: "coupe",
+    label: "Coupe",
+    desc: "Luxury sports car treatment",
+    modelPath: "/models/coupe/scene.gltf",
+  },
+  {
+    type: "truck",
+    label: "Truck",
+    desc: "Heavy duty performance",
+    modelPath: "/models/truck/scene.gltf",
+  },
+]);
+
+// ---------- utilities ----------
+const stagger = (i, base = 0.06) => ({ delay: i * base });
+const clampIndex = (i, len) => (i + len) % len;
+
+// observe once, disconnect as soon as seen
+function useOnScreenOnce(ref, rootMargin = "0px") {
+  const [seen, setSeen] = useState(false);
   useEffect(() => {
-    if (!ref.current) return;
+    if (seen || !ref.current) return;
     const obs = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIntersecting(true);
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setSeen(true);
             obs.disconnect();
+            break;
           }
-        });
+        }
       },
       { rootMargin }
     );
     obs.observe(ref.current);
     return () => obs.disconnect();
-  }, [ref, rootMargin]);
-  return isIntersecting;
+  }, [seen, ref, rootMargin]);
+  return seen;
 }
 
-// ---------- Memoized UI pieces ----------
+// ---------- small memoized UI ----------
 const FeatureCard = memo(function FeatureCard({
   Icon,
   title,
@@ -93,7 +140,7 @@ const FeatureCard = memo(function FeatureCard({
 }) {
   return (
     <motion.div
-      className="p-6 rounded-2xl bg-black/45 border border-white/8 shadow-md hover:shadow-blue-500/20 transition-all"
+      className="p-6 rounded-2xl bg-black/45 border border-white/10 shadow-md hover:shadow-blue-500/20 transition-all"
       {...anim}
       viewport={{ once: true }}
     >
@@ -120,9 +167,8 @@ const CarCard = memo(function CarCard({ car, onSelect, anim, fallback }) {
     <motion.button
       type="button"
       onClick={handleClick}
-      className="text-left rounded-2xl p-5 bg-white/5 backdrop-blur-md border border-white/8 shadow-lg hover:shadow-blue-400/20 hover:ring-2 hover:ring-cyan-400/30 transition"
+      className="text-left rounded-2xl p-5 bg-white/5 backdrop-blur-md border border-white/10 shadow-lg hover:shadow-blue-400/20 hover:ring-2 hover:ring-cyan-400/30 transition"
       {...anim}
-      viewport={{ once: true }}
       style={{ willChange: "transform, opacity" }}
     >
       <div className="h-56 flex items-center justify-center">
@@ -134,7 +180,6 @@ const CarCard = memo(function CarCard({ car, onSelect, anim, fallback }) {
           />
         </Suspense>
       </div>
-
       <div className="text-center mt-5">
         <h3 className="text-lg font-semibold">{car.label}</h3>
         <p className="text-sm text-gray-400">{car.desc}</p>
@@ -180,7 +225,7 @@ const CarouselItem = memo(function CarouselItem({
 });
 
 // ---------- HomePage ----------
-const HomePage = ({ onCarSelect }) => {
+const HomePage = memo(function HomePage({ onCarSelect }) {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
   const { booking, setBooking } = useContext(BookingContext);
@@ -192,89 +237,17 @@ const HomePage = ({ onCarSelect }) => {
   const reviewsRef = useRef(null);
   const floatingContactRef = useRef(null);
 
-  const progressOnScreen = useOnScreen(progressRef, "200px");
-  const beforeAfterOnScreen = useOnScreen(beforeAfterRef, "300px");
-  const reviewsOnScreen = useOnScreen(reviewsRef, "300px");
-  const floatingContactOnScreen = useOnScreen(floatingContactRef, "800px");
+  const progressOnScreen = useOnScreenOnce(progressRef, "200px");
+  const beforeAfterOnScreen = useOnScreenOnce(beforeAfterRef, "300px");
+  const reviewsOnScreen = useOnScreenOnce(reviewsRef, "300px");
+  const floatingContactOnScreen = useOnScreenOnce(floatingContactRef, "800px");
 
-  // static lists memoized
-  const features = useMemo(
-    () => [
-      {
-        icon: Shield,
-        title: "Premium Protection",
-        description: "Protecting and maintaining your vehicle",
-      },
-      {
-        icon: Clock,
-        title: "Time Efficient",
-        description: "Quick turnaround without compromising quality",
-      },
-      { icon: MapPin, title: "Mobile Service", description: "We come to you" },
-      {
-        icon: Star,
-        title: "5-Star Reviews",
-        description: "Trusted by 500+ satisfied customers",
-      },
-    ],
-    []
-  );
-
-  const cars = useMemo(
-    () => [
-      {
-        type: "sedan",
-        label: "Sedan",
-        desc: "Perfect for daily drivers",
-        modelPath: "/models/sedan/scene.gltf",
-      },
-      {
-        type: "suv",
-        label: "SUV",
-        desc: "Ideal for family vehicles",
-        modelPath: "/models/suv/scene.gltf",
-      },
-      {
-        type: "coupe",
-        label: "Coupe",
-        desc: "Luxury sports car treatment",
-        modelPath: "/models/coupe/scene.gltf",
-      },
-      {
-        type: "truck",
-        label: "Truck",
-        desc: "Heavy duty performance",
-        modelPath: "/models/truck/scene.gltf",
-      },
-    ],
-    []
-  );
-
-  // UI state
+  // state
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [mountedHeavy, setMountedHeavy] = useState(false); // progressive hydration
+  const [mountedHeavy, setMountedHeavy] = useState(false);
   const [modelsPreloaded, setModelsPreloaded] = useState(false);
 
-  // handlers memoized
-  const handleCarSelect = useCallback(
-    (carType) => {
-      if (onCarSelect) onCarSelect(carType);
-      setBooking({ ...booking, carType });
-      navigate("/services");
-    },
-    [navigate, onCarSelect, booking, setBooking]
-  );
-
-  const nextSlide = useCallback(
-    () => setCurrentSlide((p) => (p + 1) % cars.length),
-    [cars.length]
-  );
-  const prevSlide = useCallback(
-    () => setCurrentSlide((p) => (p - 1 + cars.length) % cars.length),
-    [cars.length]
-  );
-
-  // Respect user reduced motion preference
+  // motion presets (created once)
   const fadeUp = useMemo(() => {
     if (prefersReducedMotion) return {};
     return {
@@ -285,30 +258,60 @@ const HomePage = ({ onCarSelect }) => {
     };
   }, [prefersReducedMotion]);
 
-  // progressive hydration: mount heavy content after small delay or on first interaction
+  const heroAnim = useMemo(() => {
+    if (prefersReducedMotion) return {};
+    return {
+      initial: { opacity: 0, y: 24 },
+      animate: { opacity: 1, y: 0 },
+      transition: { duration: 0.8, ease: "easeOut" },
+    };
+  }, [prefersReducedMotion]);
+
+  // handlers
+  const handleCarSelect = useCallback(
+    (carType) => {
+      if (onCarSelect) onCarSelect(carType);
+      setBooking((prev) => ({ ...prev, carType }));
+      navigate("/services");
+    },
+    [navigate, onCarSelect, setBooking]
+  );
+
+  const nextSlide = useCallback(
+    () => setCurrentSlide((p) => clampIndex(p + 1, CARS.length)),
+    []
+  );
+  const prevSlide = useCallback(
+    () => setCurrentSlide((p) => clampIndex(p - 1, CARS.length)),
+    []
+  );
+
+  // progressive hydration: mount heavy content after micro delay or first interaction
   useEffect(() => {
     if (mountedHeavy) return;
-    let t = setTimeout(() => setMountedHeavy(true), 450); // shorter delay for snappier feel
-
+    const t = setTimeout(() => setMountedHeavy(true), 380);
     const onFirstInteraction = () => {
       clearTimeout(t);
       setMountedHeavy(true);
+      window.removeEventListener("pointerdown", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
       window.removeEventListener("mousemove", onFirstInteraction);
       window.removeEventListener("touchstart", onFirstInteraction);
-      window.removeEventListener("keydown", onFirstInteraction);
     };
-
+    window.addEventListener("pointerdown", onFirstInteraction, {
+      passive: true,
+    });
+    window.addEventListener("keydown", onFirstInteraction, { passive: true });
     window.addEventListener("mousemove", onFirstInteraction, { passive: true });
     window.addEventListener("touchstart", onFirstInteraction, {
       passive: true,
     });
-    window.addEventListener("keydown", onFirstInteraction, { passive: true });
-
     return () => {
       clearTimeout(t);
+      window.removeEventListener("pointerdown", onFirstInteraction);
+      window.removeEventListener("keydown", onFirstInteraction);
       window.removeEventListener("mousemove", onFirstInteraction);
       window.removeEventListener("touchstart", onFirstInteraction);
-      window.removeEventListener("keydown", onFirstInteraction);
     };
   }, [mountedHeavy]);
 
@@ -316,7 +319,6 @@ const HomePage = ({ onCarSelect }) => {
   useEffect(() => {
     if (modelsPreloaded) return;
 
-    // ignore preloading on slow connections (save mobile data)
     const connection =
       navigator.connection ||
       navigator.mozConnection ||
@@ -328,40 +330,36 @@ const HomePage = ({ onCarSelect }) => {
       connection?.saveData;
 
     if (slow) {
-      setModelsPreloaded(true); // mark as skipped to avoid repeated checks
+      setModelsPreloaded(true);
       return;
     }
 
-    const preloadModels = async () => {
+    const preload = async () => {
+      // try drei's preloader
       try {
-        // try drei's preload if available
         const drei = await import("@react-three/drei").catch(() => null);
         if (drei?.useGLTF?.preload) {
-          cars.forEach((c) => {
+          for (const c of CARS) {
             try {
               drei.useGLTF.preload(c.modelPath);
-            } catch (e) {
-              /* ignore */
-            }
-          });
+            } catch {}
+          }
           setModelsPreloaded(true);
           return;
         }
-      } catch {
-        // no-op
-      }
+      } catch {}
 
-      // fallback: gentle fetch to warm cache, but avoid no-cors (less useful) and wrap in try/catch
+      // fallback: warm HTTP cache (same-origin)
       try {
         await Promise.all(
-          cars.map((c) =>
-            fetch(c.modelPath, { method: "GET", cache: "force-cache" }).catch(
-              () => null
-            )
+          CARS.map((c) =>
+            fetch(c.modelPath, {
+              method: "GET",
+              cache: "force-cache",
+              mode: "same-origin",
+            }).catch(() => null)
           )
         );
-      } catch {
-        /* noop */
       } finally {
         setModelsPreloaded(true);
       }
@@ -369,21 +367,25 @@ const HomePage = ({ onCarSelect }) => {
 
     const idle = (cb) =>
       "requestIdleCallback" in window
-        ? window.requestIdleCallback(cb, { timeout: 600 })
+        ? window.requestIdleCallback(cb, { timeout: 800 })
         : setTimeout(cb, 300);
-    idle(preloadModels);
-  }, [cars, modelsPreloaded]);
 
-  // handle location-based scroll (keep existing behavior)
+    idle(preload);
+  }, [modelsPreloaded]);
+
+  // handle location-based scroll
   useEffect(() => {
-    if (location.state?.scrollTo) {
-      const section = document.getElementById(location.state.scrollTo);
-      section?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [location]);
+    const target =
+      location.state?.scrollTo &&
+      document.getElementById(location.state.scrollTo);
+    if (target)
+      target.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+      });
+  }, [location, prefersReducedMotion]);
 
-  // small optimized fallbacks we reuse
-  const carFallback = <Skeleton className="h-56 w-full" />;
+  // shared fallback
+  const carFallback = useMemo(() => <Skeleton className="h-56 w-full" />, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0A0F11] via-[#0E1417] to-[#0A0F11] text-white overflow-x-hidden">
@@ -398,7 +400,7 @@ const HomePage = ({ onCarSelect }) => {
         <Header />
       </Suspense>
 
-      {/* Floating Contact - mount only if user likely to see / after hydration */}
+      {/* Floating Contact */}
       <div ref={floatingContactRef} aria-hidden>
         {floatingContactOnScreen && mountedHeavy ? (
           <Suspense fallback={null}>
@@ -407,27 +409,22 @@ const HomePage = ({ onCarSelect }) => {
         ) : null}
       </div>
 
-      {/* HERO (LCP image as <img>) */}
+      {/* HERO */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden sm:py-4 md:py-6">
         <img
           src={heroBackground}
           alt="High-end car detailing background"
-          fetchPriority="high"
+          fetchpriority="high"
           decoding="async"
           loading="eager"
           className="absolute inset-0 w-full h-full object-cover"
+          sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/40 to-black/50" />
 
         <motion.div
           className="relative z-10 text-center px-6 max-w-6xl mx-auto"
-          {...(prefersReducedMotion
-            ? {}
-            : {
-                initial: { opacity: 0, y: 24 },
-                animate: { opacity: 1, y: 0 },
-                transition: { duration: 0.8, ease: "easeOut" },
-              })}
+          {...heroAnim}
         >
           <Link
             to="/"
@@ -439,10 +436,10 @@ const HomePage = ({ onCarSelect }) => {
               alt="Precision Toronto Logo"
               width={176}
               height={176}
-              className="w-46 md:w-56 h-auto mx-auto rounded-full shadow-lg"
+              className="w-44 md:w-56 h-auto mx-auto rounded-full shadow-lg"
               loading="eager"
               decoding="async"
-              fetchPriority="high"
+              fetchpriority="high"
             />
           </Link>
 
@@ -450,41 +447,36 @@ const HomePage = ({ onCarSelect }) => {
             Luxury Auto Detailing Excellence
           </p>
 
-          {/* Features */}
+          {/* Features (no hooks inside loops) */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 mt-12 mb-12">
-            {features.map((f, i) => {
-              // memoize per-index anim to avoid re-creating objects
-              const anim = useMemo(
-                () =>
+            {FEATURES.map((f, i) => (
+              <FeatureCard
+                key={f.title}
+                Icon={f.icon}
+                title={f.title}
+                description={f.description}
+                anim={
                   prefersReducedMotion
                     ? {}
                     : {
                         ...fadeUp,
                         transition: {
                           ...(fadeUp.transition || {}),
-                          delay: i * 0.06,
+                          ...stagger(i, 0.06),
                         },
-                      },
-                // eslint-disable-next-line react-hooks/exhaustive-deps
-                [i, prefersReducedMotion]
-              );
-              return (
-                <FeatureCard
-                  key={f.title}
-                  Icon={f.icon}
-                  title={f.title}
-                  description={f.description}
-                  anim={anim}
-                />
-              );
-            })}
+                      }
+                }
+              />
+            ))}
           </div>
 
           <motion.button
             onClick={() =>
-              document.getElementById("car-selection")?.scrollIntoView({
-                behavior: prefersReducedMotion ? "auto" : "smooth",
-              })
+              document
+                .getElementById("car-selection")
+                ?.scrollIntoView({
+                  behavior: prefersReducedMotion ? "auto" : "smooth",
+                })
             }
             className="px-10 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full shadow-xl transition-all sm:mb-7 lg:mb-0"
             whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
@@ -495,7 +487,7 @@ const HomePage = ({ onCarSelect }) => {
         </motion.div>
       </section>
 
-      {/* Progress Tracker - lazy mount when its region is near viewport */}
+      {/* Progress Tracker */}
       <div ref={progressRef}>
         {progressOnScreen ? (
           <Suspense
@@ -529,40 +521,33 @@ const HomePage = ({ onCarSelect }) => {
 
           {/* Desktop grid */}
           <div className="hidden lg:grid grid-cols-4 gap-8">
-            {cars.map((car, idx) => {
-              const anim = useMemo(
-                () =>
+            {CARS.map((car, idx) => (
+              <CarCard
+                key={car.type}
+                car={car}
+                onSelect={handleCarSelect}
+                anim={
                   prefersReducedMotion
                     ? {}
                     : {
                         ...fadeUp,
                         transition: {
                           ...(fadeUp.transition || {}),
-                          delay: idx * 0.08,
+                          ...stagger(idx, 0.08),
                         },
-                      },
-                // eslint-disable-next-line react-hooks/exhaustive-deps
-                [idx, prefersReducedMotion]
-              );
-
-              return (
-                <CarCard
-                  key={car.type}
-                  car={car}
-                  onSelect={handleCarSelect}
-                  anim={anim}
-                  fallback={carFallback}
-                />
-              );
-            })}
+                      }
+                }
+                fallback={carFallback}
+              />
+            ))}
           </div>
 
           {/* Mobile carousel */}
           <div className="block lg:hidden relative max-w-sm mx-auto">
             <AnimatePresence mode="wait">
               <CarouselItem
-                key={cars[currentSlide].type}
-                car={cars[currentSlide]}
+                key={CARS[currentSlide].type}
+                car={CARS[currentSlide]}
                 onSelect={handleCarSelect}
                 anim={
                   prefersReducedMotion
@@ -591,7 +576,7 @@ const HomePage = ({ onCarSelect }) => {
                 className="flex gap-2 absolute left-1/2 -translate-x-1/2"
                 aria-hidden="true"
               >
-                {cars.map((_, idx) => (
+                {CARS.map((_, idx) => (
                   <span
                     key={idx}
                     className={`w-3 h-3 rounded-full transition ${
@@ -638,7 +623,7 @@ const HomePage = ({ onCarSelect }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 container mx-auto px-6">
           {beforeAfterPairs.map((pair, idx) => (
-            <motion.div
+            <motion.figure
               key={idx}
               className="relative overflow-hidden rounded-xl shadow-lg group"
               initial={{ opacity: 0, scale: 0.96 }}
@@ -649,9 +634,10 @@ const HomePage = ({ onCarSelect }) => {
               <img
                 src={pair.before}
                 alt="Before detailing"
-                className="w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 group-hover:opacity-0 transition-opacity duration-600"
+                className="w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 group-hover:opacity-0 transition-opacity duration-500"
                 loading="lazy"
                 decoding="async"
+                sizes="(max-width: 768px) 100vw, 33vw"
               />
               <span className="absolute top-3 left-3 bg-blue-600 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
                 Before
@@ -663,16 +649,17 @@ const HomePage = ({ onCarSelect }) => {
                 className="w-full h-64 md:h-72 lg:h-80 object-cover"
                 loading="lazy"
                 decoding="async"
+                sizes="(max-width: 768px) 100vw, 33vw"
               />
               <span className="absolute top-3 right-3 bg-blue-800 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
                 After
               </span>
-            </motion.div>
+            </motion.figure>
           ))}
         </div>
       </section>
 
-      {/* BeforeAfterSlider (heavy) - mount only when on-screen to avoid early cost */}
+      {/* Heavy slider lazy-mount only when visible */}
       <div
         ref={beforeAfterRef}
         className="py-20 px-6 bg-gradient-to-b from-[#0F1518] to-[#0A0F11]"
@@ -683,14 +670,12 @@ const HomePage = ({ onCarSelect }) => {
               <BeforeAfterSlider />
             </Suspense>
           ) : (
-            <div className="h-[420px] w-full">
-              <Skeleton className="h-[420px] w-full" />
-            </div>
+            <Skeleton className="h-[420px] w-full" />
           )}
         </div>
       </div>
 
-      {/* Reviews (lazy mount) */}
+      {/* Reviews */}
       <div ref={reviewsRef}>
         {reviewsOnScreen && mountedHeavy ? (
           <Suspense
@@ -719,6 +704,6 @@ const HomePage = ({ onCarSelect }) => {
       </Suspense>
     </div>
   );
-};
+});
 
 export default HomePage;

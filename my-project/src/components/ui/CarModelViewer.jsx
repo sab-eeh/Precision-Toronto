@@ -1,94 +1,128 @@
-import React, { Suspense, useRef, useEffect, useMemo } from "react";
+import React, { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   useGLTF,
   Preload,
   Html,
-  useProgress,
   OrbitControls,
   Environment,
+  AdaptiveDpr,
+  PerformanceMonitor,
 } from "@react-three/drei";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 
-// ✅ Predefined model settings
-const modelSettings = {
+// ---- Global DRACO + Preloads (run once per module) ----
+useGLTF.setDecoderPath("/draco/");
+
+const MODEL_SETTINGS = Object.freeze({
   sedan: { scale: 85, y: -0.8 },
   suv: { scale: 0.25, y: -0.2 },
   coupe: { scale: 80, y: -0.8 },
   truck: { scale: 6.2, y: -1 },
-};
+});
 
-// ✅ Loader component
-function Loader() {
-  const { progress } = useProgress();
+const ALL_MODELS = [
+  "/models/sedan/scene.gltf",
+  "/models/suv/scene.gltf",
+  "/models/coupe/scene.gltf",
+  "/models/truck/scene.gltf",
+];
+ALL_MODELS.forEach((p) => useGLTF.preload(p));
+
+// ---- Loader (pure, lightweight) ----
+const Loader = React.memo(function Loader() {
   return (
     <Html center>
       <div className="flex flex-col items-center justify-center text-white bg-black/50 p-4 rounded-lg">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-3"></div>
-        <p className="text-sm">{progress.toFixed(0)}% loaded</p>
+        <p className="text-sm">Loading…</p>
       </div>
     </Html>
   );
-}
+});
 
-// ✅ Car Model Component
-function CarModel({ modelPath, modelType, rotationSpeed = 0.4 }) {
+// ---- Car Model (optimized transforms + smooth rotation) ----
+const CarModel = React.memo(function CarModel({
+  modelPath,
+  modelType,
+  rotationSpeed = 0.4,
+}) {
   const meshRef = useRef();
-
-  // ✅ Load with DRACO support
-  const { scene } = useGLTF(modelPath, true, true, (loader) => {
-    if (!loader.dracoLoader) {
-      const dracoLoader = new DRACOLoader();
-      dracoLoader.setDecoderPath("/draco/");
-      loader.setDRACOLoader(dracoLoader);
-    }
-  });
-
-  // ✅ Memoize scale/position values
+  const { scene } = useGLTF(modelPath);
   const { scale, y } = useMemo(
-    () => modelSettings[modelType?.toLowerCase()] || { scale: 1, y: 0 },
+    () => MODEL_SETTINGS[modelType?.toLowerCase()] || { scale: 1, y: 0 },
     [modelType]
   );
 
-  // ✅ Apply transforms safely
+  // Apply transforms exactly once when deps change
   useEffect(() => {
-    scene.scale.set(scale, scale, scale);
+    scene.scale.setScalar(scale);
     scene.position.set(0, y, 0);
+    // Ensure frustumCulled false for big scaled assets that might pop
+    scene.traverse((o) => {
+      if (o.isMesh) o.frustumCulled = false;
+    });
   }, [scene, scale, y]);
 
-  // ✅ Smooth rotation
   useFrame(({ clock }) => {
-    if (meshRef.current) {
+    if (meshRef.current)
       meshRef.current.rotation.y = clock.elapsedTime * rotationSpeed;
-    }
   });
 
   return <primitive ref={meshRef} object={scene} />;
-}
+});
 
-// ✅ Viewer Component
+// ---- Viewer ----
 function CarModelViewer({ modelPath, modelType }) {
+  // Connection-aware DPR upper bound
+  const maxDpr = useMemo(() => {
+    const c =
+      navigator.connection ||
+      navigator.mozConnection ||
+      navigator.webkitConnection;
+    const slow =
+      c?.saveData ||
+      (c?.effectiveType && /(2g|slow-2g)/i.test(c.effectiveType || ""));
+    return slow ? 1.25 : 2;
+  }, []);
+
   return (
     <div className="w-full h-72 rounded-xl overflow-hidden">
       <Canvas
         camera={{ position: [3, 2, 5], fov: 45 }}
-        dpr={[1, 2]}
-        gl={{ antialias: true }}
+        dpr={[1, maxDpr]}
+        // Keep visuals nice but lean:
+        gl={{
+          antialias: true,
+          powerPreference: "high-performance",
+          alpha: true,
+          stencil: false,
+          depth: true,
+          failIfMajorPerformanceCaveat: true,
+        }}
+        // Rotation requires frames; keep always to retain smoothness
+        frameloop="always"
+        shadows={false}
       >
-        {/* ✅ Lighting */}
+        <PerformanceMonitor
+          onDecline={() => {
+            /* DPR auto-adjusts via AdaptiveDpr */
+          }}
+        >
+          <AdaptiveDpr pixelated />
+        </PerformanceMonitor>
+
+        {/* Lighting */}
         <ambientLight intensity={0.6} />
         <directionalLight position={[10, 10, 5]} intensity={1.2} />
 
-        {/* ✅ Realistic environment */}
-        <Environment preset="city" />
-
-        {/* ✅ Loader shown while Suspense waits */}
+        {/* Realistic environment */}
         <Suspense fallback={<Loader />}>
+          <Environment preset="city" />
           <CarModel modelPath={modelPath} modelType={modelType} />
           <Preload all />
         </Suspense>
 
-        {/* ✅ Controls */}
+        {/* Controls (same UX) */}
         <OrbitControls enableZoom={false} />
       </Canvas>
     </div>
@@ -96,6 +130,3 @@ function CarModelViewer({ modelPath, modelType }) {
 }
 
 export default React.memo(CarModelViewer);
-
-// ✅ Preload helper for performance
-useGLTF.preload("/path/to/your/model.glb");
