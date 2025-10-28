@@ -1,4 +1,4 @@
-// routes/authRoutes.js
+// backend/src/routes/authRoutes.js
 const express = require("express");
 const {
   login,
@@ -16,7 +16,7 @@ router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 router.get("/dashboard", protect, dashboard);
 
-// Optional: create first admin (only run once, secure/remove later)
+// Only use once to create first admin
 router.post("/register-admin", registerAdminIfFirst);
 
 module.exports = router;

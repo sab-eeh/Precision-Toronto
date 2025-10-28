@@ -1,107 +1,146 @@
-// /utils/time.js
-// Time utilities: minutes addition, business-minute addition (8am-8pm), overlap check, slot generation
+// utils/time.js
+const BUSINESS_START_HOUR = 8; // 08:00
+const BUSINESS_END_HOUR = 20; // 20:00
 
-const BUSINESS_START_HOUR = 8;
-const BUSINESS_END_HOUR = 20;
+function toDate(d) {
+  const t = d instanceof Date ? d : new Date(d);
+  if (isNaN(t)) throw new Error("Invalid Date");
+  return t;
+}
+const clone = (d) => new Date(d.getTime());
+function withTime(d, h = 0, m = 0, s = 0, ms = 0) {
+  const x = clone(d);
+  x.setHours(h, m, s, ms);
+  return x;
+}
+function startOfDay(d) {
+  const x = clone(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function addDays(d, n) {
+  const x = clone(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+const min = (a, b) => (a < b ? a : b);
+const max = (a, b) => (a > b ? a : b);
 
-/**
- * Add minutes to a Date (simple)
- */
-function addMinutes(date, minutes) {
-  const d = new Date(date);
-  d.setMinutes(d.getMinutes() + Number(minutes));
+function bizWindowForDate(d) {
+  const s = withTime(d, BUSINESS_START_HOUR, 0, 0, 0);
+  const e = withTime(d, BUSINESS_END_HOUR, 0, 0, 0);
+  return { start: s, end: e };
+}
+
+function nextBizStart(dLike) {
+  const d = toDate(dLike);
+  const { start, end } = bizWindowForDate(d);
+  if (d < start) return start;
+  if (d >= end) return bizWindowForDate(addDays(d, 1)).start;
   return d;
 }
 
-/**
- * Add minutes while only counting business hours (8:00 - 20:00).
- * If the remaining minutes exceed today, continue at next day's business start.
- *
- * Example: start 2025-09-30 17:00, minutes=240 (4h)
- * - 17:00 -> 20:00 (3h used)
- * - remainder 1h -> next day 08:00 -> 09:00 => returns 2025-10-01 09:00
- */
-function addBusinessMinutes(startDate, minutes) {
-  let remaining = Number(minutes);
-  let cursor = new Date(startDate);
+/** Add minutes only through business hours */
+function addBusinessMinutes(startLike, minutes) {
+  let current = nextBizStart(toDate(startLike));
+  let remaining = Math.max(0, Math.floor(minutes));
 
   while (remaining > 0) {
-    // Define today's business window
-    const todayStart = new Date(cursor);
-    todayStart.setHours(BUSINESS_START_HOUR, 0, 0, 0);
-
-    const todayEnd = new Date(cursor);
-    todayEnd.setHours(BUSINESS_END_HOUR, 0, 0, 0);
-
-    // If cursor before business start, jump to business start
-    if (cursor < todayStart) cursor = new Date(todayStart);
-
-    // If cursor is at/after today's business end -> move to next day 8am
-    if (cursor >= todayEnd) {
-      cursor = new Date(todayStart);
-      cursor.setDate(cursor.getDate() + 1);
+    const { end } = bizWindowForDate(current);
+    const roomMs = end.getTime() - current.getTime();
+    if (roomMs <= 0) {
+      current = bizWindowForDate(addDays(current, 1)).start;
       continue;
     }
-
-    // Minutes available today from cursor
-    const minsLeftToday = Math.floor((todayEnd - cursor) / 60000);
-    if (remaining <= minsLeftToday) {
-      cursor = addMinutes(cursor, remaining);
-      remaining = 0;
-      break;
+    const roomMin = Math.floor(roomMs / 60000);
+    if (remaining <= roomMin) {
+      return new Date(current.getTime() + remaining * 60000);
     }
-
-    // consume the rest of today's business minutes
-    remaining -= minsLeftToday;
-    cursor = new Date(todayEnd);
-    // loop will move to next business day
+    remaining -= roomMin;
+    current = bizWindowForDate(addDays(current, 1)).start;
   }
-
-  return cursor;
+  return current;
 }
 
-/**
- * Check overlap for half-open intervals [aStart, aEnd) and [bStart, bEnd)
- */
+/** Return [{ startAt, endAt, minutes }] across business days */
+function splitIntoBusinessSegments(startLike, totalMinutes) {
+  let cursor = nextBizStart(toDate(startLike));
+  let remaining = Math.max(0, Math.floor(totalMinutes));
+  const segments = [];
+
+  while (remaining > 0) {
+    const { end } = bizWindowForDate(cursor);
+    if (cursor >= end) {
+      cursor = bizWindowForDate(addDays(cursor, 1)).start;
+      continue;
+    }
+    const todayRoomMin = Math.floor((end.getTime() - cursor.getTime()) / 60000);
+    const take = Math.min(todayRoomMin, remaining);
+    const segEnd = new Date(cursor.getTime() + take * 60000);
+
+    segments.push({
+      startAt: new Date(cursor),
+      endAt: segEnd,
+      minutes: take, // <-- aligned to schema/UI
+    });
+
+    remaining -= take;
+    cursor = segEnd;
+    if (cursor >= end && remaining > 0) {
+      cursor = bizWindowForDate(addDays(cursor, 1)).start;
+    }
+  }
+  return segments;
+}
+
+/** Generate fixed-size slots for the business day */
+function generateSlotsForDay(dayLike, opts = {}) {
+  const day = startOfDay(toDate(dayLike));
+  const startHour = Number.isFinite(opts.startHour)
+    ? opts.startHour
+    : BUSINESS_START_HOUR;
+  const endHour = Number.isFinite(opts.endHour)
+    ? opts.endHour
+    : BUSINESS_END_HOUR;
+  const slotMin = Math.max(5, opts.slotMinutes || 60);
+
+  const dayStart = withTime(day, startHour, 0, 0, 0);
+  const dayEnd = withTime(day, endHour, 0, 0, 0);
+
+  const out = [];
+  for (let t = dayStart.getTime(); t < dayEnd.getTime(); t += slotMin * 60000) {
+    const s = new Date(t);
+    const e = new Date(min(t + slotMin * 60000, dayEnd.getTime()));
+    out.push({ start: s, end: e });
+  }
+  return out;
+}
+
+/** Basic overlap */
 function isOverlap(aStart, aEnd, bStart, bEnd) {
-  return aStart < bEnd && aEnd > bStart;
+  const A = toDate(aStart).getTime();
+  const B = toDate(aEnd).getTime();
+  const C = toDate(bStart).getTime();
+  const D = toDate(bEnd).getTime();
+  return A < D && B > C;
 }
 
-/**
- * Generate hourly slots for a given day within business hours.
- * Defaults: startHour = 8, endHour = 20, slotMinutes = 60
- */
-function generateSlotsForDay(
-  dayStart,
-  {
-    startHour = BUSINESS_START_HOUR,
-    endHour = BUSINESS_END_HOUR,
-    slotMinutes = 60,
-  } = {}
-) {
-  const start = new Date(dayStart);
-  start.setHours(startHour, 0, 0, 0);
-
-  const end = new Date(dayStart);
-  end.setHours(endHour, 0, 0, 0);
-
-  const slots = [];
-  let cursor = new Date(start);
-
-  while (addMinutes(cursor, slotMinutes) <= end) {
-    const slotEnd = addMinutes(cursor, slotMinutes);
-    slots.push({ start: new Date(cursor), end: slotEnd });
-    cursor = slotEnd;
-  }
-
-  return slots;
+/** Minutes overlapped between two ranges */
+function minutesOverlap(aStart, aEnd, bStart, bEnd) {
+  const A = toDate(aStart).getTime();
+  const B = toDate(aEnd).getTime();
+  const C = toDate(bStart).getTime();
+  const D = toDate(bEnd).getTime();
+  const ov = max(0, min(B, D) - max(A, C));
+  return Math.floor(ov / 60000);
 }
 
 module.exports = {
-  addMinutes,
-  addBusinessMinutes,
-  isOverlap,
-  generateSlotsForDay,
   BUSINESS_START_HOUR,
   BUSINESS_END_HOUR,
+  addBusinessMinutes,
+  splitIntoBusinessSegments,
+  generateSlotsForDay,
+  isOverlap,
+  minutesOverlap,
 };

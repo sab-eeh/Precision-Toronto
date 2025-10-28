@@ -1,3 +1,4 @@
+// backend/src/middleware/validateRequest.js
 const { validationResult } = require("express-validator");
 
 module.exports = function validateRequest(req, res, next) {
@@ -6,8 +7,12 @@ module.exports = function validateRequest(req, res, next) {
     return res.status(422).json({
       success: false,
       message: "Validation failed",
-      errors: result.array(),
+      errors: result.array().map((e) => ({
+        field: e.param,
+        msg: e.msg,
+        location: e.location,
+      })),
     });
   }
-  next();
+  return next();
 };

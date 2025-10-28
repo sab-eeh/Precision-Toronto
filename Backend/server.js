@@ -1,80 +1,44 @@
-const express = require("express");
-const dotenv = require("dotenv");
-const helmet = require("helmet");
-const cors = require("cors");
-const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
+// backend/src/server.js
+require("dotenv").config();
+const http = require("http");
+const app = require("./app");
 const connectDB = require("./config/db");
 
-// Load environment variables
-dotenv.config();
+const PORT = Number(process.env.PORT || 5000);
 
-// Connect to DB
-connectDB();
+// Connect DB first, then start server
+(async () => {
+  await connectDB();
 
-// Init express app
-const app = express();
+  const server = http.createServer(app);
 
-// --------------------
-// Middlewares
-// --------------------
-app.use(express.json({ limit: "10kb" }));
-app.use(helmet());
-
-app.use(
-  cors({
-    origin: ["http://localhost:5173"], // your React frontend
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
-
-if (process.env.NODE_ENV !== "test") {
-  app.use(morgan("dev"));
-}
-
-// Rate Limiter
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use("/api", limiter);
-
-// --------------------
-// Routes
-// --------------------
-const bookingRoutes = require("./routes/bookingRoutes");
-const authRoutes = require("./routes/authRoutes");
-
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/auth", authRoutes);
-
-// Health check
-app.get("/", (req, res) => {
-  res.status(200).json({ message: "API is running ✅" });
-});
-
-// Global Error Handler
-// (Place after routes)
-app.use((err, req, res, next) => {
-  console.error("Error:", err.stack);
-  res.status(err.statusCode || 500).json({
-    success: false,
-    message: err.message || "Internal Server Error",
+  server.listen(PORT, () => {
+    console.log(
+      `🚀 Server running in ${
+        process.env.NODE_ENV || "development"
+      } on port ${PORT}`
+    );
   });
-});
 
-// --------------------
-// Start Server
-// --------------------
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
-  console.log(
-    `🚀 Server running in ${
-      process.env.NODE_ENV || "development"
-    } mode on port ${PORT}`
-  )
-);
+  // Handle unhandled rejections & exceptions cleanly
+  process.on("unhandledRejection", (reason) => {
+    console.error("Unhandled Rejection:", reason);
+  });
+  process.on("uncaughtException", (err) => {
+    console.error("Uncaught Exception:", err);
+    process.exit(1);
+  });
 
-module.exports = app; // Export for testing if needed
+  // Graceful shutdown
+  const shutdown = () => {
+    console.log("🔻 Shutting down...");
+    server.close(() => {
+      console.log("HTTP server closed");
+      process.exit(0);
+    });
+    // Force exit if something hangs
+    setTimeout(() => process.exit(1), 5000).unref();
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+})();

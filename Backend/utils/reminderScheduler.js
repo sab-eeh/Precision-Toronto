@@ -1,65 +1,69 @@
+// backend/src/utils/reminderScheduler.js
 const cron = require("node-cron");
 const Booking = require("../models/Booking");
 const sendEmail = require("./emails");
-const sendSMS = require("./sms");
+const { sendSMS } = require("./sms");
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL; // add this in .env
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
-// Run every 15 minutes
+/**
+ * Every 15 minutes: find bookings ~24h away and send reminders
+ */
 cron.schedule("*/15 * * * *", async () => {
-  console.log("🔔 Checking for upcoming bookings...");
-
   const now = new Date();
-  const reminderTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours ahead
+  const target = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24h later
+
+  console.log("🔔 Checking for bookings starting ~24h from now");
 
   try {
     const bookings = await Booking.find({
       startAt: {
-        $gte: reminderTime,
-        $lt: new Date(reminderTime.getTime() + 15 * 60 * 1000), // within next 15 min window
+        $gte: target,
+        $lt: new Date(target.getTime() + 15 * 60 * 1000),
       },
-      status: { $in: ["pending", "confirmed"] }, // only active bookings
+      status: { $in: ["pending", "confirmed"] },
     });
 
-    for (let booking of bookings) {
-      const bookingDate = new Date(booking.startAt).toLocaleString();
+    for (const b of bookings) {
+      const dateStr = new Date(b.startAt).toLocaleString();
 
-      // --- Customer Email Reminder ---
-      if (booking.email) {
-        const emailHtml = `
+      // Customer email
+      if (b.email) {
+        const html = `
           <h2>Appointment Reminder</h2>
-          <p>Dear ${booking.customerName},</p>
+          <p>Dear ${b.customerName},</p>
           <p>This is a friendly reminder for your booking tomorrow:</p>
-          <p><strong>Service(s):</strong> ${booking.services.map(s => s.title).join(", ")}</p>
-          <p><strong>Date & Time:</strong> ${bookingDate}</p>
-          <p>We look forward to seeing you!</p>
-        `;
-        await sendEmail(booking.email, "⏰ Reminder: Your Booking Tomorrow", emailHtml);
+          <p><strong>Services:</strong> ${b.services
+            .map((s) => s.title)
+            .join(", ")}</p>
+          <p><strong>Date & Time:</strong> ${dateStr}</p>`;
+        await sendEmail(b.email, "⏰ Reminder: Your Booking Tomorrow", html);
       }
 
-      // --- Customer SMS Reminder ---
-      if (booking.phone) {
-        const smsText = `⏰ Reminder: Hi ${booking.customerName}, your booking is tomorrow at ${bookingDate}. - Precision Toronto`;
-        await sendSMS(booking.phone, smsText);
+      // Customer SMS
+      if (b.phone) {
+        const text = `⏰ Reminder: Hi ${b.customerName}, your booking is tomorrow at ${dateStr}. - Precision Toronto`;
+        await sendSMS(b.phone, text);
       }
 
-      // --- Admin Email Notification ---
+      // Admin notification
       if (ADMIN_EMAIL) {
-        const adminHtml = `
-          <h2>Booking Reminder (Admin)</h2>
-          <p>Customer: ${booking.customerName}</p>
-          <p>Phone: ${booking.phone}</p>
-          <p>Email: ${booking.email || "N/A"}</p>
-          <p>Services: ${booking.services.map(s => `${s.title} ($${s.price})`).join(", ")}</p>
-          <p>Total Price: $${booking.totalPrice}</p>
-          <p>Date & Time: ${bookingDate}</p>
-        `;
-        await sendEmail(ADMIN_EMAIL, "📋 Reminder: Upcoming Booking (24h)", adminHtml);
+        const html = `
+          <h2>Upcoming Booking (24h Reminder)</h2>
+          <p>Customer: ${b.customerName}</p>
+          <p>Phone: ${b.phone}</p>
+          <p>Email: ${b.email || "N/A"}</p>
+          <p>Services: ${b.services
+            .map((s) => `${s.title} ($${s.price})`)
+            .join(", ")}</p>
+          <p>Total: $${b.totalPrice}</p>
+          <p>Date & Time: ${dateStr}</p>`;
+        await sendEmail(ADMIN_EMAIL, "📋 Reminder: Booking in 24h", html);
       }
 
-      console.log(`✅ Reminder sent for booking: ${booking._id}`);
+      console.log(`✅ Reminder sent for booking ${b._id}`);
     }
-  } catch (error) {
-    console.error("❌ Reminder Scheduler Error:", error.message);
+  } catch (err) {
+    console.error("❌ Reminder scheduler error:", err.message);
   }
 });
