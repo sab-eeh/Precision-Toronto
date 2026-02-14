@@ -22,16 +22,7 @@ import {
   FilePlus,
 } from "lucide-react";
 
-/**
- * AdminDashboard (responsive, enhanced)
- *
- * - Keeps your dark theme and original logic.
- * - Improves responsiveness so elements won't overlap on small screens.
- * - Adds: summary cards, bulk select & delete, export CSV, clearer wrapping/truncation.
- * - Uses plain React + Tailwind classes.
- *
- * Replace original AdminDashboard.jsx with this file.
- */
+import { parseDuration } from "../utils/duration";
 
 const API = "http://localhost:5000/api";
 const STATUS_OPTIONS = [
@@ -100,22 +91,58 @@ function uniqueById(items) {
 
 function computeServiceSchedule(startAtISO, services = []) {
   if (!startAtISO || !Array.isArray(services)) return [];
+
+  const getServiceDurationMin = (service) => {
+    if (!service) return 60;
+
+    // 1) Prefer numeric minutes from backend
+    const numericCandidates = [
+      service.durationMinutes,
+      service.minutes,
+      service.durationMin,
+      service.timeMinutes,
+      service.estimatedMinutes,
+    ];
+
+    for (const v of numericCandidates) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+
+    // 2) Parse duration strings like "2–3 hrs", "45 mins", "1h 30m"
+    const strCandidates = [service.duration, service.time];
+
+    for (const v of strCandidates) {
+      if (typeof v === "string" && v.trim()) {
+        const parsed = parseDuration(v);
+        if (parsed?.avg && parsed.avg > 0) return parsed.avg;
+      }
+    }
+
+    // fallback (prevents schedule breaking)
+    return 60;
+  };
+
   const start = new Date(startAtISO);
   const out = [];
   let cursor = new Date(start);
+
   for (const s of services) {
-    const durationMin =
-      Number(s.duration || s.minutes || s.durationMinutes || 0) || 0;
+    const durationMin = getServiceDurationMin(s);
+
     const serviceStart = new Date(cursor);
     const serviceEnd = new Date(cursor.getTime() + durationMin * 60_000);
+
     out.push({
       ...s,
-      _schedStart: serviceStart.toISOString(),
-      _schedEnd: serviceEnd.toISOString(),
+      _schedStart: serviceStart,
+      _schedEnd: serviceEnd,
       _durationMin: durationMin,
     });
+
     cursor = serviceEnd;
   }
+
   return out;
 }
 
@@ -147,6 +174,13 @@ export default function AdminDashboard() {
   // New enhanced state:
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [selectAllOnPage, setSelectAllOnPage] = useState(false);
+
+  function getAllBookingItems(b) {
+    return [
+      ...(Array.isArray(b.services) ? b.services : []),
+      ...(Array.isArray(b.addons) ? b.addons : []),
+    ];
+  }
 
   // auth gate + initial fetch
   useEffect(() => {
@@ -331,13 +365,15 @@ export default function AdminDashboard() {
             .filter(Boolean)
             .join(" ")
         : "";
-      const servicesTitles =
-        Array.isArray(b?.services) && b.services.length
-          ? b.services
-              .map((s) => s?.title)
-              .filter(Boolean)
-              .join("; ")
-          : "";
+      const allItems = getAllBookingItems(b);
+
+      const servicesTitles = allItems.length
+        ? allItems
+            .map((s) => s?.title)
+            .filter(Boolean)
+            .join(", ")
+        : "—";
+
       return [
         b._id,
         b.customerName || "",
@@ -719,10 +755,14 @@ export default function AdminDashboard() {
                       .join(", ")
                   : "—";
               const range = formatDateTimeRange(b.startAt, b.endAt);
-              const mins = minutesBetween(b.startAt, b.endAt);
+              const mins = Number(b.durationMinutes) || null;
               const isNew = isNewBooking(b.createdAt || b.createdAtAt, 15);
               const expanded = expandedBookingId === b._id;
-              const sched = computeServiceSchedule(b.startAt, b.services || []);
+              const sched = computeServiceSchedule(
+                b.startAt,
+                getAllBookingItems(b)
+              );
+
               const checked = selectedIds.has(b._id);
 
               return (
@@ -881,8 +921,13 @@ export default function AdminDashboard() {
                             ) : (
                               sched.map((s, idx) => {
                                 const now = Date.now();
-                                const start = new Date(s._schedStart).getTime();
-                                const end = new Date(s._schedEnd).getTime();
+                                const start =
+                                  s._schedStart?.getTime?.() ||
+                                  new Date(s._schedStart).getTime();
+                                const end =
+                                  s._schedEnd?.getTime?.() ||
+                                  new Date(s._schedEnd).getTime();
+
                                 const isDone = !!s.done;
                                 const stateLabel = isDone
                                   ? "Done"
@@ -912,6 +957,14 @@ export default function AdminDashboard() {
                                       ></div>
                                       <div className="text-sm text-gray-100 font-medium">
                                         {s.title || s.name || "Service"}
+                                        {Array.isArray(b.addons) &&
+                                          b.addons.some(
+                                            (a) => a?.title === s?.title
+                                          ) && (
+                                            <span className="text-[10px] px-2 py-0.5 rounded bg-purple-600 text-white ml-3">
+                                              Add-on
+                                            </span>
+                                          )}
                                       </div>
                                     </div>
 
@@ -920,16 +973,12 @@ export default function AdminDashboard() {
                                         {s.description || s.note || ""}
                                       </div>
                                       <div className="text-xs text-gray-400">
-                                        {new Date(
-                                          s._schedStart
-                                        ).toLocaleTimeString([], {
+                                        {s._schedStart.toLocaleTimeString([], {
                                           hour: "2-digit",
                                           minute: "2-digit",
                                         })}{" "}
                                         -{" "}
-                                        {new Date(
-                                          s._schedEnd
-                                        ).toLocaleTimeString([], {
+                                        {s._schedEnd.toLocaleTimeString([], {
                                           hour: "2-digit",
                                           minute: "2-digit",
                                         })}

@@ -1,355 +1,430 @@
+// src/context/BookingContext.jsx
 import React, {
   createContext,
   useCallback,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
-  useState,
 } from "react";
 
-/** Bump this on schema changes to safely migrate */
+/* =============================
+   Storage & Versioning
+============================= */
+
 const STORAGE_VERSION = 2;
 const STORAGE_KEY = "precision_booking_v2";
 
-/** Utility: safe number parsing */
+const nowISO = () => new Date().toISOString();
+
+const isBrowser = typeof window !== "undefined";
+
+const safeParse = (s, fallback) => {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return fallback;
+  }
+};
+
+const safeGet = (key) => (isBrowser ? window.localStorage.getItem(key) : null);
+
+const safeSet = (key, val) => {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(val));
+  } catch {
+    /* quota/full – ignore */
+  }
+};
+
+const safeRemove = (key) => {
+  if (!isBrowser) return;
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+};
+
+/* =============================
+   Helpers / Normalizers
+============================= */
+
 const toMoney = (n) => {
   const num = Number(n);
   return Number.isFinite(num) ? num : 0;
 };
 
-/** Schema */
-const DEFAULT_BOOKING = {
+const clampQty = (q) => Math.max(1, Number(q || 1));
+
+const normalizeItem = (item) => ({
+  ...item,
+  id: item?.id ?? item?.title, // fall back to title for id
+  qty: clampQty(item?.qty),
+  price: toMoney(item?.price),
+});
+
+const normalizeList = (list) =>
+  Array.isArray(list) ? list.map(normalizeItem) : [];
+
+const DEFAULT_BOOKING = Object.freeze({
   version: STORAGE_VERSION,
   status: "idle", // "idle" | "in-progress"
-  carType: "", // e.g. "sedan"
-  services: [], // [{ id, title, price, ... , qty }]
-  addons: [], // [{ id, title, price, ... , qty }]
-  customerInfo: {}, // {name, phone, email,...}
+  carType: "",
+  services: [],
+  addons: [],
+  customerInfo: {}, // { name, phone, email, address, notes }
   createdAt: null,
   updatedAt: null,
+});
+
+/** merge and normalize (keeps schema correct) */
+const mergeWithDefault = (obj) => {
+  const base = { ...DEFAULT_BOOKING, ...(obj || {}) };
+  return {
+    ...base,
+    version: STORAGE_VERSION,
+    services: normalizeList(base.services),
+    addons: normalizeList(base.addons),
+  };
 };
 
-/** Context shape */
+/** Load & migrate storage */
+const loadInitial = () => {
+  const raw = safeGet(STORAGE_KEY);
+  if (!raw) {
+    const fresh = mergeWithDefault({
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    });
+    return fresh;
+  }
+  const parsed = safeParse(raw, null);
+  if (!parsed || parsed.version !== STORAGE_VERSION) {
+    // migrate: keep carType if present, reset the rest
+    const fresh = mergeWithDefault({
+      carType: parsed?.carType || "",
+      status: "idle",
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    });
+    safeSet(STORAGE_KEY, fresh);
+    return fresh;
+  }
+  return mergeWithDefault(parsed);
+};
+
+/* =============================
+   Reducer (single source of truth)
+============================= */
+
+const types = {
+  SET_BOOKING: "SET_BOOKING",
+  RESET: "RESET",
+  CONFIRM: "CONFIRM",
+  TOGGLE_SERVICE: "TOGGLE_SERVICE",
+  TOGGLE_ADDON: "TOGGLE_ADDON",
+  INC_SERVICE: "INC_SERVICE",
+  DEC_SERVICE: "DEC_SERVICE",
+  INC_ADDON: "INC_ADDON",
+  DEC_ADDON: "DEC_ADDON",
+};
+
+const upsert = (list, item, delta = 0) => {
+  const key = item?.id ?? item?.title;
+  const idx = list.findIndex((x) => x.id === key);
+  if (idx === -1) {
+    return [...list, normalizeItem({ ...item, id: key, qty: 1 })];
+  }
+  const next = [...list];
+  const cur = next[idx];
+  const qty = Math.max(0, (cur.qty || 1) + delta);
+  if (qty === 0) {
+    next.splice(idx, 1);
+  } else {
+    next[idx] = normalizeItem({ ...cur, qty });
+  }
+  return next;
+};
+
+const toggle = (list, item) => {
+  const key = item?.id ?? item?.title;
+  const exists = list.some((x) => x.id === key);
+  return exists
+    ? list.filter((x) => x.id !== key)
+    : upsert(list, { ...item, id: key, qty: 1 });
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case types.SET_BOOKING: {
+      const base =
+        typeof action.payload === "function"
+          ? action.payload(state)
+          : { ...state, ...action.payload };
+      const next = mergeWithDefault({
+        ...base,
+        status: base.status || "in-progress",
+        createdAt: state.createdAt || nowISO(),
+        updatedAt: nowISO(),
+      });
+      return next;
+    }
+
+    case types.RESET: {
+      return mergeWithDefault({
+        status: "idle",
+        carType: "",
+        services: [],
+        addons: [],
+        customerInfo: {},
+        createdAt: nowISO(),
+        updatedAt: nowISO(),
+      });
+    }
+
+    case types.CONFIRM: {
+      // reducer returns the cleared draft; snapshot done outside via ref
+      return mergeWithDefault({
+        status: "idle",
+        carType: "",
+        services: [],
+        addons: [],
+        customerInfo: {},
+        createdAt: nowISO(),
+        updatedAt: nowISO(),
+      });
+    }
+
+    case types.TOGGLE_SERVICE: {
+      const services = toggle(state.services, action.payload);
+      return mergeWithDefault({
+        ...state,
+        services,
+        status: "in-progress",
+        updatedAt: nowISO(),
+      });
+    }
+
+    case types.TOGGLE_ADDON: {
+      const addons = toggle(state.addons, action.payload);
+      return mergeWithDefault({
+        ...state,
+        addons,
+        status: "in-progress",
+        updatedAt: nowISO(),
+      });
+    }
+
+    case types.INC_SERVICE: {
+      const services = upsert(state.services, { id: action.payload }, +1);
+      return mergeWithDefault({
+        ...state,
+        services,
+        status: "in-progress",
+        updatedAt: nowISO(),
+      });
+    }
+
+    case types.DEC_SERVICE: {
+      const services = upsert(state.services, { id: action.payload }, -1);
+      return mergeWithDefault({
+        ...state,
+        services,
+        status: "in-progress",
+        updatedAt: nowISO(),
+      });
+    }
+
+    case types.INC_ADDON: {
+      const addons = upsert(state.addons, { id: action.payload }, +1);
+      return mergeWithDefault({
+        ...state,
+        addons,
+        status: "in-progress",
+        updatedAt: nowISO(),
+      });
+    }
+
+    case types.DEC_ADDON: {
+      const addons = upsert(state.addons, { id: action.payload }, -1);
+      return mergeWithDefault({
+        ...state,
+        addons,
+        status: "in-progress",
+        updatedAt: nowISO(),
+      });
+    }
+
+    default:
+      return state;
+  }
+};
+
+/* =============================
+   Context
+============================= */
+
 export const BookingContext = createContext({
   booking: DEFAULT_BOOKING,
-  lastConfirmed: null, // snapshot after confirmation
+  lastConfirmed: null,
   setBooking: () => {},
   resetBooking: () => {},
   confirmBooking: async () => {},
-
   toggleService: () => {},
   toggleAddon: () => {},
   incrementService: () => {},
   decrementService: () => {},
   incrementAddon: () => {},
   decrementAddon: () => {},
-
   totalPrice: 0,
 });
 
-const mergeWithDefault = (obj) => {
-  const merged = { ...DEFAULT_BOOKING, ...(obj || {}) };
-  // Normalize arrays & ensure qty >= 1
-  merged.services = (merged.services || []).map((s) => ({
-    ...s,
-    id: s.id ?? s.title,
-    qty: Math.max(1, Number(s.qty || 1)),
-    price: toMoney(s.price),
-  }));
-  merged.addons = (merged.addons || []).map((a) => ({
-    ...a,
-    id: a.id ?? a.title,
-    qty: Math.max(1, Number(a.qty || 1)),
-    price: toMoney(a.price),
-  }));
-  return merged;
-};
+export function BookingProvider({ children }) {
+  const [booking, dispatch] = useReducer(reducer, undefined, loadInitial);
 
-export const BookingProvider = ({ children }) => {
-  // Rehydrate once (lazy init + defensive migrate)
-  const [booking, setBookingState] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return mergeWithDefault(DEFAULT_BOOKING);
-      const parsed = JSON.parse(raw);
+  // Keep lastConfirmed in a ref + state to avoid accidental persistence
+  const lastConfirmedRef = useRef(null);
+  const [lastConfirmed, setLastConfirmed] = React.useState(null);
 
-      if (!parsed || parsed.version !== STORAGE_VERSION) {
-        // Old or corrupt storage — start fresh but keep carType if present
-        const fresh = mergeWithDefault({
-          carType: parsed?.carType || "",
-          status: "idle",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
-        return fresh;
-      }
-
-      return mergeWithDefault(parsed);
-    } catch {
-      return mergeWithDefault(DEFAULT_BOOKING);
-    }
-  });
-
-  // lastConfirmed - kept in memory to show immediate receipt after confirmation
-  const [lastConfirmed, setLastConfirmed] = useState(null);
-
-  // Debounced persist (prevents thrash on rapid +/− clicks)
+  /* ---------- Debounced persist ---------- */
   const persistTimer = useRef(null);
-  const persist = useCallback((next) => {
-    try {
-      // Only persist drafts. We never persist confirmed state.
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn("BookingContext: failed to save localStorage", err);
-    }
-  }, []);
-
   useEffect(() => {
-    // Small debounce to combine rapid updates
+    if (!isBrowser) return;
     if (persistTimer.current) clearTimeout(persistTimer.current);
-    // If booking is null (shouldn't happen) skip
     persistTimer.current = setTimeout(() => {
-      if (!booking) return;
-      // If booking has been marked as a transient "CLEAR" sentinel, skip persistence
-      // (we'll handle clearing explicitly in confirmBooking)
-      persist(booking);
+      // We only persist the draft (booking state). Confirmation clears storage explicitly.
+      safeSet(STORAGE_KEY, booking);
     }, 120);
     return () => clearTimeout(persistTimer.current);
-  }, [booking, persist]);
+  }, [booking]);
 
-  // Listen to storage events so other tabs/copies stay in sync
+  /* ---------- Cross-tab sync ---------- */
   useEffect(() => {
+    if (!isBrowser) return;
     const onStorage = (e) => {
       if (e.key === STORAGE_KEY) {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) {
-            // Other tab cleared storage — reset our state
-            setBookingState(mergeWithDefault(DEFAULT_BOOKING));
-            return;
-          }
-          const parsed = JSON.parse(raw);
-          setBookingState(mergeWithDefault(parsed));
-        } catch {
-          setBookingState(mergeWithDefault(DEFAULT_BOOKING));
-        }
+        const raw = safeGet(STORAGE_KEY);
+        const parsed = safeParse(raw, DEFAULT_BOOKING);
+        // Reuse reducer: dispatch SET_BOOKING so normalization stays consistent
+        dispatch({ type: types.SET_BOOKING, payload: parsed });
       }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const setBooking = useCallback((updater) => {
-    setBookingState((prev) => {
-      const base =
-        typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
-      const next = mergeWithDefault({
-        ...base,
-        version: STORAGE_VERSION,
-        status: base.status || "in-progress", // treat any change as in-progress
-        createdAt: prev.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-      return next;
-    });
-  }, []);
+  /* ---------- Public API (stable callbacks) ---------- */
+  const setBooking = useCallback(
+    (updater) => dispatch({ type: types.SET_BOOKING, payload: updater }),
+    []
+  );
 
   const resetBooking = useCallback(() => {
-    const fresh = mergeWithDefault({
-      status: "idle",
-      carType: "",
-      services: [],
-      addons: [],
-      customerInfo: {},
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
     setLastConfirmed(null);
-    setBookingState(fresh);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
-    } catch {}
-  }, []);
-
-  /**
-   * confirmBooking
-   *
-   * Call this AFTER your backend successfully created the booking.
-   * - It will snapshot the confirmed booking to `lastConfirmed` (in memory).
-   * - Remove the draft from localStorage so new users start fresh.
-   * - Reset the `booking` context to an empty draft so Services page shows nothing.
-   *
-   * If you want to show a receipt after confirmation, read `lastConfirmed` from context.
-   */
-  const confirmBooking = useCallback(() => {
-    setBookingState((prev) => {
-      const snapshot = mergeWithDefault(prev);
-      // Keep snapshot in memory so UI can render a receipt right away
-      setLastConfirmed(snapshot);
-
-      try {
-        // Remove draft from storage so next user starts fresh
-        localStorage.removeItem(STORAGE_KEY);
-      } catch {}
-
-      // Reset in-memory draft
-      const fresh = mergeWithDefault({
+    lastConfirmedRef.current = null;
+    dispatch({ type: types.RESET });
+    // also write reset to storage so fresh visitors start clean
+    safeSet(
+      STORAGE_KEY,
+      mergeWithDefault({
         status: "idle",
         carType: "",
         services: [],
         addons: [],
         customerInfo: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-
-      return fresh;
-    });
+        createdAt: nowISO(),
+        updatedAt: nowISO(),
+      })
+    );
   }, []);
 
-  // --- Mutators (toggle + qty controls) ---
-  const upsertItem = (list, item, deltaQty = 0) => {
-    const idx = list.findIndex((x) => x.id === (item.id ?? item.title));
-    if (idx === -1) {
-      return [
-        ...list,
-        { ...item, id: item.id ?? item.title, qty: Math.max(1, item.qty || 1) },
-      ];
-    }
-    const next = [...list];
-    const current = next[idx];
-    const qty = Math.max(0, (current.qty || 1) + deltaQty);
-    if (qty === 0) {
-      next.splice(idx, 1);
-    } else {
-      next[idx] = { ...current, qty };
-    }
-    return next;
-  };
+  /**
+   * confirmBooking
+   * Call AFTER backend confirmation succeeds.
+   * - snapshot current draft to `lastConfirmed`
+   * - clear localStorage
+   * - reset in-memory draft
+   */
+  const confirmBooking = useCallback(() => {
+    const snapshot = mergeWithDefault(booking);
+    lastConfirmedRef.current = snapshot;
+    setLastConfirmed(snapshot);
 
-  const toggleService = useCallback((service) => {
-    setBookingState((prev) => {
-      const exists = (prev.services || []).some(
-        (s) => s.id === (service.id ?? service.title)
-      );
-      const nextServices = exists
-        ? prev.services.filter((s) => s.id !== (service.id ?? service.title))
-        : upsertItem(prev.services || [], {
-            ...service,
-            price: toMoney(service.price),
-            qty: 1,
-          });
-      return mergeWithDefault({
-        ...prev,
-        services: nextServices,
-        status: "in-progress",
-        updatedAt: new Date().toISOString(),
-      });
-    });
-  }, []);
+    safeRemove(STORAGE_KEY);
+    dispatch({ type: types.CONFIRM });
+  }, [booking]);
 
-  const toggleAddon = useCallback((addon) => {
-    setBookingState((prev) => {
-      const exists = (prev.addons || []).some(
-        (a) => a.id === (addon.id ?? addon.title)
-      );
-      const nextAddons = exists
-        ? prev.addons.filter((a) => a.id !== (addon.id ?? addon.title))
-        : upsertItem(prev.addons || [], {
-            ...addon,
-            price: toMoney(addon.price),
-            qty: 1,
-          });
-      return mergeWithDefault({
-        ...prev,
-        addons: nextAddons,
-        status: "in-progress",
-        updatedAt: new Date().toISOString(),
-      });
-    });
-  }, []);
+  const toggleService = useCallback(
+    (service) => dispatch({ type: types.TOGGLE_SERVICE, payload: service }),
+    []
+  );
+  const toggleAddon = useCallback(
+    (addon) => dispatch({ type: types.TOGGLE_ADDON, payload: addon }),
+    []
+  );
+  const incrementService = useCallback(
+    (id) => dispatch({ type: types.INC_SERVICE, payload: id }),
+    []
+  );
+  const decrementService = useCallback(
+    (id) => dispatch({ type: types.DEC_SERVICE, payload: id }),
+    []
+  );
+  const incrementAddon = useCallback(
+    (id) => dispatch({ type: types.INC_ADDON, payload: id }),
+    []
+  );
+  const decrementAddon = useCallback(
+    (id) => dispatch({ type: types.DEC_ADDON, payload: id }),
+    []
+  );
 
-  const incrementService = useCallback((id) => {
-    setBookingState((prev) => {
-      const nextServices = upsertItem(prev.services || [], { id }, +1);
-      return mergeWithDefault({
-        ...prev,
-        services: nextServices,
-        status: "in-progress",
-        updatedAt: new Date().toISOString(),
-      });
-    });
-  }, []);
-
-  const decrementService = useCallback((id) => {
-    setBookingState((prev) => {
-      const nextServices = upsertItem(prev.services || [], { id }, -1);
-      return mergeWithDefault({
-        ...prev,
-        services: nextServices,
-        status: "in-progress",
-        updatedAt: new Date().toISOString(),
-      });
-    });
-  }, []);
-
-  const incrementAddon = useCallback((id) => {
-    setBookingState((prev) => {
-      const nextAddons = upsertItem(prev.addons || [], { id }, +1);
-      return mergeWithDefault({
-        ...prev,
-        addons: nextAddons,
-        status: "in-progress",
-        updatedAt: new Date().toISOString(),
-      });
-    });
-  }, []);
-
-  const decrementAddon = useCallback((id) => {
-    setBookingState((prev) => {
-      const nextAddons = upsertItem(prev.addons || [], { id }, -1);
-      return mergeWithDefault({
-        ...prev,
-        addons: nextAddons,
-        status: "in-progress",
-        updatedAt: new Date().toISOString(),
-      });
-    });
-  }, []);
-
-  // Derived total
   const totalPrice = useMemo(() => {
     const serviceTotal = (booking.services || []).reduce(
-      (sum, s) => sum + toMoney(s.price) * Math.max(1, s.qty || 1),
+      (sum, s) => sum + toMoney(s.price) * clampQty(s.qty),
       0
     );
     const addonTotal = (booking.addons || []).reduce(
-      (sum, a) => sum + toMoney(a.price) * Math.max(1, a.qty || 1),
+      (sum, a) => sum + toMoney(a.price) * clampQty(a.qty),
       0
     );
     return Number((serviceTotal + addonTotal).toFixed(2));
   }, [booking.services, booking.addons]);
 
-  return (
-    <BookingContext.Provider
-      value={{
-        booking,
-        lastConfirmed,
-        setBooking,
-        resetBooking,
-        confirmBooking,
-        toggleService,
-        toggleAddon,
-        incrementService,
-        decrementService,
-        incrementAddon,
-        decrementAddon,
-        totalPrice,
-      }}
-    >
-      {children}
-    </BookingContext.Provider>
+  const value = useMemo(
+    () => ({
+      booking,
+      lastConfirmed,
+      setBooking,
+      resetBooking,
+      confirmBooking,
+      toggleService,
+      toggleAddon,
+      incrementService,
+      decrementService,
+      incrementAddon,
+      decrementAddon,
+      totalPrice,
+    }),
+    [
+      booking,
+      lastConfirmed,
+      setBooking,
+      resetBooking,
+      confirmBooking,
+      toggleService,
+      toggleAddon,
+      incrementService,
+      decrementService,
+      incrementAddon,
+      decrementAddon,
+      totalPrice,
+    ]
   );
-};
+
+  return (
+    <BookingContext.Provider value={value}>{children}</BookingContext.Provider>
+  );
+}

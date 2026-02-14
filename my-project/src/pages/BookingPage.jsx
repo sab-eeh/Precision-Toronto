@@ -26,19 +26,16 @@ import { cn } from "../lib/utils";
 import api from "../api/client";
 import { Title, Meta } from "react-head";
 import { BookingContext } from "../context/BookingContext";
+import { parseDuration } from "../utils/duration"; // ✅ FIX: import duration parser
 
-// Lazy load non-critical layout pieces
 const Header = lazy(() => import("../layout/Header"));
 const Footer = lazy(() => import("../layout/Footer"));
 const FloatingContact = lazy(() => import("../components/FloatingContact"));
 const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
 
-const BUSINESS_MINUTES_PER_SLOT = 60;
-const DRAFT_KEY = "precision_booking_draft_v1";
+const DRAFT_KEY = "precision_booking_draft_v2";
 
-/* ---------- Helpers ---------- */
-
-// Format date to YYYY-MM-DD (local)
+// Format YYYY-MM-DD local
 function formatYMDLocal(date) {
   if (!date) return null;
   const y = date.getFullYear();
@@ -46,58 +43,88 @@ function formatYMDLocal(date) {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
-
-// Parse YYYY-MM-DD into a local Date at 00:00 local time (avoid timezone shifts)
 function parseYMDToLocalDate(ymd) {
   if (!ymd) return null;
-  const [y, m, d] = ymd.split("-").map((n) => Number(n));
+  const [y, m, d] = ymd.split("-").map(Number);
   if (!y || !m || !d) return null;
   return new Date(y, m - 1, d);
 }
 
-// Safely parse a booking-selectedDate value (handles legacy ISO or YMD)
-function parseBookingSelectedDate(val) {
-  if (!val) return null;
-  if (typeof val === "string") {
-    // YMD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return parseYMDToLocalDate(val);
-    // ISO fallback: create Date and use local YMD
-    const dt = new Date(val);
-    if (!isNaN(dt))
-      return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-  }
-  if (val instanceof Date && !isNaN(val))
-    return new Date(val.getFullYear(), val.getMonth(), val.getDate());
-  return null;
-}
+// ✅ FIX: Convert service/addon duration into numeric minutes
+function toDurationMinutes(item) {
+  if (!item) return 60;
 
-/* ---------- Component ---------- */
+  // already numeric
+  const direct = Number(item.durationMinutes);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+
+  // parse from string
+  if (typeof item.duration === "string" && item.duration.trim()) {
+    const parsed = parseDuration(item.duration);
+    if (parsed?.avg && parsed.avg > 0) return parsed.avg;
+  }
+
+  return 60;
+}
 
 export default function BookingPage() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { booking, setBooking } = useContext(BookingContext);
 
-  // If user hasn't selected services and didn't come with state, show friendly message
-  if (!state && !(booking && booking.services && booking.services.length)) {
+  if (
+    !state &&
+    !booking?.services?.length &&
+    !booking?.selectedServices?.length
+  ) {
     return <div className="p-10 text-center">No booking data found.</div>;
   }
 
-  // If route provided services (user navigated from Services), prefer that;
-  // otherwise fall back to booking context.
+  // Keep original behavior: state has priority, then booking context
+  const raw = state || booking || {};
 
-  const {
-    selectedCar,
-    selectedServices,
-    selectedAddons,
-    totalPrice,
-    durationSummary,
-    formattedDurations,
-  } = state || booking || {};
+  const selectedCar = raw.selectedCar;
+  const totalPrice = raw.totalPrice;
+  const durationSummary = raw.durationSummary; // may exist from previous step
+  const formattedDurations = raw.formattedDurations;
 
-  // Initialize states (preferred: booking or blank)
+  // ✅ FIX: Ensure selectedServices always contain durationMinutes
+  const selectedServices = useMemo(() => {
+    const list = Array.isArray(raw.selectedServices)
+      ? raw.selectedServices
+      : booking?.selectedServices || [];
+    return list.map((s) => ({
+      ...s,
+      durationMinutes: toDurationMinutes(s),
+    }));
+  }, [raw.selectedServices, booking?.selectedServices]);
+
+  // ✅ FIX: Ensure selectedAddons always contain durationMinutes
+  const selectedAddons = useMemo(() => {
+    const list = Array.isArray(raw.selectedAddons)
+      ? raw.selectedAddons
+      : booking?.selectedAddons || [];
+    return list.map((a) => ({
+      ...a,
+      durationMinutes: toDurationMinutes(a),
+    }));
+  }, [raw.selectedAddons, booking?.selectedAddons]);
+
+  // If you don't have `durationSummary`, compute here as a fallback
+  const computedDuration = useMemo(() => {
+    const s = Array.isArray(selectedServices) ? selectedServices : [];
+    const a = Array.isArray(selectedAddons) ? selectedAddons : [];
+    const total =
+      s.reduce((sum, it) => sum + (Number(it.durationMinutes) || 0), 0) +
+      a.reduce((sum, it) => sum + (Number(it.durationMinutes) || 0), 0);
+    return total > 0 ? total : 60;
+  }, [selectedServices, selectedAddons]);
+
+  // Use summary avg if exists, else computed
+  const effectiveDuration = durationSummary?.avg || computedDuration;
+
   const [selectedDate, setSelectedDate] = useState(() =>
-    parseBookingSelectedDate(booking?.selectedDate)
+    booking?.selectedDate ? parseYMDToLocalDate(booking.selectedDate) : null
   );
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedTime, setSelectedTime] = useState(booking?.selectedTime || "");
@@ -114,7 +141,6 @@ export default function BookingPage() {
       notes: "",
     }
   );
-
   const [vehicleInfo, setVehicleInfo] = useState(
     booking?.vehicleInfo || {
       make: "",
@@ -125,207 +151,70 @@ export default function BookingPage() {
     }
   );
 
-  /* ---------- Restore draft only when relevant ---------- 
-     We avoid restoring draft for "brand new" users (no state AND no booking.services)
-     This prevents showing old customer data to a new user.
-  */
+  // Persist draft (debounced)
   useEffect(() => {
-    const shouldRestore = !!(
-      state ||
-      (booking && booking.services && booking.services.length)
-    );
-    if (!shouldRestore) {
-      // Remove stale draft and keep inputs blank (new user)
-      localStorage.removeItem(DRAFT_KEY);
-      setSelectedDate(null);
-      setSelectedTime("");
-      setCustomerInfo({
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        notes: "",
-      });
-      setVehicleInfo({ make: "", model: "", year: "", color: "", license: "" });
-      return;
-    }
-
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return;
-
-    try {
-      const parsed = JSON.parse(raw);
-
-      // Prefer a full startAtISO if present (more precise)
-      if (parsed?.startAtISO) {
-        const start = new Date(parsed.startAtISO);
-        if (!isNaN(start)) {
-          setSelectedDate(
-            new Date(start.getFullYear(), start.getMonth(), start.getDate())
-          );
-          // Use time label if saved or compute from ISO
-          setSelectedTime(parsed.selectedTime || format(start, "h:mm a"));
-        }
-      } else if (parsed?.selectedDateYMD) {
-        const d = parseYMDToLocalDate(parsed.selectedDateYMD);
-        if (d) setSelectedDate(d);
-        setSelectedTime(parsed.selectedTime || "");
-      } else if (parsed?.selectedDate) {
-        // legacy
-        const d = parseBookingSelectedDate(parsed.selectedDate);
-        if (d) setSelectedDate(d);
-        setSelectedTime(parsed.selectedTime || "");
-      }
-
-      setCustomerInfo(parsed.customerInfo || booking?.customerInfo || {});
-      setVehicleInfo(parsed.vehicleInfo || booking?.vehicleInfo || {});
-    } catch (err) {
-      // If parse fails, drop the draft
-      localStorage.removeItem(DRAFT_KEY);
-    }
-    // We intentionally depend on booking.services and state — restore only when they change.
-  }, [state, booking?.services]);
-
-  /* ---------- Persist draft (debounced) ---------- */
-  useEffect(() => {
-    // Only persist if user actually has services selected (so we don't create drafts for random visitors)
-    const shouldPersist = !!(
-      state ||
-      (booking && booking.services && booking.services.length)
-    );
-    if (!shouldPersist) return;
-
     const handle = setTimeout(() => {
       const draft = {
-        selectedDateYMD: selectedDate ? formatYMDLocal(selectedDate) : null,
+        selectedDate: selectedDate ? formatYMDLocal(selectedDate) : null,
         selectedTime: selectedTime || "",
-        // keep startAtISO if present in booking (helps precise restore)
-        startAtISO: booking?.startAtISO || null,
         customerInfo,
         vehicleInfo,
       };
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-      } catch (e) {
-        // ignore quota errors
+      } catch {
+        /* ignore quota */
       }
     }, 400);
-
     return () => clearTimeout(handle);
-  }, [
-    selectedDate,
-    selectedTime,
-    customerInfo,
-    vehicleInfo,
-    state,
-    booking?.services,
-    booking?.startAtISO,
-  ]);
+  }, [selectedDate, selectedTime, customerInfo, vehicleInfo]);
 
-  /* ---------- Fetch available slots for selectedDate ---------- */
+  // Load slots when date changes
   useEffect(() => {
-    // reset status
     setSlotsError("");
     setAvailableSlots([]);
     setSelectedTime("");
-
     if (!selectedDate) return;
 
     const controller = new AbortController();
-    let active = true;
+    let alive = true;
 
     (async () => {
       try {
         setLoadingSlots(true);
         const ymd = formatYMDLocal(selectedDate);
-        // The api client supports options (method/signal) in other files, so pass signal
-        const data = await api(`/api/bookings/availability?date=${ymd}`, {
-          signal: controller.signal,
-        });
-        if (!active) return;
+
+        // ✅ FIX: durationMinutes now always correct
+        const url = `/api/bookings/availability?date=${ymd}&durationMinutes=${Math.round(
+          effectiveDuration
+        )}`;
+
+        const data = await api(url, { signal: controller.signal });
+        if (!alive) return;
+
         const slots = (data?.availableSlots || []).map((s) => ({
           start: new Date(s.start),
           end: new Date(s.end),
           label: format(new Date(s.start), "h:mm a"),
-          booked: s.booked || false,
+          booked: !!s.booked,
         }));
+
         setAvailableSlots(slots);
       } catch (err) {
-        if (err?.name === "AbortError") {
-          // aborted - ignore
-          return;
+        if (err?.name !== "AbortError") {
+          setSlotsError(err?.message || "Failed to load availability");
         }
-        setSlotsError(err?.message || "Failed to load availability");
       } finally {
-        if (active) setLoadingSlots(false);
+        if (alive) setLoadingSlots(false);
       }
     })();
 
     return () => {
-      active = false;
+      alive = false;
       controller.abort();
     };
-  }, [selectedDate]);
+  }, [selectedDate, effectiveDuration]);
 
-  /* ---------- Submit handler ---------- */
-  const handleSubmit = useCallback(
-    (e) => {
-      e.preventDefault();
-      if (!selectedDate || !selectedTime) return;
-
-      const selectedSlot = availableSlots.find((s) => s.label === selectedTime);
-      if (!selectedSlot) return;
-
-      // Derive booking date from the chosen slot's local date (avoid timezone shifts)
-      const localYMD = formatYMDLocal(
-        new Date(
-          selectedSlot.start.getFullYear(),
-          selectedSlot.start.getMonth(),
-          selectedSlot.start.getDate()
-        )
-      );
-
-      const bookingData = {
-        // store date as YYYY-MM-DD local string (stable across timezones)
-        selectedDate: localYMD,
-        selectedTime,
-        customerInfo,
-        vehicleInfo,
-        selectedServices,
-        selectedAddons,
-        selectedCar,
-        totalPrice,
-        notes: customerInfo.notes || "",
-        // precise timestamp for backend & confirmation
-        startAtISO: selectedSlot.start.toISOString(),
-        slotMinutes: durationSummary?.avg || BUSINESS_MINUTES_PER_SLOT,
-        durationSummary,
-        formattedDurations,
-      };
-
-      // Save to context (draft)
-      setBooking((prev) => ({ ...prev, ...bookingData }));
-
-      setSubmitting(true);
-      // Navigate to Confirmation page, passing bookingData in state (confirmation page will merge and POST)
-      navigate("/confirmation", { state: bookingData });
-    },
-    [
-      selectedDate,
-      selectedTime,
-      availableSlots,
-      customerInfo,
-      vehicleInfo,
-      selectedServices,
-      selectedAddons,
-      selectedCar,
-      totalPrice,
-      setBooking,
-      navigate,
-    ]
-  );
-
-  /* ---------- Form validation (memoized) ---------- */
   const isFormValid = useMemo(
     () =>
       selectedDate &&
@@ -345,19 +234,73 @@ export default function BookingPage() {
     [selectedServices]
   );
 
-  /* ---------- UI placeholders for slots when loading ---------- */
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (!selectedDate || !selectedTime) return;
+
+      const selectedSlot = availableSlots.find((s) => s.label === selectedTime);
+      if (!selectedSlot) return;
+
+      const localYMD = formatYMDLocal(
+        new Date(
+          selectedSlot.start.getFullYear(),
+          selectedSlot.start.getMonth(),
+          selectedSlot.start.getDate()
+        )
+      );
+
+      // ✅ FIX: pass services/addons WITH durationMinutes
+      const bookingData = {
+        selectedDate: localYMD,
+        selectedTime,
+        customerInfo,
+        vehicleInfo,
+        selectedServices,
+        selectedAddons,
+        selectedCar,
+        totalPrice,
+        notes: customerInfo.notes || "",
+        startAtISO: selectedSlot.start.toISOString(),
+        slotMinutes: effectiveDuration,
+        durationSummary: durationSummary || {
+          avg: effectiveDuration,
+          min: effectiveDuration,
+          max: effectiveDuration,
+        },
+        formattedDurations,
+      };
+
+      setBooking((prev) => ({ ...prev, ...bookingData }));
+      setSubmitting(true);
+      navigate("/confirmation", { state: bookingData });
+    },
+    [
+      selectedDate,
+      selectedTime,
+      availableSlots,
+      customerInfo,
+      vehicleInfo,
+      selectedServices,
+      selectedAddons,
+      selectedCar,
+      totalPrice,
+      formattedDurations,
+      durationSummary,
+      effectiveDuration,
+      setBooking,
+      navigate,
+    ]
+  );
+
   const slotsSkeleton = Array.from({ length: 6 }).map((_, i) => (
     <div key={i} className="h-10 rounded-md bg-[#121826] animate-pulse" />
   ));
 
-  /* ---------- Rendering ---------- */
   return (
     <>
-      <Title>Book Car Detailing in Toronto | Precision Toronto</Title>
-      <Meta
-        name="description"
-        content="Book your car cleaning and detailing appointment with Precision Toronto."
-      />
+      <Title>Book Car Detailing | Precision</Title>
+      <Meta name="description" content="Book your car detailing appointment." />
 
       <div className="min-h-screen bg-[#0A0F1C] flex flex-col text-white">
         <Suspense fallback={<div className="h-20 bg-gray-800 animate-pulse" />}>
@@ -413,6 +356,12 @@ export default function BookingPage() {
                       placeholderText="Pick a date"
                       dateFormat="MM/dd/yyyy"
                     />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Estimated service duration:{" "}
+                      <span className="text-blue-300">
+                        {Math.round(effectiveDuration)} minutes
+                      </span>
+                    </p>
                   </div>
 
                   <div>
@@ -605,10 +554,10 @@ export default function BookingPage() {
                   {selectedTime && (
                     <SummaryRow label="Time:" value={selectedTime} highlight />
                   )}
-                  {formattedDurations?.avg && (
+                  {effectiveDuration && (
                     <SummaryRow
                       label="Estimated Duration:"
-                      value={`${formattedDurations.min} – ${formattedDurations.max} (avg ${formattedDurations.avg})`}
+                      value={`${Math.round(effectiveDuration)} minutes`}
                     />
                   )}
                   <div className="flex justify-between pt-4 border-t border-gray-700">
@@ -639,8 +588,6 @@ export default function BookingPage() {
     </>
   );
 }
-
-/* ---------- small memoized subcomponents ---------- */
 
 const InputField = React.memo(function InputField({
   id,

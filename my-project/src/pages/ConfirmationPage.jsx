@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { Title, Meta } from "react-head";
 import api from "../api/client";
 import { BookingContext } from "../context/BookingContext";
+import { parseDuration } from "../utils/duration"; // ✅ FIX
 
 const Header = lazy(() => import("../layout/Header"));
 const Footer = lazy(() => import("../layout/Footer"));
@@ -33,6 +34,21 @@ function safeArrayTitles(arr) {
 function safeText(value, fallback = "N/A") {
   if (value === 0) return "0";
   return value ? String(value) : fallback;
+}
+
+// ✅ FIX: always derive duration per service
+function toDurationMinutes(item) {
+  if (!item) return 60;
+
+  const direct = Number(item.durationMinutes);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+
+  if (typeof item.duration === "string" && item.duration.trim()) {
+    const parsed = parseDuration(item.duration);
+    if (parsed?.avg && parsed.avg > 0) return parsed.avg;
+  }
+
+  return 60;
 }
 
 export default function ConfirmationPage() {
@@ -71,21 +87,32 @@ export default function ConfirmationPage() {
         totalPrice,
         notes,
         startAtISO,
-        slotMinutes,
       } = bookingData;
+
+      // ✅ FIX: normalize services & addons properly
+      const normalizedServices = Array.isArray(selectedServices)
+        ? selectedServices.map((s) => ({
+            _id: s?._id || null,
+            title: s?.title || "Service",
+            price: Number(s?.price) || 0,
+            durationMinutes: toDurationMinutes(s),
+          }))
+        : [];
+
+      const normalizedAddons = Array.isArray(selectedAddons)
+        ? selectedAddons.map((a) => ({
+            _id: a?._id || null,
+            title: a?.title || "Addon",
+            price: Number(a?.price) || 0,
+            durationMinutes: toDurationMinutes(a),
+          }))
+        : [];
 
       const payload = {
         customerInfo,
         vehicleInfo,
-        selectedServices: Array.isArray(selectedServices)
-          ? selectedServices.map((s) => ({
-              _id: s._id || null,
-              title: s.title,
-              price: s.price,
-              durationMinutes: s.durationMinutes || slotMinutes || 60,
-            }))
-          : [],
-        selectedAddons: selectedAddons || [],
+        selectedServices: normalizedServices,
+        selectedAddons: normalizedAddons,
         totalPrice:
           typeof totalPrice === "number" ? totalPrice : Number(totalPrice) || 0,
         startAt: startAtISO,
@@ -135,15 +162,15 @@ export default function ConfirmationPage() {
       setConfirmed(true);
       setMessage("Booking successfully confirmed.");
 
-      // ✅ Clear booking draft/context AFTER local state is set
+      // clear booking draft/context AFTER local state is set
       try {
-        confirmBooking(); // clears BookingContext + localStorage draft
-        localStorage.removeItem("precision_booking_draft_v1"); // extra safety
+        confirmBooking();
+        localStorage.removeItem("precision_booking_draft_v1");
       } catch (e) {
         console.warn("confirmBooking cleanup failed:", e);
       }
     } catch (err) {
-      if (err.name === "AbortError") {
+      if (err?.name === "AbortError") {
         setError("Request timed out. Please try again.");
       } else {
         setError(
@@ -188,14 +215,17 @@ export default function ConfirmationPage() {
   const customerPhone = bookingData.customerInfo?.phone || "";
   const address = bookingData.customerInfo?.address || "No address provided";
   const startAt = bookingData.startAtISO || bookingData.startAt || null;
+
   const displayDate = startAt
     ? format(new Date(startAt), "EEEE, MMMM d, yyyy")
     : "N/A";
   const displayTime = startAt ? format(new Date(startAt), "h:mm a") : "N/A";
+
   const vehicle = bookingData.vehicleInfo || {};
   const vehicleText =
     [vehicle?.year, vehicle?.make, vehicle?.model].filter(Boolean).join(" ") ||
     "Not specified";
+
   const total =
     typeof bookingData.totalPrice === "number"
       ? `$${bookingData.totalPrice.toFixed(2)}`
@@ -203,6 +233,9 @@ export default function ConfirmationPage() {
 
   return (
     <div className="min-h-screen bg-[#0A0F1C] text-white">
+      <Title>Confirm Booking | Precision</Title>
+      <Meta name="description" content="Confirm your booking details." />
+
       <Suspense fallback={<div className="h-20 bg-gray-800 animate-pulse" />}>
         <Header />
       </Suspense>

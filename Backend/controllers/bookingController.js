@@ -1,83 +1,93 @@
 const Booking = require("../models/Booking");
-const { addMinutes, generateSlotsForDay, isOverlap } = require("../utils/time");
-const sendEmail = require("../utils/emails");
-const sendSMS = require("../utils/sms");
+const {
+  BUSINESS_START_HOUR,
+  BUSINESS_END_HOUR,
+  addBusinessMinutes,
+  isOverlap,
+  generateSlotsForDay,
+  atHM,
+} = require("../utils/time");
 
-// Business rules
-const MAX_DAY_MINUTES = 600; // 10 hours per day
-const BUSINESS_START_HOUR = 8; // 8 AM
-const BUSINESS_END_HOUR = 20; // 8 PM
+const MAX_DAY_MINUTES = (BUSINESS_END_HOUR - BUSINESS_START_HOUR) * 60;
 
-/**
- * Compute total duration from selected services & addons
- */
+/** Sum service+addon durations; use fallback if nothing selected */
 function computeDurationMinutes(services = [], addons = [], fallback = 60) {
-  const totalServices = services.reduce(
-    (sum, s) => sum + (Number(s.durationMinutes) || 0),
-    0
-  );
-  const totalAddons = addons.reduce(
-    (sum, a) => sum + (Number(a.durationMinutes) || 0),
-    0
-  );
-  const total = totalServices + totalAddons;
+  const s = Array.isArray(services) ? services : [];
+  const a = Array.isArray(addons) ? addons : [];
+  const total =
+    s.reduce((sum, it) => sum + (Number(it.durationMinutes) || 0), 0) +
+    a.reduce((sum, it) => sum + (Number(it.durationMinutes) || 0), 0);
   return total > 0 ? total : fallback;
 }
 
 /**
- * Normalize payload from frontend → backend shape
+ * Normalize booking payload.
+ * IMPORTANT:
+ * - Accepts both selectedServices/services
+ * - Accepts both selectedAddons/addons
  */
 function normalizePayload(body) {
   const {
-    customerInfo,
-    vehicleInfo,
+    customerInfo = {},
+    vehicleInfo = {},
     selectedServices,
     selectedAddons,
+    services,
+    addons,
     totalPrice,
     startAt,
     notes,
     address,
-  } = body;
+  } = body || {};
+
+  const incomingServices = Array.isArray(selectedServices)
+    ? selectedServices
+    : Array.isArray(services)
+    ? services
+    : [];
+
+  const incomingAddons = Array.isArray(selectedAddons)
+    ? selectedAddons
+    : Array.isArray(addons)
+    ? addons
+    : [];
 
   return {
     customerName: customerInfo?.name?.trim(),
-    phone: (customerInfo?.phone || "").trim(),
-    email: (customerInfo?.email || "").trim().toLowerCase(),
+    phone: String(customerInfo?.phone || "").trim(),
+    email: String(customerInfo?.email || "")
+      .trim()
+      .toLowerCase(),
     address: address || customerInfo?.address || "",
-
     vehicle: {
       type: vehicleInfo?.type || "sedan",
       make: vehicleInfo?.make,
       model: vehicleInfo?.model,
       year: vehicleInfo?.year,
       color: vehicleInfo?.color,
-      plate: vehicleInfo?.license,
+      plate: vehicleInfo?.plate || vehicleInfo?.license,
     },
-
-    services: (selectedServices || []).map((s) => ({
-      serviceId: s._id || null,
-      title: s.title,
-      price: Number(s.price) || 0,
-      durationMinutes: Number(s.durationMinutes) || 60,
+    services: incomingServices.map((s) => ({
+      serviceId: s?._id || s?.serviceId || null,
+      title: s?.title || "Service",
+      price: Number(s?.price) || 0,
+      durationMinutes: Math.max(1, Number(s?.durationMinutes) || 60),
+      done: !!s?.done,
     })),
-
-    addons: (selectedAddons || []).map((a) => ({
-      addonId: a._id || null,
-      title: a.title,
-      price: Number(a.price) || 0,
-      durationMinutes: Number(a.durationMinutes) || 30,
+    addons: incomingAddons.map((a) => ({
+      addonId: a?._id || a?.addonId || null,
+      title: a?.title || "Addon",
+      price: Number(a?.price) || 0,
+      durationMinutes: Math.max(1, Number(a?.durationMinutes) || 30),
+      done: !!a?.done,
     })),
-
     totalPrice: Number(totalPrice) || 0,
     startAt,
     notes,
   };
 }
 
-/**
- * Create Booking
- */
-const createBooking = async (req, res) => {
+async function createBooking(req, res) {
   try {
     const data = normalizePayload(req.body);
 
@@ -95,15 +105,12 @@ const createBooking = async (req, res) => {
     }
 
     const durationMinutes = computeDurationMinutes(data.services, data.addons);
-    const end = addMinutes(start, durationMinutes);
+    const end = addBusinessMinutes(start, durationMinutes);
 
-    // Check overlap with existing bookings
     const overlapping = await Booking.findOne({
       status: { $ne: "cancelled" },
-      $expr: {
-        $and: [{ $lt: ["$startAt", end] }, { $gt: ["$endAt", start] }],
-      },
-    });
+      $expr: { $and: [{ $lt: ["$startAt", end] }, { $gt: ["$endAt", start] }] },
+    }).lean();
 
     if (overlapping) {
       return res.status(409).json({
@@ -122,9 +129,8 @@ const createBooking = async (req, res) => {
       source: "web",
     });
 
-    // Send notifications (async, don’t block response)
-    notifyCustomer(booking);
-    notifyAdmin(booking);
+    notifyCustomer(booking).catch(console.error);
+    notifyAdmin(booking).catch(console.error);
 
     return res
       .status(201)
@@ -133,72 +139,103 @@ const createBooking = async (req, res) => {
     console.error("Booking error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
-};
+}
 
-/**
- * List all bookings (admin)
- */
-const listBookings = async (req, res) => {
+async function listBookings(_req, res) {
   try {
-    const bookings = await Booking.find().sort({ startAt: -1 });
+    const bookings = await Booking.find().sort({ startAt: -1 }).lean();
     res.json({ success: true, bookings });
   } catch (err) {
     console.error("List bookings error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
-};
+}
 
-/**
- * Get single booking
- */
-const getBooking = async (req, res) => {
+async function getBooking(req, res) {
   try {
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) {
+    const booking = await Booking.findById(req.params.id).lean();
+    if (!booking)
       return res
         .status(404)
         .json({ success: false, message: "Booking not found" });
-    }
     res.json({ success: true, booking });
   } catch (err) {
     console.error("Get booking error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
-};
+}
 
-/**
- * Update booking (admin)
- */
-const updateBooking = async (req, res) => {
+async function updateBooking(req, res) {
   try {
-    const updates = normalizePayload(req.body);
+    const raw = req.body || {};
+    const normalized = normalizePayload(raw);
 
-    // If updating time/services, recalc endAt
-    if (updates.startAt || updates.services || updates.addons) {
-      const booking = await Booking.findById(req.params.id);
-      if (!booking) {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking)
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
+
+    // ✅ Build updates only for fields actually sent (prevents wiping)
+    const updates = {};
+
+    if (raw.customerInfo || raw.customerName) {
+      if (normalized.customerName)
+        updates.customerName = normalized.customerName;
+      if (normalized.phone) updates.phone = normalized.phone;
+      if (normalized.email) updates.email = normalized.email;
+      updates.address = normalized.address || booking.address;
+    }
+
+    if (raw.vehicleInfo || raw.vehicle) {
+      updates.vehicle = {
+        ...(booking.vehicle || {}),
+        ...(normalized.vehicle || {}),
+      };
+    }
+
+    // Accept services / selectedServices
+    const hasServices =
+      Array.isArray(raw.services) || Array.isArray(raw.selectedServices);
+    const hasAddons =
+      Array.isArray(raw.addons) || Array.isArray(raw.selectedAddons);
+
+    if (hasServices) updates.services = normalized.services;
+    if (hasAddons) updates.addons = normalized.addons;
+
+    if (raw.notes !== undefined) updates.notes = raw.notes;
+
+    if (raw.totalPrice !== undefined) {
+      updates.totalPrice = Number(raw.totalPrice) || 0;
+    }
+
+    if (raw.startAt) {
+      const newStart = new Date(raw.startAt);
+      if (isNaN(newStart.getTime())) {
         return res
-          .status(404)
-          .json({ success: false, message: "Booking not found" });
+          .status(422)
+          .json({ success: false, message: "Invalid startAt date" });
       }
+      updates.startAt = newStart;
+    }
 
-      const newStart = updates.startAt
-        ? new Date(updates.startAt)
-        : booking.startAt;
+    // If start/services/addons changed → recompute endAt & duration
+    if (updates.startAt || hasServices || hasAddons) {
+      const newStart = updates.startAt || booking.startAt;
       const durationMinutes = computeDurationMinutes(
-        updates.services || booking.services,
-        updates.addons || booking.addons
+        hasServices ? updates.services : booking.services,
+        hasAddons ? updates.addons : booking.addons
       );
-      const newEnd = addMinutes(newStart, durationMinutes);
 
-      // Check overlap
+      const newEnd = addBusinessMinutes(newStart, durationMinutes);
+
       const overlapping = await Booking.findOne({
         _id: { $ne: booking._id },
         status: { $ne: "cancelled" },
         $expr: {
           $and: [{ $lt: ["$startAt", newEnd] }, { $gt: ["$endAt", newStart] }],
         },
-      });
+      }).lean();
 
       if (overlapping) {
         return res.status(409).json({
@@ -208,99 +245,57 @@ const updateBooking = async (req, res) => {
         });
       }
 
-      updates.startAt = newStart;
       updates.endAt = newEnd;
       updates.durationMinutes = durationMinutes;
     }
 
     const updated = await Booking.findByIdAndUpdate(req.params.id, updates, {
       new: true,
+      lean: true,
     });
-    if (!updated) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Booking not found" });
-    }
+
     res.json({ success: true, message: "Booking updated", booking: updated });
   } catch (err) {
     console.error("Update booking error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
-};
+}
 
 /**
- * Cancel booking
+ * Availability: checks whether a WHOLE requested duration (possibly multi-day) can start at each slot.
+ * GET /api/bookings/availability?date=YYYY-MM-DD&durationMinutes=NNN
  */
-const cancelBooking = async (req, res) => {
+async function getAvailability(req, res) {
   try {
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Booking not found" });
-    }
-    booking.status = "cancelled";
-    await booking.save();
-    res.json({ success: true, message: "Booking cancelled", booking });
-  } catch (err) {
-    console.error("Cancel booking error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-/**
- * Delete booking (admin)
- */
-const deleteBooking = async (req, res) => {
-  try {
-    const booking = await Booking.findByIdAndDelete(req.params.id);
-    if (!booking) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Booking not found" });
-    }
-    res.json({ success: true, message: "Booking deleted" });
-  } catch (err) {
-    console.error("Delete booking error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-/**
- * Availability slots for a given day
- */
-const getAvailability = async (req, res) => {
-  try {
-    const { date, durationMinutes = 60 } = req.query;
+    const { date, durationMinutes } = req.query;
     if (!date) {
-      return res
-        .status(422)
-        .json({ success: false, message: "Missing date query param" });
+      return res.status(422).json({ success: false, message: "Missing ?date" });
     }
 
-    const serviceDuration = Number(durationMinutes);
-
-    // Day range
     const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
+    if (isNaN(dayStart.getTime())) {
+      return res.status(422).json({ success: false, message: "Invalid date" });
+    }
 
-    // Fetch bookings for that day
+    // Clamp duration (also covers undefined)
+    const raw = Number(durationMinutes || 60);
+    const serviceDuration = Math.max(1, Math.min(100000, Math.floor(raw)));
+
+    const businessMinsPerDay = MAX_DAY_MINUTES;
+    const neededDays = Math.ceil(serviceDuration / businessMinsPerDay);
+    const lookaheadDays = Math.min(neededDays + 3, 30);
+
+    const horizonStart = atHM(dayStart, BUSINESS_START_HOUR);
+    const horizonEnd = new Date(horizonStart);
+    horizonEnd.setDate(horizonEnd.getDate() + lookaheadDays);
+
     const bookings = await Booking.find({
-      startAt: { $gte: dayStart, $lt: dayEnd },
       status: { $ne: "cancelled" },
-    });
+      startAt: { $lt: horizonEnd },
+      endAt: { $gt: horizonStart },
+    }).lean();
 
-    // Compute booked minutes
-    const totalBookedMinutes = bookings.reduce((sum, b) => {
-      const dur = (b.endAt - b.startAt) / 60000;
-      return sum + dur;
-    }, 0);
-
-    const isFullyBooked = totalBookedMinutes >= MAX_DAY_MINUTES;
-
-    // Generate slots
+    const now = new Date();
     const slots = generateSlotsForDay(dayStart, {
       startHour: BUSINESS_START_HOUR,
       endHour: BUSINESS_END_HOUR,
@@ -308,29 +303,36 @@ const getAvailability = async (req, res) => {
     });
 
     const slotsWithStatus = slots.map((slot) => {
-      const slotEndIfServiceAdded = addMinutes(slot.start, serviceDuration);
-
-      const businessDayEnd = new Date(slot.start);
-      businessDayEnd.setHours(BUSINESS_END_HOUR, 0, 0, 0);
-
-      const exceedsDay = slotEndIfServiceAdded > businessDayEnd;
-
-      const isBooked = bookings.some((b) =>
-        isOverlap(slot.start, slot.end, b.startAt, b.endAt)
+      const inPast =
+        slot.start < now && dayStart.toDateString() === now.toDateString();
+      const candidateEnd = addBusinessMinutes(slot.start, serviceDuration);
+      const intersects = bookings.some((b) =>
+        isOverlap(slot.start, candidateEnd, b.startAt, b.endAt)
       );
 
       return {
         start: slot.start,
         end: slot.end,
+        // ✅ keep ISO as label (frontend should store ISO)
         label: slot.start.toISOString(),
-        booked: isBooked || isFullyBooked || exceedsDay,
+        booked: inPast || intersects,
       };
     });
+
+    const dayBookings = bookings.filter(
+      (b) => b.startAt >= atHM(dayStart, 0) && b.startAt < atHM(dayStart, 24)
+    );
+
+    const totalBookedMinutes = dayBookings.reduce((sum, b) => {
+      const from = Math.max(atHM(dayStart, BUSINESS_START_HOUR), b.startAt);
+      const to = Math.min(atHM(dayStart, BUSINESS_END_HOUR), b.endAt);
+      return sum + Math.max(0, (to - from) / 60000);
+    }, 0);
 
     return res.json({
       success: true,
       availableSlots: slotsWithStatus,
-      fullyBooked: isFullyBooked,
+      fullyBooked: totalBookedMinutes >= MAX_DAY_MINUTES,
       totalBookedMinutes,
       remainingMinutes: Math.max(0, MAX_DAY_MINUTES - totalBookedMinutes),
     });
@@ -338,47 +340,41 @@ const getAvailability = async (req, res) => {
     console.error("Availability error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
-};
+}
 
-/**
- * Notifications
- */
-async function notifyCustomer(booking) {
-  const bookingDate = new Date(booking.startAt).toLocaleString();
-  if (booking.email) {
-    const html = `
-      <h2>Booking Confirmation</h2>
-      <p>Hi ${booking.customerName},</p>
-      <p>Your booking is confirmed for ${bookingDate}.</p>
-      <p>Address: ${booking.address || "N/A"}</p>
-      <p>Total: $${booking.totalPrice}</p>`;
-    sendEmail(booking.email, "Your Booking Confirmation", html).catch(
-      console.error
-    );
-  }
-  if (booking.phone) {
-    const sms = `Hi ${booking.customerName}, your booking is confirmed for ${bookingDate}. Total $${booking.totalPrice}.`;
-    sendSMS(booking.phone, sms).catch(console.error);
+async function cancelBooking(req, res) {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking)
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
+    booking.status = "cancelled";
+    await booking.save();
+    res.json({ success: true, message: "Booking cancelled", booking });
+  } catch (err) {
+    console.error("Cancel booking error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 }
 
-async function notifyAdmin(booking) {
-  if (!process.env.ADMIN_EMAIL && !process.env.ADMIN_PHONE) return;
-  const bookingDate = new Date(booking.startAt).toLocaleString();
-  if (process.env.ADMIN_EMAIL) {
-    const html = `<h2>New Booking</h2>
-      <p>${booking.customerName} - ${booking.phone}</p>
-      <p>${bookingDate}</p>
-      <p>Total: $${booking.totalPrice}</p>`;
-    sendEmail(process.env.ADMIN_EMAIL, "New Booking Received", html).catch(
-      console.error
-    );
-  }
-  if (process.env.ADMIN_PHONE) {
-    const sms = `📢 New Booking: ${booking.customerName} at ${bookingDate} | $${booking.totalPrice}`;
-    sendSMS(process.env.ADMIN_PHONE, sms).catch(console.error);
+async function deleteBooking(req, res) {
+  try {
+    const booking = await Booking.findByIdAndDelete(req.params.id);
+    if (!booking)
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
+    res.json({ success: true, message: "Booking deleted" });
+  } catch (err) {
+    console.error("Delete booking error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 }
+
+// stubs
+async function notifyCustomer() {}
+async function notifyAdmin() {}
 
 module.exports = {
   createBooking,
