@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, {
   useState,
   useEffect,
@@ -6,6 +7,7 @@ import React, {
   memo,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import { Routes, Route, useLocation, Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -61,16 +63,46 @@ const PREFETCH_MAP = Object.freeze({
     import(/* webpackChunkName: "admin-dashboard" */ "./pages/AdminDashboard"),
 });
 
-/* -------------------- Prefetching <Link> -------------------- */
+function isSlowConnection() {
+  const conn =
+    navigator.connection ||
+    navigator.mozConnection ||
+    navigator.webkitConnection;
+
+  const effectiveType = conn?.effectiveType || "";
+  const slow =
+    conn?.saveData ||
+    /(2g|slow-2g)/i.test(effectiveType) ||
+    /(^|-)2g$/i.test(effectiveType);
+
+  return !!slow;
+}
+
+function requestIdle(cb, timeout = 2000) {
+  if ("requestIdleCallback" in window) {
+    return window.requestIdleCallback(cb, { timeout });
+  }
+  return window.setTimeout(cb, Math.min(timeout, 1200));
+}
+
+function cancelIdle(id) {
+  if (typeof id === "number") clearTimeout(id);
+  else if ("cancelIdleCallback" in window) window.cancelIdleCallback(id);
+}
+
+/* -------------------- Prefetching <Link> (safe + once) -------------------- */
 const PrefetchLink = memo(function PrefetchLink({ to, children, ...props }) {
+  const prefetchedRef = useRef(false);
+
   const handlePrefetch = useCallback(() => {
-    const conn =
-      navigator.connection ||
-      navigator.mozConnection ||
-      navigator.webkitConnection;
-    const isSlow =
-      conn?.saveData || /(^|-)2g$/i.test(conn?.effectiveType || "");
-    if (!isSlow && PREFETCH_MAP[to]) PREFETCH_MAP[to]();
+    if (prefetchedRef.current) return;
+    if (isSlowConnection()) return;
+
+    const fn = PREFETCH_MAP[to];
+    if (fn) {
+      prefetchedRef.current = true;
+      fn();
+    }
   }, [to]);
 
   return (
@@ -89,13 +121,12 @@ const PrefetchLink = memo(function PrefetchLink({ to, children, ...props }) {
 const ScrollToTop = memo(function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
-    // keep behavior immediate but standards-compliant
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [pathname]);
   return null;
 });
 
-/* -------------------- Loader (non-blocking footprint) -------------------- */
+/* -------------------- Loader -------------------- */
 const Loader = memo(function Loader() {
   return (
     <div className="flex justify-center items-center h-32">
@@ -110,14 +141,13 @@ const Loader = memo(function Loader() {
 
 /* -------------------- Page transition wrapper -------------------- */
 const PAGE_TRANSITION = Object.freeze({
-  initial: { opacity: 0.5, y: 10 },
+  initial: { opacity: 0.6, y: 8 },
   animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 },
-  transition: { duration: 0.25, ease: "easeOut" },
+  exit: { opacity: 0, y: -8 },
+  transition: { duration: 0.22, ease: "easeOut" },
 });
 
 const PageWrapper = memo(function PageWrapper({ children }) {
-  // memoize variants object reference
   const anim = useMemo(() => PAGE_TRANSITION, []);
   return (
     <motion.div
@@ -133,45 +163,30 @@ const PageWrapper = memo(function PageWrapper({ children }) {
 });
 
 /* -------------------- App -------------------- */
-function App() {
+export default function App() {
   const [selectedCar, setSelectedCar] = useState(null);
   const location = useLocation();
 
-  // Idle preloading of common routes – connection-aware
+  // Prefetch common routes once, in idle time (smart + safe)
   useEffect(() => {
-    const conn =
-      navigator.connection ||
-      navigator.mozConnection ||
-      navigator.webkitConnection;
-    const isSlow =
-      conn?.saveData || /(^|-)2g$/i.test(conn?.effectiveType || "");
+    if (isSlowConnection()) return;
 
-    if (isSlow) return;
-
-    const preload = () => {
-      ["/about", "/services", "/contact"].forEach((p) => {
+    const id = requestIdle(() => {
+      // Only prefetch routes user is MOST likely to visit
+      ["/services", "/about", "/contact"].forEach((p) => {
         const fn = PREFETCH_MAP[p];
         if (fn) fn();
       });
-    };
+    }, 2500);
 
-    // Use requestIdleCallback if available for zero-jank background work
-    const id =
-      "requestIdleCallback" in window
-        ? window.requestIdleCallback(preload, { timeout: 2000 })
-        : setTimeout(preload, 2000);
-
-    return () => {
-      if (typeof id === "number") clearTimeout(id);
-      else if ("cancelIdleCallback" in window) window.cancelIdleCallback(id);
-    };
+    return () => cancelIdle(id);
   }, []);
 
   return (
     <>
       <ScrollToTop />
+
       <Suspense fallback={<Loader />}>
-        {/* initial={false} avoids exit/enter flicker on first mount */}
         <AnimatePresence mode="wait" initial={false}>
           <Routes location={location} key={location.pathname}>
             <Route
@@ -182,6 +197,7 @@ function App() {
                 </PageWrapper>
               }
             />
+
             <Route
               path="/about"
               element={
@@ -190,6 +206,7 @@ function App() {
                 </PageWrapper>
               }
             />
+
             <Route
               path="/gallery"
               element={
@@ -198,6 +215,7 @@ function App() {
                 </PageWrapper>
               }
             />
+
             <Route
               path="/contact"
               element={
@@ -206,6 +224,7 @@ function App() {
                 </PageWrapper>
               }
             />
+
             <Route
               path="/services"
               element={
@@ -214,6 +233,7 @@ function App() {
                 </PageWrapper>
               }
             />
+
             <Route
               path="/booking"
               element={
@@ -222,6 +242,7 @@ function App() {
                 </PageWrapper>
               }
             />
+
             <Route
               path="/confirmation"
               element={
@@ -230,6 +251,7 @@ function App() {
                 </PageWrapper>
               }
             />
+
             <Route
               path="/admin/login"
               element={
@@ -238,6 +260,7 @@ function App() {
                 </PageWrapper>
               }
             />
+
             <Route
               path="/admin/dashboard"
               element={
@@ -247,11 +270,14 @@ function App() {
               }
             />
 
-            {/* Redirects / legacy paths */}
+            {/* Redirects / legacy */}
             <Route
               path="/connect"
               element={<Navigate to="/gallery" replace />}
             />
+
+            {/* 404 fallback (important after hosting) */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
       </Suspense>
@@ -259,5 +285,4 @@ function App() {
   );
 }
 
-export default App;
 export { PrefetchLink };

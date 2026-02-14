@@ -9,6 +9,8 @@ const compression = require("compression");
 // Routes
 const bookingRoutes = require("./routes/bookingRoutes");
 const authRoutes = require("./routes/authRoutes");
+const contactRoutes = require("./routes/contactRoutes");
+
 
 // Init app
 const app = express();
@@ -70,6 +72,8 @@ app.get("/", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/contact", contactRoutes);
+
 
 // 404
 app.use((req, res) => {

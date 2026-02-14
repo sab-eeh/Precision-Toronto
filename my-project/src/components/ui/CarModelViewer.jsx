@@ -1,8 +1,8 @@
-import React, { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+// src/components/ui/CarModelViewer.jsx
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   useGLTF,
-  Preload,
   Html,
   OrbitControls,
   Environment,
@@ -10,7 +10,7 @@ import {
   PerformanceMonitor,
 } from "@react-three/drei";
 
-// ---- Global DRACO + Preloads (run once per module) ----
+// Draco decoder path (only sets config, doesn't download yet)
 useGLTF.setDecoderPath("/draco/");
 
 const MODEL_SETTINGS = Object.freeze({
@@ -20,110 +20,125 @@ const MODEL_SETTINGS = Object.freeze({
   truck: { scale: 6.2, y: -1 },
 });
 
-const ALL_MODELS = [
-  "/models/sedan/scene.gltf",
-  "/models/suv/scene.gltf",
-  "/models/coupe/scene.gltf",
-  "/models/truck/scene.gltf",
-];
-ALL_MODELS.forEach((p) => useGLTF.preload(p));
-
-// ---- Loader (pure, lightweight) ----
 const Loader = React.memo(function Loader() {
   return (
     <Html center>
       <div className="flex flex-col items-center justify-center text-white bg-black/50 p-4 rounded-lg">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white mb-3"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white mb-3" />
         <p className="text-sm">Loading…</p>
       </div>
     </Html>
   );
 });
 
-// ---- Car Model (optimized transforms + smooth rotation) ----
+// Forces canvas re-render only when needed
+function InvalidateOnFrame({ active }) {
+  const { invalidate } = useThree();
+  useFrame(() => {
+    if (active) invalidate();
+  });
+  return null;
+}
+
 const CarModel = React.memo(function CarModel({
   modelPath,
   modelType,
-  rotationSpeed = 0.4,
+  rotate = true,
 }) {
   const meshRef = useRef();
   const { scene } = useGLTF(modelPath);
+
   const { scale, y } = useMemo(
-    () => MODEL_SETTINGS[modelType?.toLowerCase()] || { scale: 1, y: 0 },
+    () => MODEL_SETTINGS[String(modelType || "").toLowerCase()] || { scale: 1, y: 0 },
     [modelType]
   );
 
-  // Apply transforms exactly once when deps change
   useEffect(() => {
     scene.scale.setScalar(scale);
     scene.position.set(0, y, 0);
-    // Ensure frustumCulled false for big scaled assets that might pop
+
+    // Light optimization: stop frustum popping for scaled meshes
     scene.traverse((o) => {
-      if (o.isMesh) o.frustumCulled = false;
+      if (o.isMesh) {
+        o.frustumCulled = false;
+      }
     });
   }, [scene, scale, y]);
 
   useFrame(({ clock }) => {
-    if (meshRef.current)
-      meshRef.current.rotation.y = clock.elapsedTime * rotationSpeed;
+    if (!rotate) return;
+    if (meshRef.current) {
+      meshRef.current.rotation.y = clock.elapsedTime * 0.4;
+    }
   });
 
   return <primitive ref={meshRef} object={scene} />;
 });
 
-// ---- Viewer ----
-function CarModelViewer({ modelPath, modelType }) {
-  // Connection-aware DPR upper bound
+function CarModelViewer({ modelPath, modelType, quality = "auto" }) {
+  const [isInteracting, setIsInteracting] = useState(false);
+
+  // DPR depends on quality + connection
   const maxDpr = useMemo(() => {
     const c =
       navigator.connection ||
       navigator.mozConnection ||
       navigator.webkitConnection;
+
     const slow =
       c?.saveData ||
       (c?.effectiveType && /(2g|slow-2g)/i.test(c.effectiveType || ""));
+
+    if (quality === "low") return 1.1;
+    if (quality === "high") return slow ? 1.5 : 2.25;
+    // auto
     return slow ? 1.25 : 2;
-  }, []);
+  }, [quality]);
+
+  // IMPORTANT: demand mode = huge performance gain
+  // We'll invalidate while rotating OR user interacting
+  const shouldAnimate = true; // keep rotation for premium look
 
   return (
     <div className="w-full h-72 rounded-xl overflow-hidden">
       <Canvas
         camera={{ position: [3, 2, 5], fov: 45 }}
         dpr={[1, maxDpr]}
-        // Keep visuals nice but lean:
+        frameloop="demand"
+        shadows={false}
         gl={{
-          antialias: true,
+          antialias: quality !== "low",
           powerPreference: "high-performance",
           alpha: true,
           stencil: false,
           depth: true,
           failIfMajorPerformanceCaveat: true,
         }}
-        // Rotation requires frames; keep always to retain smoothness
-        frameloop="always"
-        shadows={false}
+        onPointerDown={() => setIsInteracting(true)}
+        onPointerUp={() => setIsInteracting(false)}
+        onPointerLeave={() => setIsInteracting(false)}
       >
-        <PerformanceMonitor
-          onDecline={() => {
-            /* DPR auto-adjusts via AdaptiveDpr */
-          }}
-        >
+        <PerformanceMonitor>
           <AdaptiveDpr pixelated />
         </PerformanceMonitor>
 
-        {/* Lighting */}
         <ambientLight intensity={0.6} />
         <directionalLight position={[10, 10, 5]} intensity={1.2} />
 
-        {/* Realistic environment */}
         <Suspense fallback={<Loader />}>
           <Environment preset="city" />
-          <CarModel modelPath={modelPath} modelType={modelType} />
-          <Preload all />
+          <CarModel modelPath={modelPath} modelType={modelType} rotate={shouldAnimate} />
         </Suspense>
 
-        {/* Controls (same UX) */}
-        <OrbitControls enableZoom={false} />
+        {/* Controls: keep disabled for performance.
+            If you want enable rotate drag, set enableRotate true. */}
+        <OrbitControls
+          enableZoom={false}
+          enablePan={false}
+          enableRotate={false}
+        />
+
+        <InvalidateOnFrame active={shouldAnimate || isInteracting} />
       </Canvas>
     </div>
   );

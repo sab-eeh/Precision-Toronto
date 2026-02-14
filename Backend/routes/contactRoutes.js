@@ -18,7 +18,7 @@ router.post("/", async (req, res) => {
     // --- Admin notification ---
     const adminHtml = `
       <div style="font-family: Arial, sans-serif;">
-        <h2 style="color:#c0392b;">📩 New Contact Message</h2>
+        <h2 style="color:#c0392b;">New Contact Message</h2>
         <table style="border-collapse:collapse;width:100%;">
           <tr><td><b>Name:</b></td><td>${name}</td></tr>
           <tr><td><b>Email:</b></td><td>${email}</td></tr>
@@ -28,14 +28,14 @@ router.post("/", async (req, res) => {
       </div>`;
     await sendEmail(
       process.env.ADMIN_EMAIL,
-      "📩 New Contact Form Message",
+      "New Contact Form Message",
       adminHtml
     );
 
     // --- User confirmation ---
     const userHtml = `
       <div style="font-family: Arial, sans-serif;">
-        <h2 style="color:#2b7a78;">✅ Message Received</h2>
+        <h2 style="color:#2b7a78;">Message Received</h2>
         <p>Hi ${name},</p>
         <p>Thanks for reaching out to <b>Precision Toronto</b>. We'll reply soon.</p>
         <blockquote style="background:#f9f9f9;border-left:4px solid #2b7a78;padding:10px;">
@@ -44,7 +44,7 @@ router.post("/", async (req, res) => {
         <p>If urgent, call us directly: 📞 +1 647-685-7153</p>
         <p>– Precision Toronto Team</p>
       </div>`;
-    await sendEmail(email, "✅ We Received Your Message", userHtml);
+    await sendEmail(email, "We Received Your Message", userHtml);
 
     res.json({ success: true, message: "Message sent successfully" });
   } catch (err) {
