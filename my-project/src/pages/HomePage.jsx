@@ -407,7 +407,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
               Choose Your Vehicle
             </h2>
             <p className="text-lg text-gray-400">
-              Select your vehicle to see customized services and pricing
+              Select your vehicle to View packages & instant pricing
             </p>
           </div>
 

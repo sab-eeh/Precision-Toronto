@@ -13,11 +13,11 @@ export const servicesData = {
       price: 160,
       duration: "2–3 hours",
       features: [
-        "Vacuum & garbage removal",
-        "Mats restored & conditioned",
-        "Carpets & seats steam cleaned + shampooed",
-        "Plastics & upholstery conditioned",
-        "Streak-free glass",
+        "All garbage removed",
+        "carpet shampoo + vacuum",
+        "Seat and upholstery Steam Clean",
+        "Plastics and Upholstery dressed + Uv protection",
+        "Streak free glass",
       ],
       image: serviceImages.sedan[0],
     },
@@ -78,9 +78,10 @@ export const servicesData = {
       id: "sedan-pc-1",
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
-      description: "Removes ~50–60% of swirls with machine polish.",
+      description:
+        "ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
       duration: "5-7 hours ",
-      price: 399,
+      price: 199,
       features: ["50–60% swirl removal", "Restores gloss"],
       image: serviceImages.sedan[4],
     },
@@ -88,9 +89,10 @@ export const servicesData = {
       id: "sedan-pc-2",
       category: "Paint Correction",
       title: "Stage 2 Paint Correction",
-      description: "Removes ~60–80% of swirls (Stage 1 + extra correction).",
+      description:
+        "Reccomended for vehicles with moderate swirls and defects where a deeper, more refined finish is desired",
       duration: "5-7 hours ",
-      price: 549,
+      price: 349,
       features: ["60–80% swirl removal", "Higher gloss finish"],
       image: serviceImages.sedan[5],
     },
@@ -98,9 +100,10 @@ export const servicesData = {
       id: "sedan-pc-3",
       category: "Paint Correction",
       title: "Stage 3 Paint Correction",
-      description: "Removes ~80–99% of swirls for near-showroom finish.",
+      description:
+        "best suited for those chasing maximum correction and a near flawless finish",
       duration: "5-7 hours ",
-      price: 699,
+      price: 499,
       features: ["80–99% swirl removal", "Showroom finish"],
       image: serviceImages.sedan[6],
     },
@@ -111,7 +114,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "1 Year Ceramic Coating",
       description:
-        "Includes: 1 step paint correction, full paint prep (wash, clay bar, iron decontamination), 1 year ceramic coating on all painted areas. Includes 1x maintenance wash. Carfax applicable.",
+        "A solid entry into ceramic coating — great protection now, but most clients eventually upgrade.",
       price: 399,
       duration: "6-10 hours",
       features: [
@@ -128,7 +131,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "3 Year Ceramic Coating",
       description:
-        "Everything in 1-year ceramic + 3 year ceramic coating applied. Includes 2x maintenance washes. Carfax applicable.",
+        "The sweet spot for most owners, offering long-lasting protection without the need for frequent reapplication.",
       price: 715,
       duration: "6-10 hours",
 
@@ -145,7 +148,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "5 Year Ceramic Coating",
       description:
-        "Everything in 1-year ceramic + 5 year ceramic coating applied. Includes 2x maintenance washes. Carfax applicable.",
+        "Chosen by clients who want the best and never want to think about paint protection again.",
       price: 999,
       duration: "6-10 hours",
       features: [
@@ -164,7 +167,7 @@ export const servicesData = {
       title: "Window Tinting",
       description:
         "Professional window tinting - choose tint percentage at checkout.",
-      price: 249,
+      price: 250,
       duration: "2-3 hours",
       features: ["Custom tint shades", "UV protection", "Professional install"],
       image: serviceImages.sedan[8],
@@ -179,14 +182,14 @@ export const servicesData = {
       title: "Interior Only",
       description:
         "Deep clean of SUV interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
-      price: 165,
+      price: 170,
       duration: "2–4 hours",
       features: [
-        "Vacuum & shampoo",
-        "Mats restored & conditioned",
-        "Carpets & seats steam cleaned + shampooed",
-        "Plastics conditioned",
-        "Streak-free glass",
+        "All garbage removed",
+        "carpet shampoo + vacuum",
+        "Seat and upholstery Steam Clean",
+        "Plastics and Upholstery dressed + Uv protection",
+        "Streak free glass",
       ],
       image: serviceImages.suv[0],
     },
@@ -196,7 +199,7 @@ export const servicesData = {
       title: "Exterior Only",
       description:
         "SUV exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
-      price: 165,
+      price: 85,
       duration: "2-3 hours",
       features: [
         "Rims & tires deep cleaned",
@@ -213,7 +216,7 @@ export const servicesData = {
       title: "Interior + Exterior",
       description:
         "Full SUV detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      price: 235,
+      price: 249,
       duration: "3–5 hours",
       popular: true,
       features: [
@@ -243,9 +246,10 @@ export const servicesData = {
       id: "suv-pc-1",
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
-      description: "Removes ~50–60% of swirls.",
+      description:
+        "ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
       duration: "6-7 hours ",
-      price: 399,
+      price: 199,
       features: ["50–60% swirl removal", "Restores gloss"],
       image: serviceImages.suv[4],
     },
@@ -253,9 +257,10 @@ export const servicesData = {
       id: "suv-pc-2",
       category: "Paint Correction",
       title: "Stage 2 Paint Correction",
-      description: "Removes ~60–80% of swirls.",
+      description:
+        "Reccomended for vehicles with moderate swirls and defects where a deeper, more refined finish is desired",
       duration: "6-7 hours ",
-      price: 549,
+      price: 349,
       features: ["60–80% swirl removal"],
       image: serviceImages.suv[5],
     },
@@ -263,9 +268,10 @@ export const servicesData = {
       id: "suv-pc-3",
       category: "Paint Correction",
       title: "Stage 3 Paint Correction",
-      description: "Removes ~80–99% of swirls.",
+      description:
+        "best suited for those chasing maximum correction and a near flawless finish",
       duration: "6-7 hours ",
-      price: 699,
+      price: 499,
       features: ["80–99% swirl removal"],
       image: serviceImages.suv[6],
     },
@@ -276,7 +282,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "1 Year Ceramic Coating",
       description:
-        "Includes 1 step paint correction, paint prep, and 1 year ceramic coating. Includes 1x maintenance wash. Carfax applicable.",
+        "A solid entry into ceramic coating — great protection now, but most clients eventually upgrade.",
       price: 399,
       duration: "8-12 hours",
       features: [
@@ -292,7 +298,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "3 Year Ceramic Coating",
       description:
-        "Includes everything from 1 year + 3 year ceramic coating. 2x maintenance washes.",
+        "The sweet spot for most owners, offering long-lasting protection without the need for frequent reapplication.",
       price: 715,
       duration: "8-12 hours",
       features: [
@@ -307,7 +313,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "5 Year Ceramic Coating",
       description:
-        "Includes everything from 1 year + 5 year ceramic coating. 2x maintenance washes.",
+        "Chosen by clients who want the best and never want to think about paint protection again.",
       price: 999,
       duration: "8-12 hours",
       features: [
@@ -324,7 +330,7 @@ export const servicesData = {
       category: "Window Tinting",
       title: "Window Tinting",
       description: "Choose tint percentage for your SUV.",
-      price: 300,
+      price: 265,
       duration: "2-3 hours",
       features: ["Custom shades", "UV protection"],
       image: serviceImages.suv[8],
@@ -339,13 +345,14 @@ export const servicesData = {
       title: "Interior Only",
       description:
         "Heavy-duty truck interior detail: vacuum, shampoo, mats conditioned, steam clean carpets & seats, plastics conditioned.",
-      price: 175,
+      price: 170,
       duration: "2–4 hours",
       features: [
-        "Vacuum & shampoo",
-        "Heavy-duty cleaning",
-        "Mats & carpets conditioned",
-        "Plastics dressed",
+        "All garbage removed",
+        "carpet shampoo + vacuum",
+        "Seat and upholstery Steam Clean",
+        "Plastics and Upholstery dressed + Uv protection",
+        "Streak free glass",
       ],
       image: serviceImages.truck[0],
     },
@@ -355,7 +362,7 @@ export const servicesData = {
       title: "Exterior Only",
       description:
         "Truck exterior deep clean: rims, tires, pre-treatment, foam wash, hand dry, sealant, tire shine.",
-      price: 170,
+      price: 85,
       duration: "2-3 hours",
       features: [
         "Rims & tires deep cleaned",
@@ -371,7 +378,7 @@ export const servicesData = {
       title: "Interior + Exterior",
       description:
         "Full truck detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      price: 250,
+      price: 249,
       duration: "4–5 hours",
       popular: true,
       features: [
@@ -401,9 +408,10 @@ export const servicesData = {
       id: "truck-pc-1",
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
-      description: "Removes ~50–60% of swirls.",
+      description:
+        "ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
       duration: "7-8 hours ",
-      price: 399,
+      price: 199,
       features: ["50–60% swirl removal"],
       image: serviceImages.truck[4],
     },
@@ -411,9 +419,10 @@ export const servicesData = {
       id: "truck-pc-2",
       category: "Paint Correction",
       title: "Stage 2 Paint Correction",
-      description: "Removes ~60–80% of swirls.",
+      description:
+        "Reccomended for vehicles with moderate swirls and defects where a deeper, more refined finish is desired",
       duration: "7-8 hours ",
-      price: 549,
+      price: 349,
       features: ["60–80% swirl removal"],
       image: serviceImages.truck[5],
     },
@@ -421,9 +430,10 @@ export const servicesData = {
       id: "truck-pc-3",
       category: "Paint Correction",
       title: "Stage 3 Paint Correction",
-      description: "Removes ~80–99% of swirls.",
+      description:
+        "best suited for those chasing maximum correction and a near flawless finish",
       duration: "7-8 hours ",
-      price: 699,
+      price: 499,
       features: ["80–99% swirl removal"],
       image: serviceImages.truck[6],
     },
@@ -434,7 +444,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "1 Year Ceramic Coating",
       description:
-        "Includes 1 step paint correction, prep, and 1 year ceramic coating. Includes 1x maintenance wash.",
+        "A solid entry into ceramic coating — great protection now, but most clients eventually upgrade.",
       price: 399,
       duration: "8-12 hours",
       features: [
@@ -448,7 +458,8 @@ export const servicesData = {
       id: "truck-ceramic-3y",
       category: "Ceramic Coating",
       title: "3 Year Ceramic Coating",
-      description: "Includes 3 year ceramic coating and 2x maintenance washes.",
+      description:
+        "The sweet spot for most owners, offering long-lasting protection without the need for frequent reapplication.",
       price: 715,
       duration: "8-12 hours",
       features: [
@@ -462,7 +473,8 @@ export const servicesData = {
       id: "truck-ceramic-5y",
       category: "Ceramic Coating",
       title: "5 Year Ceramic Coating",
-      description: "Includes 5 year ceramic coating and 2x maintenance washes.",
+      description:
+        "Chosen by clients who want the best and never want to think about paint protection again.",
       price: 999,
       duration: "8-12 hours",
       features: [
@@ -478,9 +490,10 @@ export const servicesData = {
       id: "truck-tint",
       category: "Window Tinting",
       title: "Window Tinting",
-      description: "Window tinting for trucks - choose percentage.",
+      description:
+        "A solid entry into ceramic coating — great protection now, but most clients eventually upgrade.",
       duration: "2-3 hours",
-      price: 300,
+      price: 275,
       features: ["UV protection", "Privacy"],
       image: serviceImages.truck[8],
     },
@@ -493,14 +506,15 @@ export const servicesData = {
       category: "Detailing",
       title: "Interior Only",
       description:
-        "Luxury coupe interior deep clean: vacuum, shampoo, mats conditioned, steam-clean seats & carpets, plastics conditioned.",
+        "The sweet spot for most owners, offering long-lasting protection without the need for frequent reapplication.",
       price: 150,
       duration: "2–4 hours",
       features: [
-        "Vacuum & shampoo",
-        "Luxury finish",
-        "Mats & carpets steam cleaned",
-        "Plastics dressed",
+        "All garbage removed",
+        "carpet shampoo + vacuum",
+        "Seat and upholstery Steam Clean",
+        "Plastics and Upholstery dressed + Uv protection",
+        "Streak free glass",
       ],
       image: serviceImages.coupe[0],
     },
@@ -509,8 +523,8 @@ export const servicesData = {
       category: "Detailing",
       title: "Exterior Only",
       description:
-        "Premium coupe exterior: rims & tires, pre-treatment, foam wash, hand dry, sealant, tire shine, streak-free windows.",
-      price: 140,
+        "Chosen by clients who want the best and never want to think about paint protection again.",
+      price: 75,
       duration: "1-2 hours",
       features: ["Pre-treatment", "Foam wash", "Hand dry & sealant"],
       image: serviceImages.coupe[1],
@@ -552,9 +566,10 @@ export const servicesData = {
       id: "coupe-pc-1",
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
-      description: "Removes ~50–60% of swirls.",
+      description:
+        "ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
       duration: "5-7 hours ",
-      price: 380,
+      price: 199,
       features: ["50–60% swirl removal"],
       image: serviceImages.coupe[4],
     },
@@ -562,9 +577,10 @@ export const servicesData = {
       id: "coupe-pc-2",
       category: "Paint Correction",
       title: "Stage 2 Paint Correction",
-      description: "Removes ~60–80% of swirls.",
+      description:
+        "Reccomended for vehicles with moderate swirls and defects where a deeper, more refined finish is desired",
       duration: "5-7 hours ",
-      price: 530,
+      price: 349,
       features: ["60–80% swirl removal"],
       image: serviceImages.coupe[5],
     },
@@ -572,9 +588,10 @@ export const servicesData = {
       id: "coupe-pc-3",
       category: "Paint Correction",
       title: "Stage 3 Paint Correction",
-      description: "Removes ~80–99% of swirls.",
+      description:
+        "best suited for those chasing maximum correction and a near flawless finish",
       duration: "5-7 hours ",
-      price: 680,
+      price: 499,
       features: ["80–99% swirl removal"],
       image: serviceImages.coupe[6],
     },
@@ -585,7 +602,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "1 Year Ceramic Coating",
       description:
-        "Includes 1 step paint correction, paint prep, and 1 year ceramic coating. Includes 1x maintenance wash.",
+        "A solid entry into ceramic coating — great protection now, but most clients eventually upgrade.",
       price: 399,
       duration: "7-9 hours",
       features: [
@@ -600,7 +617,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "3 Year Ceramic Coating",
       description:
-        "Includes everything in 1 year + 3 year ceramic coating applied. Includes 2x maintenance washes.",
+        "The sweet spot for most owners, offering long-lasting protection without the need for frequent reapplication.",
       price: 715,
       duration: "7-9 hours",
       features: [
@@ -615,7 +632,7 @@ export const servicesData = {
       category: "Ceramic Coating",
       title: "5 Year Ceramic Coating",
       description:
-        "Includes everything in 1 year + 5 year ceramic coating applied. Includes 2x maintenance washes.",
+        "Chosen by clients who want the best and never want to think about paint protection again.",
       price: 999,
       duration: "7-9 hours",
       features: [
@@ -632,7 +649,7 @@ export const servicesData = {
       category: "Window Tinting",
       title: "Window Tinting",
       description: "Choose tint percentage for coupe windows.",
-      price: 200,
+      price: 315,
       duration: "1-2 hours",
       features: ["Custom shades", "UV protection"],
       image: serviceImages.coupe[8],
@@ -648,25 +665,23 @@ export const addonsData = {
       title: "Headlight Restoration",
       duration: "2-3 hours",
       price: 79.99,
-      type: "general", 
+      type: "general",
     },
     {
       id: "sedan-addon-engine",
       title: "Engine Bay Wash",
       price: 55,
       duration: "30-40 mins",
-      type: "general", 
+      type: "general",
     },
-    {
-      id: "sedan-addon-int-ceramic",
-      title: "Interior Ceramic Coating",
-      price: 299,
-      duration: "2-3 hours",
-      type: "ceramic",
-    },
+
     {
       id: "sedan-addon-wheels",
       title: "Wheels & Calipers Coating",
+      description:
+        "Keeps brake dust and grime from bonding, saving you constant wheel cleaning every wash.",
+      tag: "Most Added",
+      matters: "Wheels → brake dust icon",
       price: 99,
       duration: "1 hours",
       type: "ceramic",
@@ -674,8 +689,23 @@ export const addonsData = {
     {
       id: "sedan-addon-windows",
       title: "Windshield & Windows Coating",
+      description:
+        "Improves visibility in rain and reduces water spotting once you drive with it, you won’t want to go without it.",
+      tag: "Best Value",
+      matters: "Glass → rain/visibility icon",
       price: 145,
       duration: "1-2 hours",
+      type: "ceramic",
+    },
+    {
+      id: "sedan-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      description:
+        "Protects high-touch interior surfaces from stains, spills, and wear smost clients add this after realizing how fast interiors get ruined.",
+      tag: "Highly Recommended",
+      matters: "Interior → shield or stain icon",
+      price: 299,
+      duration: "2-3 hours",
       type: "ceramic",
     },
   ],
@@ -685,25 +715,23 @@ export const addonsData = {
       title: "Headlight Restoration",
       price: 79.99,
       duration: "2-3 hours",
-      type: "general", 
+      type: "general",
     },
     {
       id: "suv-addon-engine",
       title: "Engine Bay Wash",
       price: 65,
       duration: "30-40 mins",
-      type: "general", 
+      type: "general",
     },
-    {
-      id: "suv-addon-int-ceramic",
-      title: "Interior Ceramic Coating",
-      price: 299,
-      duration: "2-3 hours",
-      type: "ceramic",
-    },
+
     {
       id: "suv-addon-wheels",
       title: "Wheels & Calipers Coating",
+      description:
+        "Keeps brake dust and grime from bonding, saving you constant wheel cleaning every wash.",
+      tag: "Most Added",
+      matters: "Wheels → brake dust icon",
       price: 99,
       duration: "1 hours",
       type: "ceramic",
@@ -711,8 +739,23 @@ export const addonsData = {
     {
       id: "suv-addon-windows",
       title: "Windshield & Windows Coating",
+      description:
+        "Improves visibility in rain and reduces water spotting once you drive with it, you won’t want to go without it.",
+      tag: "Best Value",
+      matters: "Glass → rain/visibility icon",
       price: 145,
       duration: "1-2 hours",
+      type: "ceramic",
+    },
+    {
+      id: "suv-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      description:
+        "Protects high-touch interior surfaces from stains, spills, and wear smost clients add this after realizing how fast interiors get ruined.",
+      tag: "Highly Recommended",
+      matters: "Interior → shield or stain icon",
+      price: 299,
+      duration: "2-3 hours",
       type: "ceramic",
     },
   ],
@@ -722,26 +765,23 @@ export const addonsData = {
       title: "Headlight Restoration",
       price: 79.99,
       duration: "2-3 hours",
-      type: "general", 
+      type: "general",
     },
     {
       id: "truck-addon-engine",
       title: "Engine Bay Wash",
       price: 70,
       duration: "30-40 mins",
-      type: "general", 
-    },
-    {
-      id: "truck-addon-int-ceramic",
-      title: "Interior Ceramic Coating",
-      price: 299,
-      duration: "2-3 hours",
-      type: "ceramic",
+      type: "general",
     },
 
     {
       id: "truck-addon-wheels",
       title: "Wheels & Calipers Coating",
+      description:
+        "Keeps brake dust and grime from bonding, saving you constant wheel cleaning every wash.",
+      tag: "Most Added",
+      matters: "Wheels → brake dust icon",
       price: 99,
       duration: "1 hours",
       type: "ceramic",
@@ -749,8 +789,23 @@ export const addonsData = {
     {
       id: "truck-addon-windows",
       title: "Windshield & Windows Coating",
+      description:
+        "Improves visibility in rain and reduces water spotting once you drive with it, you won’t want to go without it.",
+      tag: "Best Value",
+      matters: "Glass → rain/visibility icon",
       price: 145,
       duration: "1-2 hours",
+      type: "ceramic",
+    },
+    {
+      id: "truck-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      description:
+        "Protects high-touch interior surfaces from stains, spills, and wear smost clients add this after realizing how fast interiors get ruined.",
+      tag: "Highly Recommended",
+      matters: "Interior → shield or stain icon",
+      price: 299,
+      duration: "2-3 hours",
       type: "ceramic",
     },
   ],
@@ -760,25 +815,23 @@ export const addonsData = {
       title: "Headlight Restoration",
       price: 70,
       duration: "2-3 hours",
-      type: "general", 
+      type: "general",
     },
     {
       id: "coupe-addon-engine",
       title: "Engine Bay Wash",
       price: 55,
       duration: "30-40 mins",
-      type: "general", 
+      type: "general",
     },
-    {
-      id: "coupe-addon-int-ceramic",
-      title: "Interior Ceramic Coating",
-      price: 299,
-      duration: "2-3 hours",
-      type: "ceramic",
-    },
+
     {
       id: "coupe-addon-wheels",
       title: "Wheels & Calipers Coating",
+      description:
+        "Keeps brake dust and grime from bonding, saving you constant wheel cleaning every wash.",
+      tag: "Most Added",
+      matters: "Wheels → brake dust icon",
       price: 99,
       duration: "1 hours",
       type: "ceramic",
@@ -786,8 +839,23 @@ export const addonsData = {
     {
       id: "coupe-addon-windows",
       title: "Windshield & Windows Coating",
+      description:
+        "Improves visibility in rain and reduces water spotting once you drive with it, you won’t want to go without it.",
+      tag: "Best Value",
+      matters: "Glass → rain/visibility icon",
       price: 145,
       duration: "1-2 hours",
+      type: "ceramic",
+    },
+    {
+      id: "coupe-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      description:
+        "Protects high-touch interior surfaces from stains, spills, and wear smost clients add this after realizing how fast interiors get ruined.",
+      tag: "Highly Recommended",
+      matters: "Interior → shield or stain icon",
+      price: 299,
+      duration: "2-3 hours",
       type: "ceramic",
     },
   ],

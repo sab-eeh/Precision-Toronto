@@ -323,12 +323,21 @@ const ServicesPage = () => {
                 {activeCategory === "Ceramic Coating" &&
                   ceramicAddons.length > 0 && (
                     <div className="mt-10">
-                      <h4 className="text-xl font-semibold mb-4">
-                        Ceramic Add-ons
-                      </h4>
+                      <div className="mb-6">
+                        <h4 className="text-xl font-semibold ">
+                          Recommended Ceramic Add-Ons
+                        </h4>
+                        <p className="text-gray-300">
+                          Enhance protection where it matters most — shield your
+                          wheels, glass, and interior from daily wear, water
+                          damage, and long-term deterioration.
+                        </p>
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                         {ceramicAddons.map((addon) => {
-                          const id = addon.id ?? addon.title;
+                          const id =
+                            addon.id ?? addon.title ?? addon.description;
                           const active = !!(booking.addons || []).find(
                             (a) => a.id === id
                           );
@@ -345,26 +354,45 @@ const ServicesPage = () => {
                                   : "bg-gray-800 text-gray-200 border-gray-700"
                               }`}
                             >
-                              <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-semibold">{addon.title}</h4>
-                                <span className="font-bold">
-                                  ${Number(addon.price).toFixed(2)}
+                              {" "}
+                              <div className="mb-3">
+                                <span className="text-sm bg-yellow-300 text-black py-1 px-2 rounded-2xl">
+                                  {addon.tag}
                                 </span>
                               </div>
-
-                              <p className="text-sm text-gray-300 mb-4">
-                                {addon.duration
-                                  ? `⏱ ${addon.duration}`
-                                  : "⏱ Est. time"}
-                              </p>
-
+                              <div className="flex flex-col gap-5">
+                                <div className="flex flex-col gap-3">
+                                  <h4 className="font-semibold">
+                                    {addon.title}
+                                  </h4>
+                                  <p className="text-sm">{addon.description}</p>
+                                  {/* <div className="flex flex-col">
+                                    <h3 className="font-semibold">
+                                      Why it matters?
+                                    </h3>
+                                    <span className="text-sm">
+                                      {addon.matters}
+                                    </span>
+                                  </div> */}
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <p className="text-sm text-gray-300">
+                                    {addon.duration
+                                      ? `⏱ ${addon.duration}`
+                                      : "⏱ Est. time"}
+                                  </p>
+                                  <span className="font-bold">
+                                    ${Number(addon.price).toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
                               {!active ? (
                                 <Button
                                   onClick={() => toggleAddon({ ...addon, id })}
                                   className="w-full"
                                   variant="secondary"
                                 >
-                                  Add
+                                  Add protection
                                 </Button>
                               ) : (
                                 <div className="flex items-center justify-between gap-3">
