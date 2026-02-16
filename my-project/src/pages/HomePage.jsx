@@ -272,6 +272,12 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
     []
   );
 
+  const [activeIndex, setActiveIndex] = useState(null);
+
+  const handleToggle = (idx) => {
+    setActiveIndex((prev) => (prev === idx ? null : idx));
+  };
+
   // Scroll to section if routed with state.scrollTo
   useEffect(() => {
     const id = location.state?.scrollTo;
@@ -521,40 +527,62 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
         </motion.p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 container mx-auto px-6">
-          {beforeAfterPairs.map((pair, idx) => (
-            <motion.figure
-              key={idx}
-              className="relative overflow-hidden rounded-xl shadow-lg group"
-              initial={{ opacity: 0, scale: 0.96 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.35, delay: idx * 0.05 }}
-              viewport={{ once: true }}
-            >
-              <img
-                src={pair.before}
-                alt="Before detailing"
-                className="w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 group-hover:opacity-0 transition-opacity duration-500"
-                loading="lazy"
-                decoding="async"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
-              <span className="absolute top-3 left-3 bg-blue-600 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
-                Before
-              </span>
+          {beforeAfterPairs.map((pair, idx) => {
+            const isTapped = activeIndex === idx;
 
-              <img
-                src={pair.after}
-                alt="After detailing"
-                className="w-full h-64 md:h-72 lg:h-80 object-cover"
-                loading="lazy"
-                decoding="async"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
-              <span className="absolute top-3 right-3 bg-blue-800 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
-                After
-              </span>
-            </motion.figure>
-          ))}
+            return (
+              <motion.figure
+                key={idx}
+                className="relative overflow-hidden rounded-xl shadow-lg group cursor-pointer select-none"
+                initial={{ opacity: 0, scale: 0.96 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.35, delay: idx * 0.05 }}
+                viewport={{ once: true }}
+                onClick={() => handleToggle(idx)}
+              >
+                {/* BEFORE image */}
+                <img
+                  src={pair.before}
+                  alt="Before detailing"
+                  className={[
+                    "w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 transition-opacity duration-500",
+                    // Desktop hover
+                    "md:group-hover:opacity-0",
+                    // Mobile tap toggle
+                    isTapped ? "opacity-0" : "opacity-100",
+                  ].join(" ")}
+                  loading="lazy"
+                  decoding="async"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+
+                <span className="hidden md:inline-flex absolute top-3 left-3 bg-blue-600 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
+                  Before
+                </span>
+
+                {/* AFTER image */}
+                <img
+                  src={pair.after}
+                  alt="After detailing"
+                  className="w-full h-64 md:h-72 lg:h-80 object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+
+                <span className="hidden md:inline-flex absolute top-3 right-3 bg-blue-800 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
+                  After
+                </span>
+
+                {/* Mobile hint overlay */}
+                <div className="md:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
+                  <div className="bg-black/55 text-white text-xs font-medium px-4 py-2 rounded-full backdrop-blur-sm border border-white/10 shadow-lg">
+                    {isTapped ? "Tap to view BEFORE" : "Tap to view AFTER"}
+                  </div>
+                </div>
+              </motion.figure>
+            );
+          })}
         </div>
       </section>
 
