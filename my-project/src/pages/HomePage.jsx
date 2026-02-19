@@ -16,7 +16,7 @@ import {
   Star,
   MapPin,
   Clock,
-  Shield,
+  Store,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -42,20 +42,25 @@ const Skeleton = memo(function Skeleton({ className = "" }) {
 
 const FEATURES = Object.freeze([
   {
-    icon: Shield,
-    title: "Premium Protection",
-    description: "Protecting and maintaining your vehicle",
+    icon: Star,
+    title: "5-Star Rated",
+    description: "Trusted by 1,000+ Customers & Businesses",
+    link: "https://g.page/YOUR_GOOGLE_REVIEW_LINK",
+  },
+  {
+    icon: MapPin,
+    title: "Mobile Service",
+    description: "We Come to You — Home or Work",
+  },
+  {
+    icon: Store,
+    title: "Drop-Off Service",
+    description: "Convenient In-Shop Detailing Available",
   },
   {
     icon: Clock,
     title: "Time Efficient",
-    description: "Quick turnaround without compromising quality",
-  },
-  { icon: MapPin, title: "Mobile Service", description: "We come to you" },
-  {
-    icon: Star,
-    title: "5-Star Reviews",
-    description: "Trusted by 500+ satisfied customers",
+    description: "Quick Turnaround Without Compromising Quality",
   },
 ]);
 
@@ -314,73 +319,71 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
       </div>
 
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden sm:py-4 md:py-6">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
         <img
           src={heroBackground}
-          alt="High-end car detailing background"
-          fetchPriority="high"
-          decoding="async"
-          loading="eager"
+          alt="Luxury vehicle detailing service"
           className="absolute inset-0 w-full h-full object-cover"
-          sizes="100vw"
+          loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/40 to-black/50" />
+
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/60" />
 
         <motion.div
-          className="relative z-10 text-center px-6 max-w-6xl mx-auto"
+          className="relative z-10 text-center px-6 max-w-5xl mx-auto"
           {...heroAnim}
         >
-          <Link to="/" className="flex justify-center" aria-label="Home">
+          {/* Logo */}
+          {/* <Link to="/" className="flex justify-center mb-6">
             <img
               src={logo}
               alt="Precision Toronto Logo"
-              width={176}
-              height={176}
-              className="w-44 md:w-56 h-auto mx-auto rounded-full shadow-lg"
-              loading="eager"
-              decoding="async"
-              fetchPriority="high"
+              className="w-40 md:w-52 h-auto drop-shadow-xl"
             />
-          </Link>
+          </Link> */}
 
-          <p className="mt-6 text-lg md:text-2xl text-gray-300 tracking-wide">
-            Luxury Auto Detailing Excellence
+          {/* Main Headline */}
+          <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight tracking-tight">
+            PRECISION ISN’T A SERVICE.
+            <br />
+            IT’S A STANDARD.
+          </h1>
+
+          {/* Subheadline */}
+          <p className="mt-6 text-lg md:text-3xl text-gray-300">
+            Experience True Vehicle Care
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10 mt-12 mb-12">
-            {FEATURES.map((f, i) => (
-              <FeatureCard
-                key={f.title}
-                Icon={f.icon}
-                title={f.title}
-                description={f.description}
-                anim={
-                  prefersReducedMotion
-                    ? {}
-                    : {
-                        ...fadeUp,
-                        transition: {
-                          ...(fadeUp.transition || {}),
-                          delay: i * 0.06,
-                        },
-                      }
-                }
-              />
-            ))}
-          </div>
+          {/* Supporting Line */}
+          <p className="mt-3 text-base font-semibold md:text-2xl text-gray-300">
+            Premium Detailing & Protection Services
+            <br />
+            Serving Durham Region & Greater Toronto Area
+          </p>
 
+          {/* CTA Button */}
           <motion.button
             onClick={() =>
               document.getElementById("car-selection")?.scrollIntoView({
                 behavior: prefersReducedMotion ? "auto" : "smooth",
               })
             }
-            className="px-10 py-4 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full shadow-xl transition-all sm:mb-7 lg:mb-0"
+            className="mt-8 px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-2xl transition-all"
             whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
-            whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+            whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
           >
-            Get Started
+            Book now or Get started
           </motion.button>
+
+          {/* Star Rating Section */}
+          <div className="mt-6 flex flex-col items-center">
+            <div className="flex gap-12 text-yellow-400 text-3xl">{"★ ★ ★ ★ ★"}</div>
+            <p className="mt-2 text-gray-300 text-lg">
+              5-Star Rated Detailing Service
+            </p>
+          </div>
         </motion.div>
       </section>
 

@@ -10,7 +10,7 @@ export const servicesData = {
       title: "Interior Only",
       description:
         "Factory reset interior: vacuum, garbage removal, mats restored & conditioned, carpets & seats steam cleaned + shampooed, plastics conditioned, streak-free glass.",
-      price: 160,
+      price: 159.99,
       duration: "2–3 hours",
       features: [
         "All garbage removed",
@@ -27,7 +27,7 @@ export const servicesData = {
       title: "Exterior Only",
       description:
         "Deep clean exterior: rims & tires deep clean, pre-treatment, foam wash, hand dry, paint protection (sealant/ceramic spray), tire shine, rim polish, streak-free windows.",
-      price: 150,
+      price: 149.99,
       duration: "2-3 hours",
       features: [
         "Rims & tires deep cleaned",
@@ -44,7 +44,7 @@ export const servicesData = {
       title: "Interior + Exterior",
       description:
         "Complete sedan detail inside & out. Includes full interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      price: 210,
+      price: 209.99,
       duration: "3–5 hours",
       popular: true,
       features: [
@@ -63,7 +63,7 @@ export const servicesData = {
       category: "Detailing",
       title: "Engine Bay Wash",
       description: "Degrease & detail engine bay (safe for electronics).",
-      price: 55,
+      price: 54.99,
       duration: "30-40 mins",
       features: [
         "Engine degreased",
