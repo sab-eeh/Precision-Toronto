@@ -8,37 +8,25 @@ const PORT = Number(process.env.PORT || 5000);
 
 // Connect DB first, then start server
 (async () => {
-  await connectDB();
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is missing in environment variables");
+    }
 
-  const server = http.createServer(app);
+    await connectDB();
+    console.log("✅ DB connected");
 
-  server.listen(PORT, () => {
-    console.log(
-      `🚀 Server running in ${
-        process.env.NODE_ENV || "development"
-      } on port ${PORT}`
-    );
-  });
+    const server = http.createServer(app);
 
-  // Handle unhandled rejections & exceptions cleanly
-  process.on("unhandledRejection", (reason) => {
-    console.error("Unhandled Rejection:", reason);
-  });
-  process.on("uncaughtException", (err) => {
-    console.error("Uncaught Exception:", err);
-    process.exit(1);
-  });
-
-  // Graceful shutdown
-  const shutdown = () => {
-    console.log("🔻 Shutting down...");
-    server.close(() => {
-      console.log("HTTP server closed");
-      process.exit(0);
+    server.listen(PORT, () => {
+      console.log(
+        `🚀 Server running in ${
+          process.env.NODE_ENV || "development"
+        } on port ${PORT}`
+      );
     });
-    // Force exit if something hangs
-    setTimeout(() => process.exit(1), 5000).unref();
-  };
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
+  } catch (err) {
+    console.error("❌ Startup Error:", err.message);
+    process.exit(1);
+  }
 })();
