@@ -161,7 +161,7 @@ const Header = memo(() => {
       className="bg-[#14181E]/95 backdrop-blur-md sticky top-0 z-50 shadow-md"
     >
       {/* Desktop Top Bar */}
-      <div className="hidden md:block border-b border-[#1F242C]">
+      <div className="hidden md:block border-b border-black bg-[#0c0c0c]">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-2 text-sm text-gray-300">
           <div className="flex items-center gap-6">
             {CONTACT_INFO.map(({ icon, text, color }) => (
@@ -206,14 +206,17 @@ const Header = memo(() => {
       {/* Main Header */}
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-2">
         {/* Logo */}
-        <PrefetchLink to="/" className="flex items-center">
+        <div className="relative">
           <img
             src="/logo.png"
-            alt="Precision Toronto Logo"
-            className="w-36 h-auto mx-auto rounded-full shadow-lg"
-            loading="lazy"
+            className="w-32 mx-auto shadow-lg 
+               [mask-image:linear-gradient(to_bottom,black_80%,transparent)]
+               [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent)]"
           />
-        </PrefetchLink>
+
+          {/* subtle glow blend */}
+          <div className="absolute inset-0 bg-black/10 blur-xl -z-10" />
+        </div>
 
         {/* Desktop Nav */}
         <div className="flex items-center gap-4">

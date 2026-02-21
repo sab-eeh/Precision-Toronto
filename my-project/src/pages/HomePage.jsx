@@ -319,7 +319,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
       </div>
 
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden translate-y-[-40px] md:translate-y-0">
         {/* Background Image */}
         <img
           src={heroBackground}
@@ -335,15 +335,6 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
           className="relative z-10 text-center px-6 max-w-5xl mx-auto"
           {...heroAnim}
         >
-          {/* Logo */}
-          {/* <Link to="/" className="flex justify-center mb-6">
-            <img
-              src={logo}
-              alt="Precision Toronto Logo"
-              className="w-40 md:w-52 h-auto drop-shadow-xl"
-            />
-          </Link> */}
-
           {/* Main Headline */}
           <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight tracking-tight">
             PRECISION ISN’T A SERVICE.
@@ -374,12 +365,14 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
             whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
             whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
           >
-            Book now or Get started
+            Book now
           </motion.button>
 
           {/* Star Rating Section */}
           <div className="mt-6 flex flex-col items-center">
-            <div className="flex gap-12 text-yellow-400 text-3xl">{"★ ★ ★ ★ ★"}</div>
+            <div className="flex gap-12 text-yellow-400 text-3xl">
+              {"★ ★ ★ ★ ★"}
+            </div>
             <p className="mt-2 text-gray-300 text-lg">
               5-Star Rated Detailing Service
             </p>
