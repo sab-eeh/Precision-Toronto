@@ -369,14 +369,6 @@ const ServicesPage = () => {
                                     {addon.title}
                                   </h4>
                                   <p className="text-sm">{addon.description}</p>
-                                  {/* <div className="flex flex-col">
-                                    <h3 className="font-semibold">
-                                      Why it matters?
-                                    </h3>
-                                    <span className="text-sm">
-                                      {addon.matters}
-                                    </span>
-                                  </div> */}
                                 </div>
                                 <div className="flex justify-between items-center">
                                   <p className="text-sm text-gray-300">
@@ -479,14 +471,6 @@ const ServicesPage = () => {
                       <div className="flex flex-col gap-3 mb-3">
                         <h4 className="font-semibold">{addon.title}</h4>
                         <p className="text-sm">{addon.description}</p>
-                        {/* <div className="flex flex-col">
-                                    <h3 className="font-semibold">
-                                      Why it matters?
-                                    </h3>
-                                    <span className="text-sm">
-                                      {addon.matters}
-                                    </span>
-                                  </div> */}
                       </div>
                       <div className="flex justify-between items-center">
                         <p className="text-sm text-gray-300">

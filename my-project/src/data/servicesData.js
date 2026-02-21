@@ -181,79 +181,7 @@ export const servicesData = {
   ],
 
   // SUV
-  suv: [
-    // REGULAR SUV (BASE)
-    {
-      id: "suv-detail-interior",
-      category: "Detailing",
-      title: "Interior Only",
-      tag: "Most Added",
-      description:
-        "Deep clean of SUV interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
-      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
-      price: 169.99,
-      duration: "2–4 hours",
-      features: [
-        "All garbage removed",
-        "carpet shampoo + vacuum",
-        "Seat and upholstery Steam Clean",
-        "Plastics and Upholstery dressed + Uv protection",
-        "Streak free glass",
-      ],
-      image: serviceImages.suv[0],
-    },
-    {
-      id: "suv-detail-exterior",
-      category: "Detailing",
-      title: "Exterior Only",
-      tag: "Great Maintenance Option",
-      description:
-        "SUV exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
-      addionaldesc: "Ideal for maintaining gloss and protection.",
-      price: 99,
-      duration: "2-3 hours",
-      features: [
-        "Rims & tires deep cleaned",
-        "Pre-treatment & foam wash",
-        "Hand dry + paint sealant",
-        "Tire shine",
-        "Streak-free windows",
-      ],
-      image: serviceImages.suv[1],
-    },
-    {
-      id: "suv-detail-full",
-      category: "Detailing",
-      title: "Interior + Exterior",
-      tag: "Most Popular",
-      description:
-        "Full SUV detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      addionaldesc: "Best for full vehicle factory reset finish.",
-      price: 249.99,
-      duration: "3–5 hours",
-      popular: true,
-      features: [
-        "Interior full detail",
-        "Deep clean of rims & wheel wells",
-        "Paint pre-treatment",
-        "Foam wash + contact wash",
-        "Hand dry + 30–60 day paint sealant",
-        "Rims polished + tires dressed",
-        "Streak-free windows",
-      ],
-      image: serviceImages.suv[2],
-    },
-    {
-      id: "suv-engine",
-      category: "Detailing",
-      title: "Engine Bay Wash",
-      description: "Engine bay degrease & dressing.",
-      price: 65,
-      duration: "30-45 mins",
-      features: ["Degrease", "Plastics dressed"],
-      image: serviceImages.suv[3],
-    },
-
+  suv1: [
     // 5 SEATER SUV
     {
       id: "suv-5-detail-interior",
@@ -314,7 +242,111 @@ export const servicesData = {
       ],
       image: serviceImages.suv[2],
     },
+    {
+      id: "suv-engine",
+      category: "Detailing",
+      title: "Engine Bay Wash",
+      description: "Engine bay degrease & dressing.",
+      price: 65,
+      duration: "30-45 mins",
+      features: ["Degrease", "Plastics dressed"],
+      image: serviceImages.suv[3],
+    },
+    {
+      id: "suv-pc-1",
+      category: "Paint Correction",
+      title: "Stage 1 Paint Correction",
+      description:
+        "Ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
+      duration: "6-7 hours ",
+      price: 199,
+      features: ["50–60% swirl removal", "Restores gloss"],
+      image: serviceImages.suv[4],
+    },
+    {
+      id: "suv-pc-2",
+      category: "Paint Correction",
+      title: "Stage 2 Paint Correction",
+      description:
+        "Reccomended for vehicles with moderate swirls and defects where a deeper, more refined finish is desired",
+      duration: "6-7 hours ",
+      price: 349,
+      features: ["60–80% swirl removal"],
+      image: serviceImages.suv[5],
+    },
+    {
+      id: "suv-pc-3",
+      category: "Paint Correction",
+      title: "Stage 3 Paint Correction",
+      description:
+        "best suited for those chasing maximum correction and a near flawless finish",
+      duration: "6-7 hours ",
+      price: 499,
+      features: ["80–99% swirl removal"],
+      image: serviceImages.suv[6],
+    },
 
+    // Ceramic
+    {
+      id: "suv-ceramic-1y",
+      category: "Ceramic Coating",
+      title: "1 Year Ceramic Coating",
+      description:
+        "A solid entry into ceramic coating — great protection now, but most clients eventually upgrade.",
+      price: 399,
+      duration: "8-12 hours",
+      features: [
+        "1 step paint correction",
+        "Full paint prep",
+        "1 year ceramic coating",
+        "1x maintenance wash",
+      ],
+      image: serviceImages.suv[7],
+    },
+    {
+      id: "suv-ceramic-3y",
+      category: "Ceramic Coating",
+      title: "3 Year Ceramic Coating",
+      description:
+        "The sweet spot for most owners, offering long-lasting protection without the need for frequent reapplication.",
+      price: 715,
+      duration: "8-12 hours",
+      features: [
+        "All 1 year ceramic features",
+        "3 year ceramic coating applied",
+        "2x maintenance washes",
+      ],
+      image: serviceImages.suv[7],
+    },
+    {
+      id: "suv-ceramic-5y",
+      category: "Ceramic Coating",
+      title: "5 Year Ceramic Coating",
+      description:
+        "Chosen by clients who want the best and never want to think about paint protection again.",
+      price: 999,
+      duration: "8-12 hours",
+      features: [
+        "All 1 year ceramic features",
+        "5 year ceramic coating applied",
+        "2x maintenance washes",
+      ],
+      image: serviceImages.suv[7],
+    },
+
+    // Tint
+    {
+      id: "suv-tint",
+      category: "Window Tinting",
+      title: "Window Tinting",
+      description: "Choose tint percentage for your SUV.",
+      price: 265,
+      duration: "2-3 hours",
+      features: ["Custom shades", "UV protection"],
+      image: serviceImages.suv[8],
+    },
+  ],
+  suv2: [
     // 6+ SEATER SUV
     {
       id: "suv-6-detail-interior",
@@ -436,8 +468,6 @@ export const servicesData = {
       ],
       image: serviceImages.suv[2],
     },
-
-    // Paint Correction
     {
       id: "suv-pc-1",
       category: "Paint Correction",
@@ -532,7 +562,6 @@ export const servicesData = {
       image: serviceImages.suv[8],
     },
   ],
-
   // TRUCK
   truck: [
     {
@@ -912,7 +941,52 @@ export const addonsData = {
       type: "ceramic",
     },
   ],
-  suv: [
+  suv1: [
+    {
+      id: "suv-addon-headlight",
+      title: "Headlight Restoration",
+      description: "Restores clarity for headlights with protection.",
+      tag: "Instant Visual Upgrade",
+      price: 79.99,
+      duration: "2-3 hours",
+      type: "general",
+    },
+
+    {
+      id: "suv-addon-wheels",
+      title: "Wheels & Calipers Coating",
+      description:
+        "Keeps brake dust and grime from bonding, saving you constant wheel cleaning every wash.",
+      tag: "Most Added",
+      matters: "Wheels → brake dust icon",
+      price: 99,
+      duration: "1 hours",
+      type: "ceramic",
+    },
+    {
+      id: "suv-addon-windows",
+      title: "Windshield & Windows Coating",
+      description:
+        "Improves visibility in rain and reduces water spotting once you drive with it, you won’t want to go without it.",
+      tag: "Best Value",
+      matters: "Glass → rain/visibility icon",
+      price: 145,
+      duration: "1-2 hours",
+      type: "ceramic",
+    },
+    {
+      id: "suv-addon-int-ceramic",
+      title: "Interior Ceramic Coating",
+      description:
+        "Protects high-touch interior surfaces from stains, spills, and wear smost clients add this after realizing how fast interiors get ruined.",
+      tag: "Highly Recommended",
+      matters: "Interior → shield or stain icon",
+      price: 299,
+      duration: "2-3 hours",
+      type: "ceramic",
+    },
+  ],
+  suv2: [
     {
       id: "suv-addon-headlight",
       title: "Headlight Restoration",
