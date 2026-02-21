@@ -356,7 +356,10 @@ const ServicesPage = () => {
                             >
                               {" "}
                               <div className="mb-3">
-                                <span className="text-sm bg-yellow-300 text-black py-1 px-2 rounded-2xl">
+                                <span
+                                  className="text-xs  bg-gradient-to-r from-yellow-400 to-yellow-500
+                                text-black shadow-md font-semibold tracking-wideF py-1 px-2 rounded-2xl"
+                                >
                                   {addon.tag}
                                 </span>
                               </div>
@@ -465,16 +468,36 @@ const ServicesPage = () => {
                           : "bg-gray-800 text-gray-200 border-gray-700"
                       }`}
                     >
-                      <div className="flex justify-between items-center mb-2">
+                      <div className="mb-3">
+                        <span
+                          className="text-xs  bg-gradient-to-r from-yellow-400 to-yellow-500
+                                text-black shadow-md font-semibold tracking-wideF py-1 px-2 rounded-2xl"
+                        >
+                          {addon.tag}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-3 mb-3">
                         <h4 className="font-semibold">{addon.title}</h4>
+                        <p className="text-sm">{addon.description}</p>
+                        {/* <div className="flex flex-col">
+                                    <h3 className="font-semibold">
+                                      Why it matters?
+                                    </h3>
+                                    <span className="text-sm">
+                                      {addon.matters}
+                                    </span>
+                                  </div> */}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm text-gray-300">
+                          {addon.duration
+                            ? `⏱ ${addon.duration}`
+                            : "⏱ Est. time"}
+                        </p>
                         <span className="font-bold">
                           ${Number(addon.price).toFixed(2)}
                         </span>
                       </div>
-
-                      <p className="text-sm text-gray-300 mb-4">
-                        {addon.duration ? `⏱ ${addon.duration}` : "⏱ Est. time"}
-                      </p>
 
                       {!active ? (
                         <Button
@@ -482,7 +505,7 @@ const ServicesPage = () => {
                           className="w-full"
                           variant="secondary"
                         >
-                          Add
+                          Add Protecttion
                         </Button>
                       ) : (
                         <div className="flex items-center justify-between gap-3">

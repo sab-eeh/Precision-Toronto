@@ -8,9 +8,11 @@ export const servicesData = {
       id: "sedan-detail-interior",
       category: "Detailing",
       title: "Interior Only",
+      tag: "Most Added",
       description:
         "Factory reset interior: vacuum, garbage removal, mats restored & conditioned, carpets & seats steam cleaned + shampooed, plastics conditioned, streak-free glass.",
-      price: 159.99,
+      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
+      price: 149.99,
       duration: "2–3 hours",
       features: [
         "All garbage removed",
@@ -25,9 +27,11 @@ export const servicesData = {
       id: "sedan-detail-exterior",
       category: "Detailing",
       title: "Exterior Only",
+      tag: "Great Maintenance Option",
       description:
         "Deep clean exterior: rims & tires deep clean, pre-treatment, foam wash, hand dry, paint protection (sealant/ceramic spray), tire shine, rim polish, streak-free windows.",
-      price: 149.99,
+      addionaldesc: "Ideal for maintaining gloss and protection.",
+      price: 79.99,
       duration: "2-3 hours",
       features: [
         "Rims & tires deep cleaned",
@@ -42,9 +46,11 @@ export const servicesData = {
       id: "sedan-detail-full",
       category: "Detailing",
       title: "Interior + Exterior",
+      tag: "Most Popular",
       description:
         "Complete sedan detail inside & out. Includes full interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      price: 209.99,
+      addionaldesc: "Best for full vehicle factory reset finish.",
+      price: 215.99,
       duration: "3–5 hours",
       popular: true,
       features: [
@@ -79,7 +85,7 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
       description:
-        "ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
+        "Ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
       duration: "5-7 hours ",
       price: 199,
       features: ["50–60% swirl removal", "Restores gloss"],
@@ -167,7 +173,7 @@ export const servicesData = {
       title: "Window Tinting",
       description:
         "Professional window tinting - choose tint percentage at checkout.",
-      price: 250,
+      price: 260,
       duration: "2-3 hours",
       features: ["Custom tint shades", "UV protection", "Professional install"],
       image: serviceImages.sedan[8],
@@ -176,13 +182,16 @@ export const servicesData = {
 
   // SUV
   suv: [
+    // REGULAR SUV (BASE)
     {
       id: "suv-detail-interior",
       category: "Detailing",
       title: "Interior Only",
+      tag: "Most Added",
       description:
         "Deep clean of SUV interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
-      price: 170,
+      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
+      price: 169.99,
       duration: "2–4 hours",
       features: [
         "All garbage removed",
@@ -197,9 +206,11 @@ export const servicesData = {
       id: "suv-detail-exterior",
       category: "Detailing",
       title: "Exterior Only",
+      tag: "Great Maintenance Option",
       description:
         "SUV exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
-      price: 85,
+      addionaldesc: "Ideal for maintaining gloss and protection.",
+      price: 99,
       duration: "2-3 hours",
       features: [
         "Rims & tires deep cleaned",
@@ -214,9 +225,11 @@ export const servicesData = {
       id: "suv-detail-full",
       category: "Detailing",
       title: "Interior + Exterior",
+      tag: "Most Popular",
       description:
         "Full SUV detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      price: 249,
+      addionaldesc: "Best for full vehicle factory reset finish.",
+      price: 249.99,
       duration: "3–5 hours",
       popular: true,
       features: [
@@ -241,13 +254,196 @@ export const servicesData = {
       image: serviceImages.suv[3],
     },
 
+    // 5 SEATER SUV
+    {
+      id: "suv-5-detail-interior",
+      category: "Detailing",
+      title: "5-Seater SUV Interior Only",
+      tag: "Most Added",
+      description:
+        "Deep clean of 5-seater SUV interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
+      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
+      price: 179.99,
+      duration: "2–4 hours",
+      features: [
+        "All garbage removed",
+        "carpet shampoo + vacuum",
+        "Seat and upholstery Steam Clean",
+        "Plastics and Upholstery dressed + Uv protection",
+        "Streak free glass",
+      ],
+      image: serviceImages.suv[0],
+    },
+    {
+      id: "suv-5-detail-exterior",
+      category: "Detailing",
+      title: "5-Seater SUV Exterior Only",
+      tag: "Great Maintenance Option",
+      description:
+        "5-seater SUV exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
+      addionaldesc: "Ideal for maintaining gloss and protection.",
+      price: 99,
+      duration: "2-3 hours",
+      features: [
+        "Rims & tires deep cleaned",
+        "Pre-treatment & foam wash",
+        "Hand dry + paint sealant",
+        "Tire shine",
+        "Streak-free windows",
+      ],
+      image: serviceImages.suv[1],
+    },
+    {
+      id: "suv-5-detail-full",
+      category: "Detailing",
+      title: "5-Seater SUV Interior + Exterior",
+      tag: "Most Popular",
+      description:
+        "Full 5-seater SUV detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
+      addionaldesc: "Best for full vehicle factory reset finish.",
+      price: 224.99,
+      duration: "3–5 hours",
+      features: [
+        "Interior full detail",
+        "Deep clean of rims & wheel wells",
+        "Paint pre-treatment",
+        "Foam wash + contact wash",
+        "Hand dry + 30–60 day paint sealant",
+        "Rims polished + tires dressed",
+        "Streak-free windows",
+      ],
+      image: serviceImages.suv[2],
+    },
+
+    // 6+ SEATER SUV
+    {
+      id: "suv-6-detail-interior",
+      category: "Detailing",
+      title: "6+ Seater SUV Interior Only",
+      tag: "Most Added",
+      description:
+        "Deep clean of 6+ seater SUV interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
+      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
+      price: 199,
+      duration: "2–4 hours",
+      features: [
+        "All garbage removed",
+        "carpet shampoo + vacuum",
+        "Seat and upholstery Steam Clean",
+        "Plastics and Upholstery dressed + Uv protection",
+        "Streak free glass",
+      ],
+      image: serviceImages.suv[0],
+    },
+    {
+      id: "suv-6-detail-exterior",
+      category: "Detailing",
+      title: "6+ Seater SUV Exterior Only",
+      tag: "Great Maintenance Option",
+      description:
+        "6+ seater SUV exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
+      addionaldesc: "Ideal for maintaining gloss and protection.",
+      price: 109.99,
+      duration: "2-3 hours",
+      features: [
+        "Rims & tires deep cleaned",
+        "Pre-treatment & foam wash",
+        "Hand dry + paint sealant",
+        "Tire shine",
+        "Streak-free windows",
+      ],
+      image: serviceImages.suv[1],
+    },
+    {
+      id: "suv-6-detail-full",
+      category: "Detailing",
+      title: "6+ Seater SUV Interior + Exterior",
+      tag: "Most Popular",
+      description:
+        "Full 6+ seater SUV detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
+      addionaldesc: "Best for full vehicle factory reset finish.",
+      price: 249.99,
+      duration: "3–5 hours",
+      features: [
+        "Interior full detail",
+        "Deep clean of rims & wheel wells",
+        "Paint pre-treatment",
+        "Foam wash + contact wash",
+        "Hand dry + 30–60 day paint sealant",
+        "Rims polished + tires dressed",
+        "Streak-free windows",
+      ],
+      image: serviceImages.suv[2],
+    },
+
+    // ESCALADE (6+ SEATER OPTION)
+    {
+      id: "suv-escalade-detail-interior",
+      category: "Detailing",
+      title: "Escalade (6+ Seater) Interior Only",
+      tag: "Most Added",
+      description:
+        "Deep clean of Escalade interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
+      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
+      price: 199,
+      duration: "2–4 hours",
+      features: [
+        "All garbage removed",
+        "carpet shampoo + vacuum",
+        "Seat and upholstery Steam Clean",
+        "Plastics and Upholstery dressed + Uv protection",
+        "Streak free glass",
+      ],
+      image: serviceImages.suv[0],
+    },
+    {
+      id: "suv-escalade-detail-exterior",
+      category: "Detailing",
+      title: "Escalade (6+ Seater) Exterior Only",
+      tag: "Great Maintenance Option",
+      description:
+        "Escalade exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
+      addionaldesc: "Ideal for maintaining gloss and protection.",
+      price: 109.99,
+      duration: "2-3 hours",
+      features: [
+        "Rims & tires deep cleaned",
+        "Pre-treatment & foam wash",
+        "Hand dry + paint sealant",
+        "Tire shine",
+        "Streak-free windows",
+      ],
+      image: serviceImages.suv[1],
+    },
+    {
+      id: "suv-escalade-detail-full",
+      category: "Detailing",
+      title: "Escalade (6+ Seater) Interior + Exterior",
+      tag: "Most Popular",
+      description:
+        "Full Escalade detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
+      addionaldesc: "Best for full vehicle factory reset finish.",
+      price: 249.99,
+      duration: "3–5 hours",
+      features: [
+        "Interior full detail",
+        "Deep clean of rims & wheel wells",
+        "Paint pre-treatment",
+        "Foam wash + contact wash",
+        "Hand dry + 30–60 day paint sealant",
+        "Rims polished + tires dressed",
+        "Streak-free windows",
+      ],
+      image: serviceImages.suv[2],
+    },
+
     // Paint Correction
     {
       id: "suv-pc-1",
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
       description:
-        "ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
+        "Ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
       duration: "6-7 hours ",
       price: 199,
       features: ["50–60% swirl removal", "Restores gloss"],
@@ -343,9 +539,11 @@ export const servicesData = {
       id: "truck-detail-interior",
       category: "Detailing",
       title: "Interior Only",
+      tag: "Most Added",
       description:
         "Heavy-duty truck interior detail: vacuum, shampoo, mats conditioned, steam clean carpets & seats, plastics conditioned.",
-      price: 170,
+      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
+      price: 199,
       duration: "2–4 hours",
       features: [
         "All garbage removed",
@@ -360,9 +558,11 @@ export const servicesData = {
       id: "truck-detail-exterior",
       category: "Detailing",
       title: "Exterior Only",
+      tag: "Great Maintenance Option",
       description:
         "Truck exterior deep clean: rims, tires, pre-treatment, foam wash, hand dry, sealant, tire shine.",
-      price: 85,
+      addionaldesc: "Ideal for maintaining gloss and protection.",
+      price: 109.99,
       duration: "2-3 hours",
       features: [
         "Rims & tires deep cleaned",
@@ -376,9 +576,11 @@ export const servicesData = {
       id: "truck-detail-full",
       category: "Detailing",
       title: "Interior + Exterior",
+      tag: "Most Popular",
       description:
         "Full truck detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      price: 249,
+      addionaldesc: "Best for full vehicle factory reset finish.",
+      price: 249.99,
       duration: "4–5 hours",
       popular: true,
       features: [
@@ -409,7 +611,7 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
       description:
-        "ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
+        "Ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
       duration: "7-8 hours ",
       price: 199,
       features: ["50–60% swirl removal"],
@@ -491,7 +693,7 @@ export const servicesData = {
       category: "Window Tinting",
       title: "Window Tinting",
       description:
-        "A solid entry into ceramic coating — great protection now, but most clients eventually upgrade.",
+        "Professional window tinting - choose tint percentage at checkout.",
       duration: "2-3 hours",
       price: 275,
       features: ["UV protection", "Privacy"],
@@ -505,9 +707,11 @@ export const servicesData = {
       id: "coupe-detail-interior",
       category: "Detailing",
       title: "Interior Only",
+      tag: "Most Added",
       description:
-        "The sweet spot for most owners, offering long-lasting protection without the need for frequent reapplication.",
-      price: 150,
+        "Factory reset interior: vacuum, garbage removal, mats restored & conditioned, carpets & seats steam cleaned + shampooed, plastics conditioned, streak-free glass.",
+      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
+      price: 149.99,
       duration: "2–4 hours",
       features: [
         "All garbage removed",
@@ -522,9 +726,11 @@ export const servicesData = {
       id: "coupe-detail-exterior",
       category: "Detailing",
       title: "Exterior Only",
+      tag: "Great Maintenance Option",
       description:
-        "Chosen by clients who want the best and never want to think about paint protection again.",
-      price: 75,
+        "Deep clean exterior: rims & tires deep clean, pre-treatment, foam wash, hand dry, paint protection (sealant/ceramic spray), tire shine, rim polish, streak-free windows.",
+      addionaldesc: "Ideal for maintaining gloss and protection.",
+      price: 69.99,
       duration: "1-2 hours",
       features: ["Pre-treatment", "Foam wash", "Hand dry & sealant"],
       image: serviceImages.coupe[1],
@@ -533,9 +739,11 @@ export const servicesData = {
       id: "coupe-detail-full",
       category: "Detailing",
       title: "Interior + Exterior",
+      tag: "Most Popular",
       description:
         "Premium coupe full detail inside & out. Includes interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      price: 200,
+      addionaldesc: "Best for full vehicle factory reset finish.",
+      price: 199.99,
       duration: "3–5 hours",
       popular: true,
       features: [
@@ -556,7 +764,7 @@ export const servicesData = {
       title: "Engine Bay Wash",
       description: "Engine bay degrease & dressing for coupes.",
       duration: "30-45 mins",
-      price: 55,
+      price: 59.99,
       features: ["Degrease", "Dressing"],
       image: serviceImages.coupe[3],
     },
@@ -567,7 +775,7 @@ export const servicesData = {
       category: "Paint Correction",
       title: "Stage 1 Paint Correction",
       description:
-        "ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
+        "Ideal for daily driven cars with light swirl marks that need a noticeable gloss refresh",
       duration: "5-7 hours ",
       price: 199,
       features: ["50–60% swirl removal"],
@@ -663,15 +871,10 @@ export const addonsData = {
     {
       id: "sedan-addon-headlight",
       title: "Headlight Restoration",
+      description: "Restores clarity for headlights with protection.",
+      tag: "Instant Visual Upgrade",
       duration: "2-3 hours",
       price: 79.99,
-      type: "general",
-    },
-    {
-      id: "sedan-addon-engine",
-      title: "Engine Bay Wash",
-      price: 55,
-      duration: "30-40 mins",
       type: "general",
     },
 
@@ -713,15 +916,10 @@ export const addonsData = {
     {
       id: "suv-addon-headlight",
       title: "Headlight Restoration",
+      description: "Restores clarity for headlights with protection.",
+      tag: "Instant Visual Upgrade",
       price: 79.99,
       duration: "2-3 hours",
-      type: "general",
-    },
-    {
-      id: "suv-addon-engine",
-      title: "Engine Bay Wash",
-      price: 65,
-      duration: "30-40 mins",
       type: "general",
     },
 
@@ -763,15 +961,10 @@ export const addonsData = {
     {
       id: "truck-addon-headlight",
       title: "Headlight Restoration",
+      description: "Restores clarity for headlights with protection.",
+      tag: "Instant Visual Upgrade",
       price: 79.99,
       duration: "2-3 hours",
-      type: "general",
-    },
-    {
-      id: "truck-addon-engine",
-      title: "Engine Bay Wash",
-      price: 70,
-      duration: "30-40 mins",
       type: "general",
     },
 
@@ -813,15 +1006,10 @@ export const addonsData = {
     {
       id: "coupe-addon-headlight",
       title: "Headlight Restoration",
+      description: "Restores clarity for headlights with protection.",
+      tag: "Instant Visual Upgrade",
       price: 70,
       duration: "2-3 hours",
-      type: "general",
-    },
-    {
-      id: "coupe-addon-engine",
-      title: "Engine Bay Wash",
-      price: 55,
-      duration: "30-40 mins",
       type: "general",
     },
 
