@@ -6,6 +6,11 @@ import { Navigation, Pagination } from "swiper/modules";
 
 // Keep data outside render to avoid new refs each render
 const CAR_DATA = Object.freeze([
+    {
+    type: "Coupe",
+    modelPath: "/models/coupe/scene.gltf",
+    description: "Luxury sports car treatment",
+  },
   {
     type: "Sedan",
     modelPath: "/models/sedan/scene.gltf",
@@ -13,14 +18,15 @@ const CAR_DATA = Object.freeze([
   },
   {
     type: "SUV",
-    modelPath: "/models/suv/scene.gltf",
+    modelPath: "/models/suv1/scene.gltf",
     description: "Ideal for family vehicles",
   },
   {
-    type: "Coupe",
-    modelPath: "/models/coupe/scene.gltf",
-    description: "Luxury sports car treatment",
+    type: "SUV",
+    modelPath: "/models/suv2/scene.gltf",
+    description: "Ideal for family vehicles",
   },
+
   {
     type: "Truck",
     modelPath: "/models/truck/scene.gltf",

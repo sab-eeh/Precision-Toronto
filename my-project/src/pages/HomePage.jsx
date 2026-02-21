@@ -66,23 +66,30 @@ const FEATURES = Object.freeze([
 
 const CARS = Object.freeze([
   {
+    type: "coupe",
+    label: "Coupe",
+    desc: "Luxury sports car treatment",
+    modelPath: "/models/coupe/scene.gltf",
+  },
+  {
     type: "sedan",
     label: "Sedan",
     desc: "Perfect for daily drivers",
     modelPath: "/models/sedan/scene.gltf",
   },
   {
-    type: "suv",
-    label: "SUV",
-    desc: "Ideal for family vehicles",
-    modelPath: "/models/suv/scene.gltf",
+    type: "suv1",
+    label: "SUV (5 Seater)",
+    desc: "Ideal for compact family vehicles",
+    modelPath: "/models/suv1/scene.gltf",
   },
   {
-    type: "coupe",
-    label: "Coupe",
-    desc: "Luxury sports car treatment",
-    modelPath: "/models/coupe/scene.gltf",
+    type: "suv2",
+    label: "SUV (6+ Seater)",
+    desc: "Best for large family vehicles",
+    modelPath: "/models/suv2/scene.gltf",
   },
+
   {
     type: "truck",
     label: "Truck",
@@ -152,22 +159,22 @@ const CarCard = memo(function CarCard({ car, onSelect, anim }) {
       type="button"
       onClick={handleClick}
       className="
-        w-full max-w-[280px]
-        rounded-2xl
-        text-center
-        p-5
-        bg-white/5
-        backdrop-blur-md
-        border border-white/10
-        shadow-lg
-        hover:shadow-blue-400/20
-        hover:ring-2 hover:ring-cyan-400/30
-        transition
-      "
+      w-full max-w-[240px]
+      rounded-2xl
+      text-center
+      p-4
+      bg-white/5
+      backdrop-blur-md
+      border border-white/10
+      shadow-lg
+      hover:shadow-blue-400/20
+      hover:ring-2 hover:ring-cyan-400/30
+      transition
+    "
       {...anim}
       style={{ willChange: "transform, opacity" }}
     >
-      <div className="h-56 flex items-center justify-center">
+      <div className="h-48 flex items-center justify-center">
         <Suspense fallback={<Skeleton className="h-56 w-full" />}>
           <CarModelViewer
             modelPath={car.modelPath}
@@ -414,7 +421,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
           </div>
 
           {/* Desktop grid */}
-          <div className="hidden lg:grid grid-cols-4 gap-6 justify-items-center">
+          <div className="hidden lg:grid grid-cols-5 gap-5 justify-items-center items-center">
             {CARS.map((car, idx) => (
               <div key={car.type} className="w-full flex justify-center">
                 {carSectionOnScreen ? (

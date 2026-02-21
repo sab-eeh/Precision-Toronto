@@ -15,9 +15,10 @@ useGLTF.setDecoderPath("/draco/");
 
 const MODEL_SETTINGS = Object.freeze({
   sedan: { scale: 85, y: -0.8 },
-  suv: { scale: 0.25, y: -0.2 },
+  suv1: { scale: 0.8, y: -1.2 },
+  suv2: { scale: 0.23, y: -0.2 },
   coupe: { scale: 80, y: -0.8 },
-  truck: { scale: 6.2, y: -1 },
+  truck: { scale: 6.4, y: -1 },
 });
 
 const Loader = React.memo(function Loader() {
