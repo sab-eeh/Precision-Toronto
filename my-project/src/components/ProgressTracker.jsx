@@ -11,7 +11,7 @@ const steps = [
 
 const ProgressTracker = ({ currentStep }) => {
   return (
-    <div className="w-full py-8 bg-gradient-to-r from-[#0B1315] via-[#10181A] to-[#0B1315] shadow-lg">
+    <div className="w-auto py-8 bg-gradient-to-r from-[#0B1315] via-[#10181A] to-[#0B1315] shadow-lg">
       <div className="flex items-center justify-between max-w-5xl mx-auto px-4 gap-4">
         {steps.map((step, index) => {
           const Icon = step.icon;
