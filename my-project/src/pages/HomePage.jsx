@@ -80,7 +80,7 @@ const CARS = Object.freeze([
   {
     type: "suv1",
     label: "SUV (5 Seater)",
-    desc: "Ideal for compact family vehicles",
+    desc: "Ideal for small family",
     modelPath: "/models/suv1/scene.gltf",
   },
   {
@@ -408,15 +408,16 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
       <section
         id="car-selection"
         ref={carSectionRef}
-        className="py-24 bg-gradient-to-b from-[#101518] to-[#0A0F11]"
+        className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#101518] to-[#0A0F11]"
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
-          <div className="text-center mb-14">
-            <h2 className="text-4xl font-bold mb-4 tracking-wide">
+        <div className="w-full max-w-7xl mx-auto px-5 lg:px-10">
+          {/* Heading */}
+          <div className="text-center mb-8 lg:mb-14">
+            <h2 className="text-3xl lg:text-4xl font-bold mb-2 tracking-wide">
               Choose Your Vehicle
             </h2>
-            <p className="text-lg text-gray-400">
-              Select your vehicle to View packages & instant pricing
+            <p className="text-sm lg:text-lg text-gray-400 max-w-md mx-auto">
+              Select your vehicle to view packages & instant pricing
             </p>
           </div>
 
@@ -441,53 +442,53 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
                     }
                   />
                 ) : (
-                  <Skeleton className="h-[360px] w-full max-w-[280px]" />
+                  <Skeleton className="h-[340px] w-full max-w-[260px]" />
                 )}
               </div>
             ))}
           </div>
 
           {/* Mobile carousel */}
-          <div className="block lg:hidden relative max-w-sm mx-auto">
-            <AnimatePresence mode="wait">
-              {carSectionOnScreen ? (
-                <CarouselItem
-                  key={CARS[currentSlide].type}
-                  car={CARS[currentSlide]}
-                  onSelect={handleCarSelect}
-                  anim={
-                    prefersReducedMotion
-                      ? {}
-                      : {
-                          initial: { opacity: 0, y: 26 },
-                          animate: { opacity: 1, y: 0 },
-                          exit: { opacity: 0, y: -26 },
-                          transition: { duration: 0.35 },
-                        }
-                  }
-                />
-              ) : (
-                <Skeleton className="h-[360px] w-full" />
-              )}
-            </AnimatePresence>
+          <div className="lg:hidden flex flex-col items-center justify-center">
+            <div className="w-full max-w-xs flex justify-center">
+              <AnimatePresence mode="wait">
+                {carSectionOnScreen ? (
+                  <CarouselItem
+                    key={CARS[currentSlide].type}
+                    car={CARS[currentSlide]}
+                    onSelect={handleCarSelect}
+                    anim={
+                      prefersReducedMotion
+                        ? {}
+                        : {
+                            initial: { opacity: 0, y: 20 },
+                            animate: { opacity: 1, y: 0 },
+                            exit: { opacity: 0, y: -20 },
+                            transition: { duration: 0.3 },
+                          }
+                    }
+                  />
+                ) : (
+                  <Skeleton className="h-[320px] w-full" />
+                )}
+              </AnimatePresence>
+            </div>
 
-            <div className="flex items-center justify-between mt-6 relative">
+            {/* Controls */}
+            <div className="flex items-center justify-between w-full max-w-xs mt-5">
               <button
                 onClick={prevSlide}
                 aria-label="Previous vehicle"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-white/12 hover:bg-white/25 text-white shadow-lg backdrop-blur-md transition"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              <div
-                className="flex gap-2 absolute left-1/2 -translate-x-1/2"
-                aria-hidden="true"
-              >
+              <div className="flex gap-2">
                 {CARS.map((_, idx) => (
                   <span
                     key={idx}
-                    className={`w-3 h-3 rounded-full transition ${
+                    className={`w-2.5 h-2.5 rounded-full transition ${
                       idx === currentSlide ? "bg-blue-400" : "bg-white/30"
                     }`}
                   />
@@ -497,7 +498,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
               <button
                 onClick={nextSlide}
                 aria-label="Next vehicle"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-white/12 hover:bg-white/25 text-white shadow-lg backdrop-blur-md transition"
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
