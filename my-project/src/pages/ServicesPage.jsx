@@ -1,4 +1,3 @@
-// src/pages/ServicesPage.jsx
 import React, {
   useState,
   useMemo,
@@ -11,76 +10,91 @@ import React, {
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import {
-  ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  ArrowLeft,
   Minus,
   Plus,
   X,
 } from "lucide-react";
 import { Title, Meta } from "react-head";
+
 import { BookingContext } from "../context/BookingContext";
 import ServiceCard from "../components/ServiceCard";
 import Button from "../components/ui/Button";
 
+import { servicesData, addonsData } from "../data/servicesData";
+import { parseDuration, formatDuration } from "../utils/duration";
+
+/* Lazy Components */
 const FloatingContact = lazy(() => import("../components/FloatingContact"));
 const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
 const Header = lazy(() => import("../layout/Header"));
 const Footer = lazy(() => import("../layout/Footer"));
 
-import { servicesData, addonsData } from "../data/servicesData";
-import { parseDuration, formatDuration } from "../utils/duration";
-
-/* Accessible horizontal scroller for mobile */
-const Carousel = React.memo(({ children, idPrefix = "carousel" }) => {
-  const scrollRef = React.useRef(null);
-
-  const scrollBy = useCallback((dir = 1) => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const w = el.clientWidth;
-    el.scrollBy({ left: dir * w * 0.9, behavior: "smooth" });
-  }, []);
-
-  return (
-    <div className="relative">
-      <div
-        ref={scrollRef}
-        className="flex gap-6 overflow-x-auto snap-x snap-mandatory touch-pan-x py-2 scrollbar-hide"
-        role="list"
-        aria-labelledby={`${idPrefix}-label`}
-      >
-        {React.Children.map(children, (child) => (
-          <div className="min-w-[260px] sm:min-w-[300px] lg:min-w-0 snap-center">
-            {child}
-          </div>
-        ))}
-      </div>
-
-      <button
-        aria-label="Scroll left"
-        onClick={() => scrollBy(-1)}
-        className="hidden md:flex items-center justify-center absolute -left-4 top-1/2 -translate-y-1/2 bg-gradient-to-r from-gray-900 to-gray-800/80 rounded-full w-10 h-10 shadow-lg transition"
-      >
-        <ChevronLeft />
-      </button>
-      <button
-        aria-label="Scroll right"
-        onClick={() => scrollBy(1)}
-        className="hidden md:flex items-center justify-center absolute -right-4 top-1/2 -translate-y-1/2 bg-gradient-to-l from-gray-900 to-gray-800/80 rounded-full w-10 h-10 shadow-lg transition"
-      >
-        <ChevronRight />
-      </button>
-    </div>
-  );
-});
-
+/* Constants */
 const CATEGORIES = [
   "Detailing",
   "Paint Correction",
   "Ceramic Coating",
   "Window Tinting",
 ];
+
+const STEPS = {
+  CATEGORY: "chooseCategory",
+  SERVICES: "pickServices",
+  ADDONS: "addons",
+  SUMMARY: "summary",
+};
+
+/* Helpers */
+const scrollToSection = (id) => {
+  requestAnimationFrame(() => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  });
+};
+
+/* Carousel */
+const Carousel = React.memo(({ children }) => {
+  const ref = React.useRef(null);
+
+  const scroll = (dir) => {
+    if (!ref.current) return;
+    ref.current.scrollBy({
+      left: dir * ref.current.clientWidth * 0.9,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <div className="relative">
+      <div
+        ref={ref}
+        className="flex gap-6 overflow-x-auto snap-x snap-mandatory py-2 scrollbar-hide"
+      >
+        {React.Children.map(children, (child) => (
+          <div className="min-w-[260px] sm:min-w-[300px] snap-center">
+            {child}
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={() => scroll(-1)}
+        className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 bg-gray-900/80 w-10 h-10 rounded-full items-center justify-center"
+      >
+        <ChevronLeft />
+      </button>
+
+      <button
+        onClick={() => scroll(1)}
+        className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 bg-gray-900/80 w-10 h-10 rounded-full items-center justify-center"
+      >
+        <ChevronRight />
+      </button>
+    </div>
+  );
+});
 
 const ServicesPage = () => {
   const navigate = useNavigate();
@@ -98,104 +112,101 @@ const ServicesPage = () => {
     totalPrice,
   } = useContext(BookingContext);
 
-  const [step, setStep] = useState("chooseCategory");
-  const [activeCategory, setActiveCategory] = useState("Detailing");
+  const [step, setStep] = useState(STEPS.CATEGORY);
+  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
 
+  /* Scroll from hash */
   useEffect(() => {
-    if (location.hash) {
-      const el = document.getElementById(location.hash.replace("#", ""));
-      if (el)
-        requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth" }));
-    }
+    if (!location.hash) return;
+    const el = document.getElementById(location.hash.replace("#", ""));
+    if (el) el.scrollIntoView({ behavior: "smooth" });
   }, [location]);
 
   const selectedCarType = booking.carType || "sedan";
 
+  /* Services */
   const allServices = useMemo(
-    () =>
-      Array.isArray(servicesData[selectedCarType])
-        ? servicesData[selectedCarType]
-        : [],
+    () => servicesData[selectedCarType] || [],
     [selectedCarType]
   );
 
-  // General add-ons (for the Add-ons page)
-  const generalAddons = useMemo(() => {
-    const all = Array.isArray(addonsData[selectedCarType])
-      ? addonsData[selectedCarType]
-      : [];
-    return all.filter((a) => a.type === "general");
-  }, [selectedCarType]);
-
-  // Ceramic add-ons (to show under Ceramic Coating services)
-  const ceramicAddons = useMemo(() => {
-    const all = Array.isArray(addonsData[selectedCarType])
-      ? addonsData[selectedCarType]
-      : [];
-    return all.filter((a) => a.type === "ceramic");
-  }, [selectedCarType]);
-
   const servicesByCategory = useMemo(() => {
-    const map = {};
-    for (const cat of CATEGORIES) {
-      map[cat] = allServices.filter((s) => s.category === cat);
-    }
-    return map;
+    return allServices.reduce((acc, s) => {
+      if (!acc[s.category]) acc[s.category] = [];
+      acc[s.category].push(s);
+      return acc;
+    }, {});
   }, [allServices]);
 
-  // durations
+  /* Add-ons */
+  const allAddons = useMemo(
+    () => addonsData[selectedCarType] || [],
+    [selectedCarType]
+  );
+
+  const generalAddons = useMemo(
+    () => allAddons.filter((a) => a.type === "general"),
+    [allAddons]
+  );
+
+  const ceramicAddons = useMemo(
+    () => allAddons.filter((a) => a.type === "ceramic"),
+    [allAddons]
+  );
+
+  /* Duration Calculation */
   const totalDuration = useMemo(() => {
-    let total = { min: 0, max: 0 };
-    (booking.services || []).forEach((s) => {
-      const d = parseDuration(s.duration);
-      if (d) {
-        total.min += d.min * (s.qty || 1);
-        total.max += d.max * (s.qty || 1);
-      }
-    });
-    (booking.addons || []).forEach((a) => {
-      const d = parseDuration(a.duration);
-      if (d) {
-        total.min += d.min * (a.qty || 1);
-        total.max += d.max * (a.qty || 1);
-      }
-    });
-    const avg = Math.round((total.min + total.max) / 2);
-    return { ...total, avg };
+    const calc = (items = []) =>
+      items.reduce(
+        (acc, item) => {
+          const d = parseDuration(item.duration);
+          if (!d) return acc;
+          const qty = item.qty || 1;
+          acc.min += d.min * qty;
+          acc.max += d.max * qty;
+          return acc;
+        },
+        { min: 0, max: 0 }
+      );
+
+    const services = calc(booking.services);
+    const addons = calc(booking.addons);
+
+    const total = {
+      min: services.min + addons.min,
+      max: services.max + addons.max,
+    };
+
+    return {
+      ...total,
+      avg: Math.round((total.min + total.max) / 2),
+    };
   }, [booking.services, booking.addons]);
 
-  const formattedDurations = {
-    min: formatDuration(totalDuration.min),
-    max: formatDuration(totalDuration.max),
-    avg: formatDuration(totalDuration.avg),
-  };
+  const formattedDurations = useMemo(
+    () => ({
+      min: formatDuration(totalDuration.min),
+      max: formatDuration(totalDuration.max),
+      avg: formatDuration(totalDuration.avg),
+    }),
+    [totalDuration]
+  );
 
+  /* Navigation */
   const goToServices = useCallback((category) => {
     setActiveCategory(category);
-    setStep("pickServices");
-    requestAnimationFrame(() =>
-      document
-        .getElementById("services-section")
-        ?.scrollIntoView({ behavior: "smooth" })
-    );
+    setStep(STEPS.SERVICES);
+    scrollToSection("services-section");
   }, []);
 
   const goToAddons = useCallback(() => {
-    setStep("addons");
-    requestAnimationFrame(() =>
-      document
-        .getElementById("addons-section")
-        ?.scrollIntoView({ behavior: "smooth" })
-    );
+    setStep(STEPS.ADDONS);
+    scrollToSection("addons-section");
   }, []);
 
   const goToSummary = useCallback(() => {
-    setStep("summary");
-    requestAnimationFrame(() =>
-      document
-        .getElementById("summary-section")
-        ?.scrollIntoView({ behavior: "smooth" })
-    );
+    setStep(STEPS.SUMMARY);
+    scrollToSection("summary-section");
   }, []);
 
   const handleContinueToBooking = useCallback(() => {
@@ -240,48 +251,75 @@ const ServicesPage = () => {
             >
               <ArrowLeft size={18} /> Back
             </Button>
-            <h1 className="text-3xl font-bold">Choose Your Service</h1>
           </div>
 
           {/* Categories */}
           {step === "chooseCategory" && (
             <motion.section
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-12"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mb-12 px-2 sm:px-0"
             >
-              <h2 className="text-xl font-semibold mb-4">
-                Which service are you looking for?
-              </h2>
-              <div className="flex flex-wrap gap-3">
+              {/* HEADER */}
+              <div className="mb-6 max-w-xl">
+                <h2 className="text-2xl font-semibold mb-1">
+                  Choose a Service Category
+                </h2>
+                <p className="text-gray-400 text-sm">
+                  Select the type of detailing service you’re looking for to get
+                  started.
+                </p>
+              </div>
+
+              {/* GRID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {CATEGORIES.map((cat) => (
-                  <button
+                  <motion.button
                     key={cat}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => goToServices(cat)}
-                    className="px-5 py-2 rounded-xl bg-gray-800 hover:bg-blue-600 transition shadow"
+                    className="group text-left p-5 rounded-2xl border border-gray-700 bg-gray-800 hover:border-blue-500 hover:bg-blue-600/10 transition-all duration-200 shadow-sm"
                   >
-                    {cat}
-                  </button>
+                    {/* TITLE */}
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-white group-hover:text-blue-400 transition">
+                        {cat}
+                      </h3>
+
+                      <span className="text-gray-500 group-hover:text-blue-400 transition">
+                        →
+                      </span>
+                    </div>
+
+                    {/* SUBTEXT (Optional - scalable later) */}
+                    <p className="text-sm text-gray-400 mt-2 line-clamp-2">
+                      Explore available services under {cat.toLowerCase()}.
+                    </p>
+                  </motion.button>
                 ))}
               </div>
             </motion.section>
           )}
-
           {/* Services */}
-          <section id="services-section" className="mb-12">
+          <section id="services-section" className="mb-12 px-2 sm:px-0">
             {(step === "pickServices" || step === "chooseCategory") && (
               <>
-                <div className="flex items-center justify-between mb-6">
+                {/* HEADER */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                   <h3 className="text-2xl font-semibold">{activeCategory}</h3>
+
                   <Button
                     onClick={() => setStep("chooseCategory")}
                     variant="outline"
+                    className="w-full sm:w-auto"
                   >
                     Change Category
                   </Button>
                 </div>
 
-                {/* Mobile carousel */}
+                {/* MOBILE CAROUSEL */}
                 <div className="block lg:hidden mb-6">
                   <Carousel>
                     {(servicesByCategory[activeCategory] || []).map((s) => (
@@ -301,8 +339,8 @@ const ServicesPage = () => {
                   </Carousel>
                 </div>
 
-                {/* Desktop grid */}
-                <div className="hidden lg:grid lg:grid-cols-3 gap-8 mb-6">
+                {/* DESKTOP GRID */}
+                <div className="hidden lg:grid lg:grid-cols-3 gap-6 mb-8">
                   {(servicesByCategory[activeCategory] || []).map((s) => (
                     <ServiceCard
                       key={s.id ?? s.title}
@@ -319,102 +357,109 @@ const ServicesPage = () => {
                   ))}
                 </div>
 
-                {/* If we're in Ceramic Coating category, show ceramic-specific add-ons right here */}
+                {/* CERAMIC ADD-ONS */}
                 {activeCategory === "Ceramic Coating" &&
                   ceramicAddons.length > 0 && (
                     <div className="mt-10">
-                      <div className="mb-6">
-                        <h4 className="text-xl font-semibold ">
+                      <div className="mb-6 max-w-2xl">
+                        <h4 className="text-xl font-semibold mb-1">
                           Recommended Ceramic Add-Ons
                         </h4>
-                        <p className="text-gray-300">
+                        <p className="text-gray-400 text-sm">
                           Enhance protection where it matters most — shield your
                           wheels, glass, and interior from daily wear, water
                           damage, and long-term deterioration.
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
                         {ceramicAddons.map((addon) => {
                           const id =
                             addon.id ?? addon.title ?? addon.description;
-                          const active = !!(booking.addons || []).find(
-                            (a) => a.id === id
-                          );
+
                           const activeItem = (booking.addons || []).find(
                             (a) => a.id === id
                           );
+                          const active = !!activeItem;
 
                           return (
                             <div
                               key={id}
-                              className={`p-5 rounded-2xl transition shadow border ${
+                              className={`flex flex-col justify-between rounded-2xl border p-5 transition-all duration-200 shadow-sm ${
                                 active
-                                  ? "bg-blue-600 text-white border-blue-400"
-                                  : "bg-gray-800 text-gray-200 border-gray-700"
+                                  ? "bg-blue-600/10 border-blue-500"
+                                  : "bg-gray-800 border-gray-700 hover:border-gray-500"
                               }`}
                             >
-                              {" "}
-                              <div className="mb-3">
-                                <span
-                                  className="text-xs  bg-gradient-to-r from-yellow-400 to-yellow-500
-                                text-black shadow-md font-semibold tracking-wideF py-1 px-2 rounded-2xl"
-                                >
-                                  {addon.tag}
-                                </span>
-                              </div>
-                              <div className="flex flex-col gap-5">
-                                <div className="flex flex-col gap-3">
-                                  <h4 className="font-semibold">
-                                    {addon.title}
-                                  </h4>
-                                  <p className="text-sm">{addon.description}</p>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <p className="text-sm text-gray-300">
-                                    {addon.duration
-                                      ? `⏱ ${addon.duration}`
-                                      : "⏱ Est. time"}
-                                  </p>
-                                  <span className="font-bold">
+                              {/* CONTENT */}
+                              <div>
+                                {addon.tag && (
+                                  <span className="inline-block text-xs bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold px-2 py-1 rounded-full mb-3">
+                                    {addon.tag}
+                                  </span>
+                                )}
+
+                                <h4 className="font-semibold text-white mb-1">
+                                  {addon.title}
+                                </h4>
+
+                                <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+                                  {addon.description}
+                                </p>
+
+                                <div className="flex justify-between items-center text-sm mb-4">
+                                  <span className="text-gray-500">
+                                    ⏱ {addon.duration || "Est. time"}
+                                  </span>
+                                  <span className="font-semibold text-white">
                                     ${Number(addon.price).toFixed(2)}
                                   </span>
                                 </div>
                               </div>
+
+                              {/* ACTION */}
                               {!active ? (
                                 <Button
                                   onClick={() => toggleAddon({ ...addon, id })}
                                   className="w-full"
                                   variant="secondary"
                                 >
-                                  Add protection
+                                  Add Protection
                                 </Button>
                               ) : (
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      size="icon"
-                                      onClick={() => decrementAddon(id)}
-                                      aria-label="Decrease"
-                                    >
-                                      <Minus size={16} />
-                                    </Button>
-                                    <span className="min-w-[2ch] text-center font-semibold">
-                                      {activeItem?.qty ?? 1}
+                                <div className="flex flex-col gap-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-300">
+                                      Quantity
                                     </span>
-                                    <Button
-                                      size="icon"
-                                      onClick={() => incrementAddon(id)}
-                                      aria-label="Increase"
-                                    >
-                                      <Plus size={16} />
-                                    </Button>
+
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        size="icon"
+                                        onClick={() => decrementAddon(id)}
+                                      >
+                                        <Minus size={14} />
+                                      </Button>
+
+                                      <span className="w-6 text-center font-semibold text-white">
+                                        {activeItem?.qty ?? 1}
+                                      </span>
+
+                                      <Button
+                                        size="icon"
+                                        onClick={() => incrementAddon(id)}
+                                      >
+                                        <Plus size={14} />
+                                      </Button>
+                                    </div>
                                   </div>
+
                                   <Button
                                     variant="outline"
                                     onClick={() => toggleAddon({ id })}
+                                    className="w-full text-red-400 border-red-400 hover:bg-red-400/10"
                                   >
-                                    <X size={16} className="mr-1" /> Remove
+                                    Remove
                                   </Button>
                                 </div>
                               )}
@@ -425,10 +470,12 @@ const ServicesPage = () => {
                     </div>
                   )}
 
-                <div className="flex justify-end gap-3">
+                {/* CTA */}
+                <div className="flex justify-end">
                   <Button
                     disabled={!(booking.services && booking.services.length)}
                     onClick={goToAddons}
+                    className="w-full sm:w-auto"
                   >
                     Continue to Add-ons
                   </Button>
@@ -439,84 +486,103 @@ const ServicesPage = () => {
 
           {/* Add-ons (general only) */}
           {step === "addons" && (
-            <section id="addons-section" className="mb-12">
-              <h3 className="text-2xl font-semibold mb-4">Add-ons</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            <section id="addons-section" className="mb-12 px-2 sm:px-0">
+              <h3 className="text-2xl font-semibold mb-6">Add-ons</h3>
+
+              {/* GRID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
                 {generalAddons.map((addon) => {
                   const id = addon.id ?? addon.title;
-                  const active = !!(booking.addons || []).find(
-                    (a) => a.id === id
-                  );
+
                   const activeItem = (booking.addons || []).find(
                     (a) => a.id === id
                   );
+                  const active = !!activeItem;
 
                   return (
                     <div
                       key={id}
-                      className={`p-5 rounded-2xl transition shadow border ${
+                      className={`flex flex-col justify-between rounded-2xl border p-5 transition-all duration-200 shadow-sm ${
                         active
-                          ? "bg-blue-600 text-white border-blue-400"
-                          : "bg-gray-800 text-gray-200 border-gray-700"
+                          ? "bg-blue-600/10 border-blue-500"
+                          : "bg-gray-800 border-gray-700 hover:border-gray-500"
                       }`}
                     >
-                      <div className="mb-3">
-                        <span
-                          className="text-xs  bg-gradient-to-r from-yellow-400 to-yellow-500
-                                text-black shadow-md font-semibold tracking-wideF py-1 px-2 rounded-2xl"
-                        >
-                          {addon.tag}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-3 mb-3">
-                        <h4 className="font-semibold">{addon.title}</h4>
-                        <p className="text-sm">{addon.description}</p>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm text-gray-300">
-                          {addon.duration
-                            ? `⏱ ${addon.duration}`
-                            : "⏱ Est. time"}
+                      {/* TOP CONTENT */}
+                      <div>
+                        {/* TAG */}
+                        {addon.tag && (
+                          <span className="inline-block text-xs bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold px-2 py-1 rounded-full mb-3">
+                            {addon.tag}
+                          </span>
+                        )}
+
+                        {/* TITLE */}
+                        <h4 className="font-semibold text-white mb-1">
+                          {addon.title}
+                        </h4>
+
+                        {/* DESCRIPTION */}
+                        <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+                          {addon.description}
                         </p>
-                        <span className="font-bold">
-                          ${Number(addon.price).toFixed(2)}
-                        </span>
+
+                        {/* META */}
+                        <div className="flex justify-between items-center text-sm mb-4">
+                          <span className="text-gray-500">
+                            ⏱ {addon.duration || "Est. time"}
+                          </span>
+                          <span className="font-semibold text-white">
+                            ${Number(addon.price).toFixed(2)}
+                          </span>
+                        </div>
                       </div>
 
+                      {/* ACTION AREA */}
                       {!active ? (
                         <Button
                           onClick={() => toggleAddon({ ...addon, id })}
                           className="w-full"
                           variant="secondary"
                         >
-                          Add Protecttion
+                          Add Add-on
                         </Button>
                       ) : (
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="icon"
-                              onClick={() => decrementAddon(id)}
-                              aria-label="Decrease"
-                            >
-                              <Minus size={16} />
-                            </Button>
-                            <span className="min-w-[2ch] text-center font-semibold">
-                              {activeItem?.qty ?? 1}
+                        <div className="flex flex-col gap-3">
+                          {/* QUANTITY */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-300">
+                              Quantity
                             </span>
-                            <Button
-                              size="icon"
-                              onClick={() => incrementAddon(id)}
-                              aria-label="Increase"
-                            >
-                              <Plus size={16} />
-                            </Button>
+
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="icon"
+                                onClick={() => decrementAddon(id)}
+                              >
+                                <Minus size={14} />
+                              </Button>
+
+                              <span className="w-6 text-center font-semibold text-white">
+                                {activeItem?.qty ?? 1}
+                              </span>
+
+                              <Button
+                                size="icon"
+                                onClick={() => incrementAddon(id)}
+                              >
+                                <Plus size={14} />
+                              </Button>
+                            </div>
                           </div>
+
+                          {/* REMOVE */}
                           <Button
                             variant="outline"
                             onClick={() => toggleAddon({ id })}
+                            className="w-full text-red-400 border-red-400 hover:bg-red-400/10"
                           >
-                            <X size={16} className="mr-1" /> Remove
+                            Remove
                           </Button>
                         </div>
                       )}
@@ -525,164 +591,189 @@ const ServicesPage = () => {
                 })}
               </div>
 
-              <div className="flex justify-between items-center">
+              {/* NAVIGATION */}
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-3">
                 <Button
                   variant="outline"
                   onClick={() => setStep("pickServices")}
                 >
                   Back to Services
                 </Button>
-                <Button onClick={goToSummary}>Continue to Summary</Button>
+
+                <Button onClick={goToSummary} className="w-full sm:w-auto">
+                  Continue to Summary
+                </Button>
               </div>
             </section>
           )}
 
           {/* Summary */}
           {step === "summary" && (
-            <section id="summary-section" className="mb-12">
+            <section id="summary-section" className="mb-12 px-2 sm:px-0">
               <h3 className="text-2xl font-semibold mb-4">Summary</h3>
 
-              <div className="bg-gray-900 rounded-2xl p-6 mb-6 shadow-lg">
-                {/* Services */}
+              <div className="bg-gray-900 rounded-2xl p-4 sm:p-6 mb-6 shadow-lg">
+                {/* SERVICES */}
                 <div className="mb-6">
-                  <h4 className="font-semibold">Selected Services</h4>
-                  <ul className="mt-3 divide-y divide-gray-800">
+                  <h4 className="font-semibold mb-2">Selected Services</h4>
+
+                  <ul className="divide-y divide-gray-800">
                     {(booking.services || []).map((s) => (
-                      <li
-                        key={s.id}
-                        className="py-4 flex items-center justify-between gap-4"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium">{s.title}</div>
-                          {s.description && (
-                            <div className="text-sm text-gray-400 line-clamp-2">
-                              {s.description}
+                      <li key={s.id} className="py-4 last:border-none">
+                        <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] items-start md:items-center">
+                          {/* INFO */}
+                          <div className="min-w-0">
+                            <div className="font-medium text-white">
+                              {s.title}
                             </div>
-                          )}
-                          <div className="text-sm text-gray-400 mt-1">
-                            ⏱ {s.duration || "Est. time"}
+
+                            {s.description && (
+                              <div className="text-sm text-gray-400 line-clamp-2">
+                                {s.description}
+                              </div>
+                            )}
+
+                            <div className="text-sm text-gray-500 mt-1">
+                              ⏱ {s.duration || "Est. time"}
+                            </div>
+                          </div>
+
+                          {/* QUANTITY */}
+                          <div className="flex items-center gap-2 justify-start md:justify-center">
+                            <Button
+                              size="icon"
+                              onClick={() => decrementService(s.id)}
+                            >
+                              <Minus size={14} />
+                            </Button>
+
+                            <span className="w-6 text-center font-semibold">
+                              {s.qty ?? 1}
+                            </span>
+
+                            <Button
+                              size="icon"
+                              onClick={() => incrementService(s.id)}
+                            >
+                              <Plus size={14} />
+                            </Button>
+                          </div>
+
+                          {/* PRICE + REMOVE */}
+                          <div className="flex items-center justify-between md:justify-end gap-3">
+                            <div className="font-semibold text-right">
+                              $
+                              {(
+                                Number(s.price) * Math.max(1, s.qty || 1)
+                              ).toFixed(2)}
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => decrementService(s.id)}
+                              className="text-red-400 hover:text-red-500"
+                            >
+                              <X size={14} />
+                            </Button>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="icon"
-                            onClick={() => decrementService(s.id)}
-                            aria-label="Decrease"
-                          >
-                            <Minus size={16} />
-                          </Button>
-                          <span className="min-w-[2ch] text-center font-semibold">
-                            {s.qty ?? 1}
-                          </span>
-                          <Button
-                            size="icon"
-                            onClick={() => incrementService(s.id)}
-                            aria-label="Increase"
-                          >
-                            <Plus size={16} />
-                          </Button>
-                        </div>
-
-                        <div className="w-24 text-right font-semibold">
-                          $
-                          {(Number(s.price) * Math.max(1, s.qty || 1)).toFixed(
-                            2
-                          )}
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => decrementService(s.id)}
-                        >
-                          <X size={16} />
-                        </Button>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Add-ons */}
+                {/* ADD-ONS */}
                 <div className="mb-6">
-                  <h4 className="font-semibold">Add-ons</h4>
-                  <ul className="mt-3 divide-y divide-gray-800">
+                  <h4 className="font-semibold mb-2">Add-ons</h4>
+
+                  <ul className="divide-y divide-gray-800">
                     {(booking.addons || []).map((a) => (
-                      <li
-                        key={a.id}
-                        className="py-4 flex items-center justify-between gap-4"
-                      >
-                        <div className="flex-1 min-w-0 text-gray-300">
-                          {a.title}
-                          <div className="text-sm text-gray-400 mt-1">
-                            ⏱ {a.duration || "Est. time"}
+                      <li key={a.id} className="py-4 last:border-none">
+                        <div className="grid gap-4 md:grid-cols-[1fr_auto_auto] items-start md:items-center">
+                          {/* INFO */}
+                          <div className="min-w-0">
+                            <div className="text-gray-300 font-medium">
+                              {a.title}
+                            </div>
+
+                            <div className="text-sm text-gray-500 mt-1">
+                              ⏱ {a.duration || "Est. time"}
+                            </div>
+                          </div>
+
+                          {/* QUANTITY */}
+                          <div className="flex items-center gap-2 justify-start md:justify-center">
+                            <Button
+                              size="icon"
+                              onClick={() => decrementAddon(a.id)}
+                            >
+                              <Minus size={14} />
+                            </Button>
+
+                            <span className="w-6 text-center font-semibold">
+                              {a.qty ?? 1}
+                            </span>
+
+                            <Button
+                              size="icon"
+                              onClick={() => incrementAddon(a.id)}
+                            >
+                              <Plus size={14} />
+                            </Button>
+                          </div>
+
+                          {/* PRICE + REMOVE */}
+                          <div className="flex items-center justify-between md:justify-end gap-3">
+                            <div className="font-semibold text-right">
+                              $
+                              {(
+                                Number(a.price) * Math.max(1, a.qty || 1)
+                              ).toFixed(2)}
+                            </div>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => decrementAddon(a.id)}
+                              className="text-red-400 hover:text-red-500"
+                            >
+                              <X size={14} />
+                            </Button>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="icon"
-                            onClick={() => decrementAddon(a.id)}
-                            aria-label="Decrease"
-                          >
-                            <Minus size={16} />
-                          </Button>
-                          <span className="min-w-[2ch] text-center font-semibold">
-                            {a.qty ?? 1}
-                          </span>
-                          <Button
-                            size="icon"
-                            onClick={() => incrementAddon(a.id)}
-                            aria-label="Increase"
-                          >
-                            <Plus size={16} />
-                          </Button>
-                        </div>
-
-                        <div className="w-24 text-right font-semibold">
-                          $
-                          {(Number(a.price) * Math.max(1, a.qty || 1)).toFixed(
-                            2
-                          )}
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => decrementAddon(a.id)}
-                        >
-                          <X size={16} />
-                        </Button>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Totals */}
-                <div className="flex justify-between items-center font-bold text-xl">
-                  <span>Total</span>
-                  <span>${totalPrice.toFixed(2)}</span>
-                </div>
-                <div className="flex flex-col gap-1 font-semibold text-lg mt-2">
-                  <div className="flex justify-between">
-                    <span>Average Time </span>
+                {/* TOTALS */}
+                <div className="border-t border-gray-800 pt-4 mt-4 space-y-2">
+                  <div className="flex justify-between text-lg font-semibold">
+                    <span>Total</span>
+                    <span>${totalPrice.toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-gray-400">
+                    <span>Estimated Time</span>
                     <span>{formattedDurations.avg}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-between">
+              {/* ACTION BUTTONS */}
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-3">
                 <Button variant="outline" onClick={() => setStep("addons")}>
                   Back to Add-ons
                 </Button>
-                <div className="flex gap-3">
-                  <Button
-                    onClick={handleContinueToBooking}
-                    disabled={!(booking.services && booking.services.length)}
-                  >
-                    Continue to Booking
-                  </Button>
-                </div>
+
+                <Button
+                  onClick={handleContinueToBooking}
+                  disabled={!(booking.services && booking.services.length)}
+                  className="w-full sm:w-auto"
+                >
+                  Continue to Booking
+                </Button>
               </div>
             </section>
           )}
