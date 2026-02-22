@@ -412,7 +412,7 @@ export const servicesData = {
     {
       id: "suv-escalade-detail-interior",
       category: "Detailing",
-      title: "Escalade (6+ Seater) Interior Only",
+      title: "Escalade Interior Only",
       tag: "Most Added",
       description:
         "Deep clean of Escalade interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
@@ -431,7 +431,7 @@ export const servicesData = {
     {
       id: "suv-escalade-detail-exterior",
       category: "Detailing",
-      title: "Escalade (6+ Seater) Exterior Only",
+      title: "Escalade Exterior Only",
       tag: "Great Maintenance Option",
       description:
         "Escalade exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
@@ -450,7 +450,7 @@ export const servicesData = {
     {
       id: "suv-escalade-detail-full",
       category: "Detailing",
-      title: "Escalade (6+ Seater) Interior + Exterior",
+      title: "Escalade Interior + Exterior",
       tag: "Most Popular",
       description:
         "Full Escalade detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",

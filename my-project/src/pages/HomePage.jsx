@@ -372,7 +372,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
             whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
             whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
           >
-            Book now
+            Get Started
           </motion.button>
 
           {/* Star Rating Section */}
