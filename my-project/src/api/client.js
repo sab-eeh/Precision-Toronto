@@ -1,6 +1,4 @@
-
-const BASE_URL = import.meta.env.VITE_API_URL;
-
+const BASE_URL = import.meta.env.VITE_API_URL.replace(/\/$/, "");
 // Generic request function
 export async function api(path, { method = "GET", body, headers = {} } = {}) {
   try {
