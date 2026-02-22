@@ -186,7 +186,7 @@ export const servicesData = {
     {
       id: "suv-5-detail-interior",
       category: "Detailing",
-      title: "5-Seater SUV Interior Only",
+      title: "Interior Only",
       tag: "Most Added",
       description:
         "Deep clean of 5-seater SUV interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
@@ -205,7 +205,7 @@ export const servicesData = {
     {
       id: "suv-5-detail-exterior",
       category: "Detailing",
-      title: "5-Seater SUV Exterior Only",
+      title: "Exterior Only",
       tag: "Great Maintenance Option",
       description:
         "5-seater SUV exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
@@ -224,7 +224,7 @@ export const servicesData = {
     {
       id: "suv-5-detail-full",
       category: "Detailing",
-      title: "5-Seater SUV Interior + Exterior",
+      title: "Interior + Exterior",
       tag: "Most Popular",
       description:
         "Full 5-seater SUV detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
@@ -351,7 +351,7 @@ export const servicesData = {
     {
       id: "suv-6-detail-interior",
       category: "Detailing",
-      title: "6+ Seater SUV Interior Only",
+      title: "Interior Only",
       tag: "Most Added",
       description:
         "Deep clean of 6+ seater SUV interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
@@ -370,7 +370,7 @@ export const servicesData = {
     {
       id: "suv-6-detail-exterior",
       category: "Detailing",
-      title: "6+ Seater SUV Exterior Only",
+      title: "Exterior Only",
       tag: "Great Maintenance Option",
       description:
         "6+ seater SUV exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
@@ -389,7 +389,7 @@ export const servicesData = {
     {
       id: "suv-6-detail-full",
       category: "Detailing",
-      title: "6+ Seater SUV Interior + Exterior",
+      title: "Interior + Exterior",
       tag: "Most Popular",
       description:
         "Full 6+ seater SUV detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",

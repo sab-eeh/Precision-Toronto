@@ -1,11 +1,11 @@
 Model Information:
-* title:	Jeep Grand Cherokee Trackhawk
-* source:	https://sketchfab.com/3d-models/jeep-grand-cherokee-trackhawk-f8024595e11c48119877c9c7cc554abc
-* author:	David_Holiday (https://sketchfab.com/David_Holiday)
+* title:	2015 Cadillac Escalade ESV
+* source:	https://sketchfab.com/3d-models/2015-cadillac-escalade-esv-57204780d10648c59ceb3021e6f66116
+* author:	Ddiaz Design (https://sketchfab.com/ddiaz-design)
 
 Model License:
-* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
-* requirements:	Author must be credited. Commercial use is allowed.
+* license type:	CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
+* requirements:	Author must be credited. No commercial use. Modified versions must have the same license.
 
 If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
-This work is based on "Jeep Grand Cherokee Trackhawk" (https://sketchfab.com/3d-models/jeep-grand-cherokee-trackhawk-f8024595e11c48119877c9c7cc554abc) by David_Holiday (https://sketchfab.com/David_Holiday) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+This work is based on "2015 Cadillac Escalade ESV" (https://sketchfab.com/3d-models/2015-cadillac-escalade-esv-57204780d10648c59ceb3021e6f66116) by Ddiaz Design (https://sketchfab.com/ddiaz-design) licensed under CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)

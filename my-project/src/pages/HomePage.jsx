@@ -67,25 +67,25 @@ const FEATURES = Object.freeze([
 const CARS = Object.freeze([
   {
     type: "coupe",
-    label: "Coupe",
+    label: " 2 Door Coupe",
     desc: "Luxury sports car treatment",
     modelPath: "/models/coupe/scene.gltf",
   },
   {
     type: "sedan",
-    label: "Sedan",
+    label: "4 Door Sedan",
     desc: "Perfect for daily drivers",
     modelPath: "/models/sedan/scene.gltf",
   },
   {
     type: "suv1",
-    label: "SUV (5 Seater)",
+    label: "5 Seater SUV",
     desc: "Ideal for small family",
     modelPath: "/models/suv1/scene.gltf",
   },
   {
     type: "suv2",
-    label: "SUV (6+ Seater)",
+    label: "6+ Seater SUV",
     desc: "Best for large family vehicles",
     modelPath: "/models/suv2/scene.gltf",
   },
@@ -408,11 +408,11 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
       <section
         id="car-selection"
         ref={carSectionRef}
-        className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#101518] to-[#0A0F11]"
+        className="pb-8 flex items-center justify-center bg-gradient-to-b from-[#101518] to-[#0A0F11]"
       >
         <div className="w-full max-w-7xl mx-auto px-5 lg:px-10">
           {/* Heading */}
-          <div className="text-center mb-8 lg:mb-14">
+          <div className="text-center mb-3 lg:mb-4">
             <h2 className="text-3xl lg:text-4xl font-bold mb-2 tracking-wide">
               Choose Your Vehicle
             </h2>
