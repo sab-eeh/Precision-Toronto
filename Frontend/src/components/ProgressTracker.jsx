@@ -9,68 +9,75 @@ const steps = [
   { icon: CheckCircle, label: "Confirm", step: 4 },
 ];
 
-const ProgressTracker = ({ currentStep }) => {
+const ProgressTracker = ({ currentStep = 1 }) => {
   return (
-    <div className="w-auto py-8 bg-gradient-to-r from-[#0B1315] via-[#10181A] to-[#0B1315] shadow-lg">
-      <div className="flex items-center justify-between max-w-5xl mx-auto px-4 gap-4">
-        {steps.map((step, index) => {
-          const Icon = step.icon;
-          const isCompleted = currentStep > step.step;
-          const isCurrent = currentStep === step.step;
+    <div className="w-full py-8 bg-gradient-to-r from-[#0B1315] via-[#10181A] to-[#0B1315]">
+      <div className="max-w-5xl mx-auto px-4">
+        <div className="flex items-center justify-between relative">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isCompleted = currentStep > step.step;
+            const isCurrent = currentStep === step.step;
 
-          return (
-            <div key={step.step} className="flex items-center flex-1">
-              {/* Step Circle */}
-              <motion.div
-                className="flex flex-col items-center flex-shrink-0"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: index * 0.15, type: "spring" }}
+            return (
+              <div
+                key={step.step}
+                className="flex flex-col items-center relative flex-1"
               >
-                <div
-                  className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
-                    isCompleted
-                      ? "bg-gradient-to-br from-blue-500 to-blue-400 border-blue-500 text-white shadow-lg shadow-blue-500/40"
-                      : isCurrent
-                      ? "bg-gradient-to-br from-blue-600 to-blue-400 border-blue-500 text-white shadow-lg shadow-blue-500/40 scale-105"
-                      : "bg-white/5 border-gray-600 text-gray-400"
-                  }`}
+                {/* ICON */}
+                <motion.div
+                  initial={{ scale: 0.85, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`flex items-center justify-center 
+                    w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 
+                    rounded-full border-2 z-10 transition-all
+                    ${
+                      isCompleted
+                        ? "bg-blue-500 border-blue-500 text-white"
+                        : isCurrent
+                        ? "bg-blue-600 border-blue-400 text-white scale-105"
+                        : "bg-[#0F172A] border-gray-600 text-gray-400"
+                    }
+                  `}
                 >
                   {isCompleted ? (
-                    <Check className="w-6 h-6" />
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                   ) : (
-                    <Icon className="w-6 h-6" />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
                   )}
-                </div>
+                </motion.div>
+
+                {/* LABEL */}
                 <span
-                  className={`mt-2 text-xs sm:text-sm font-medium text-center tracking-wide ${
+                  className={`mt-2 text-[10px] sm:text-xs md:text-sm text-center ${
                     isCompleted || isCurrent ? "text-white" : "text-gray-400"
                   }`}
                 >
                   {step.label}
                 </span>
-              </motion.div>
 
-              {/* Connector Line */}
-              {index < steps.length - 1 && (
-                <div className="flex-1 flex items-center">
-                  {/* Base line */}
-                  <div className="h-1 w-full bg-gray-700 rounded-full relative">
-                    {/* Progress fill */}
+                {/* 🔥 CONNECTOR LINE */}
+                {index < steps.length - 1 && (
+                  <div className="absolute top-1/2 -mt-2 left-1/2 w-full h-[3px] -translate-y-1/2 z-0">
+                    {/* BASE LINE */}
+                    <div className="w-full h-full bg-gray-700 rounded-full" />
+
+                    {/* ACTIVE LINE */}
                     <motion.div
-                      className="absolute top-0 left-0 h-1 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full"
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full"
                       initial={{ width: "0%" }}
                       animate={{
                         width: currentStep > step.step ? "100%" : "0%",
                       }}
-                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                      transition={{ duration: 0.4 }}
                     />
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -364,7 +364,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
           {/* CTA Button */}
           <motion.button
             onClick={() =>
-              document.getElementById("car-selection")?.scrollIntoView({
+              document.getElementById("booking-section")?.scrollIntoView({
                 behavior: prefersReducedMotion ? "auto" : "smooth",
               })
             }
@@ -387,125 +387,127 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
         </motion.div>
       </section>
 
-      {/* Progress Tracker */}
-      <div ref={progressRef}>
-        {progressOnScreen ? (
-          <Suspense
-            fallback={
-              <div className="px-6">
-                <Skeleton className="h-6 w-64" />
-              </div>
-            }
-          >
-            <ProgressTracker currentStep={1} />
-          </Suspense>
-        ) : (
-          <div className="px-6 py-4" />
-        )}
-      </div>
-
-      {/* Car Selection */}
-      <section
-        id="car-selection"
-        ref={carSectionRef}
-        className="pb-8 flex items-center justify-center bg-gradient-to-b from-[#101518] to-[#0A0F11]"
-      >
-        <div className="w-full max-w-7xl mx-auto px-5 lg:px-10">
-          {/* Heading */}
-          <div className="text-center mb-3 lg:mb-4">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-2 tracking-wide">
-              Choose Your Vehicle
-            </h2>
-            <p className="text-sm lg:text-lg text-gray-400 max-w-md mx-auto">
-              Select your vehicle to view packages & instant pricing
-            </p>
-          </div>
-
-          {/* Desktop grid */}
-          <div className="hidden lg:grid grid-cols-5 gap-5 justify-items-center items-center">
-            {CARS.map((car, idx) => (
-              <div key={car.type} className="w-full flex justify-center">
-                {carSectionOnScreen ? (
-                  <CarCard
-                    car={car}
-                    onSelect={handleCarSelect}
-                    anim={
-                      prefersReducedMotion
-                        ? {}
-                        : {
-                            ...fadeUp,
-                            transition: {
-                              ...(fadeUp.transition || {}),
-                              delay: idx * 0.08,
-                            },
-                          }
-                    }
-                  />
-                ) : (
-                  <Skeleton className="h-[340px] w-full max-w-[260px]" />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Mobile carousel */}
-          <div className="lg:hidden flex flex-col items-center justify-center">
-            <div className="w-full max-w-xs flex justify-center">
-              <AnimatePresence mode="wait">
-                {carSectionOnScreen ? (
-                  <CarouselItem
-                    key={CARS[currentSlide].type}
-                    car={CARS[currentSlide]}
-                    onSelect={handleCarSelect}
-                    anim={
-                      prefersReducedMotion
-                        ? {}
-                        : {
-                            initial: { opacity: 0, y: 20 },
-                            animate: { opacity: 1, y: 0 },
-                            exit: { opacity: 0, y: -20 },
-                            transition: { duration: 0.3 },
-                          }
-                    }
-                  />
-                ) : (
-                  <Skeleton className="h-[320px] w-full" />
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center justify-between w-full max-w-xs mt-5">
-              <button
-                onClick={prevSlide}
-                aria-label="Previous vehicle"
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              <div className="flex gap-2">
-                {CARS.map((_, idx) => (
-                  <span
-                    key={idx}
-                    className={`w-2.5 h-2.5 rounded-full transition ${
-                      idx === currentSlide ? "bg-blue-400" : "bg-white/30"
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={nextSlide}
-                aria-label="Next vehicle"
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+      <div id="booking-section">
+        {/* Progress Tracker */}
+        <div ref={progressRef}>
+          {progressOnScreen ? (
+            <Suspense
+              fallback={
+                <div className="px-6">
+                  <Skeleton className="h-6 w-64" />
+                </div>
+              }
+            >
+              <ProgressTracker currentStep={1} />
+            </Suspense>
+          ) : (
+            <div className="px-6 py-4" />
+          )}
         </div>
-      </section>
+
+        {/* Car Selection */}
+        <section
+          id="car-selection"
+          ref={carSectionRef}
+          className="pb-8 flex items-center justify-center bg-gradient-to-b from-[#101518] to-[#0A0F11]"
+        >
+          <div className="w-full max-w-7xl mx-auto px-5 lg:px-10">
+            {/* Heading */}
+            <div className="text-center mb-3 lg:mb-4">
+              <h2 className="text-3xl lg:text-4xl font-bold mb-2 tracking-wide">
+                Choose Your Vehicle
+              </h2>
+              <p className="text-sm lg:text-lg text-gray-400 max-w-md mx-auto">
+                Select your vehicle to view packages & instant pricing
+              </p>
+            </div>
+
+            {/* Desktop grid */}
+            <div className="hidden lg:grid grid-cols-5 gap-5 justify-items-center items-center">
+              {CARS.map((car, idx) => (
+                <div key={car.type} className="w-full flex justify-center">
+                  {carSectionOnScreen ? (
+                    <CarCard
+                      car={car}
+                      onSelect={handleCarSelect}
+                      anim={
+                        prefersReducedMotion
+                          ? {}
+                          : {
+                              ...fadeUp,
+                              transition: {
+                                ...(fadeUp.transition || {}),
+                                delay: idx * 0.08,
+                              },
+                            }
+                      }
+                    />
+                  ) : (
+                    <Skeleton className="h-[340px] w-full max-w-[260px]" />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile carousel */}
+            <div className="lg:hidden flex flex-col items-center justify-center">
+              <div className="w-full max-w-xs flex justify-center">
+                <AnimatePresence mode="wait">
+                  {carSectionOnScreen ? (
+                    <CarouselItem
+                      key={CARS[currentSlide].type}
+                      car={CARS[currentSlide]}
+                      onSelect={handleCarSelect}
+                      anim={
+                        prefersReducedMotion
+                          ? {}
+                          : {
+                              initial: { opacity: 0, y: 20 },
+                              animate: { opacity: 1, y: 0 },
+                              exit: { opacity: 0, y: -20 },
+                              transition: { duration: 0.3 },
+                            }
+                      }
+                    />
+                  ) : (
+                    <Skeleton className="h-[320px] w-full" />
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center justify-between w-full max-w-xs mt-5">
+                <button
+                  onClick={prevSlide}
+                  aria-label="Previous vehicle"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                <div className="flex gap-2">
+                  {CARS.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`w-2.5 h-2.5 rounded-full transition ${
+                        idx === currentSlide ? "bg-blue-400" : "bg-white/30"
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  onClick={nextSlide}
+                  aria-label="Next vehicle"
+                  className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 transition"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* Before & After (static) */}
       <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11] py-20">
