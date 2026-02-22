@@ -192,12 +192,23 @@ export default function BookingPage() {
         const data = await api(url, { signal: controller.signal });
         if (!alive) return;
 
-        const slots = (data?.availableSlots || []).map((s) => ({
-          start: new Date(s.start),
-          end: new Date(s.end),
-          label: format(new Date(s.start), "h:mm a"),
-          booked: !!s.booked,
-        }));
+        const slots = (data?.availableSlots || []).map((s) => {
+          const startDate = new Date(s.start);
+
+          const torontoLabel = startDate.toLocaleTimeString("en-CA", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: "America/Toronto",
+          });
+
+          return {
+            start: startDate,
+            end: new Date(s.end),
+            label: torontoLabel,
+            booked: !!s.booked,
+          };
+        });
 
         setAvailableSlots(slots);
       } catch (err) {
