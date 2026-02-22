@@ -1,5 +1,3 @@
-// backend/src/app.js
-
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
@@ -45,7 +43,7 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env.CLIENT_URL, // https://precision-toronto.vercel.app
+  process.env.CLIENT_URL,
 ];
 
 app.use(
@@ -53,26 +51,25 @@ app.use(
     origin: (origin, callback) => {
       console.log("🌐 Origin:", origin);
 
-      // Allow requests without origin (Postman, mobile apps)
       if (!origin) return callback(null, true);
 
-      const normalizedOrigin = origin.replace(/\/$/, "");
+      const isAllowed = allowedOrigins.some((allowed) => {
+        if (!allowed) return false;
 
-      const isAllowed = allowedOrigins.some(
-        (allowed) => allowed && normalizedOrigin === allowed.replace(/\/$/, "")
-      );
+        // Allow subdomains + variations
+        return origin.startsWith(allowed.replace(/\/$/, ""));
+      });
 
-      if (isAllowed) {
-        return callback(null, true);
-      }
+      if (isAllowed) return callback(null, true);
 
       console.error("❌ CORS blocked:", origin);
       return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
+
+
 
 // ======================
 // LOGGING
