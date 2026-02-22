@@ -1,8 +1,13 @@
 // backend/src/utils/normalizePayload.js
-/**
- * Clean and deduplicate booking payload before sending to backend.
- * Designed for frontend use too (JSX import safe).
- */
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const BUSINESS_TZ = "America/Toronto";
+
 export const normalizePayload = (body) => {
   const {
     selectedDate,
@@ -56,7 +61,7 @@ export const normalizePayload = (body) => {
     services,
     addons,
     totalPrice: Number(totalPrice) || 0,
-    startAt: startAtISO ? new Date(startAtISO) : null,
+    startAt: startAtISO ? dayjs.tz(startAtISO, BUSINESS_TZ).toDate() : null,
     slotMinutes: slotMinutes || 60,
     selectedDate,
     selectedTime,

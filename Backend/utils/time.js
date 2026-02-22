@@ -1,18 +1,29 @@
 // src/utils/time.js
-// Business-hours scheduling helpers: 08:00–20:00
+
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+// 🌎 BUSINESS TIMEZONE (TORONTO)
+const BUSINESS_TZ = "America/Toronto";
 
 const BUSINESS_START_HOUR = 8;
 const BUSINESS_END_HOUR = 20;
-const MINUTES_PER_DAY = 24 * 60;
 
-/** Return Date at given hour:minute on the same calendar day (local time). */
-function atHM(date, h, m = 0) {
-  const d = new Date(date);
-  d.setHours(h, m, 0, 0);
-  return d;
+/** Create a Toronto-time date */
+function toToronto(date) {
+  return dayjs.tz(date, BUSINESS_TZ);
 }
 
-/** Window for the business day containing `cursor`. */
+/** Return Date at given hour:minute in Toronto timezone */
+function atHM(date, h, m = 0) {
+  return toToronto(date).hour(h).minute(m).second(0).millisecond(0);
+}
+
+/** Window for business day in Toronto */
 function businessWindow(cursor) {
   return {
     start: atHM(cursor, BUSINESS_START_HOUR),
@@ -20,109 +31,88 @@ function businessWindow(cursor) {
   };
 }
 
-/** Move to the next business day's start. */
+/** Next business day 08:00 Toronto */
 function nextBusinessStart(cursor) {
-  const d = new Date(cursor);
-  // Go to next day 08:00
-  d.setDate(d.getDate() + 1);
-  d.setHours(BUSINESS_START_HOUR, 0, 0, 0);
-  return d;
+  return toToronto(cursor)
+    .add(1, "day")
+    .hour(BUSINESS_START_HOUR)
+    .minute(0)
+    .second(0)
+    .millisecond(0);
 }
 
-/** Clamp a given Date into business hours: if before 08:00 -> 08:00; if after 20:00 -> next day 08:00. */
+/** Clamp inside business hours */
 function clampToBusinessStart(d) {
-  const { start, end } = businessWindow(d);
-  if (d < start) return start;
-  if (d >= end) return nextBusinessStart(d);
-  return new Date(d);
-}
+  const cur = toToronto(d);
+  const { start, end } = businessWindow(cur);
 
-/**
- * Add minutes counting ONLY business time.
- * Example: addBusinessMinutes(21 Oct 17:00, 1800) => 24 Oct 11:00
- */
-function addBusinessMinutes(startDate, minutes) {
-  if (!Number.isFinite(minutes) || minutes < 0)
-    throw new Error("minutes must be >= 0");
-  let cur = clampToBusinessStart(new Date(startDate));
-  let remain = Math.floor(minutes);
-
-  while (remain > 0) {
-    const { start, end } = businessWindow(cur);
-    // ensure inside the window
-    if (cur < start) cur = start;
-    if (cur >= end) {
-      cur = nextBusinessStart(cur);
-      continue;
-    }
-    const available = Math.floor((end - cur) / 60000);
-    const use = Math.min(remain, available);
-    cur = new Date(cur.getTime() + use * 60000);
-    remain -= use;
-    if (remain > 0) cur = nextBusinessStart(cur);
-  }
+  if (cur.isBefore(start)) return start;
+  if (cur.isSame(end) || cur.isAfter(end)) return nextBusinessStart(cur);
 
   return cur;
 }
 
-/** Split a block of business minutes into per-day working segments (useful for UI, audits, admin views). */
-function splitIntoBusinessSegments(startDate, minutes) {
-  const segments = [];
-  let cur = clampToBusinessStart(new Date(startDate));
+/** Add business minutes (Toronto-safe) */
+function addBusinessMinutes(startDate, minutes) {
+  if (!Number.isFinite(minutes) || minutes < 0)
+    throw new Error("minutes must be >= 0");
+
+  let cur = clampToBusinessStart(startDate);
   let remain = Math.floor(minutes);
 
   while (remain > 0) {
     const { start, end } = businessWindow(cur);
-    if (cur < start) cur = start;
-    if (cur >= end) {
+
+    if (cur.isBefore(start)) cur = start;
+    if (cur.isSame(end) || cur.isAfter(end)) {
       cur = nextBusinessStart(cur);
       continue;
     }
-    const available = Math.floor((end - cur) / 60000);
+
+    const available = end.diff(cur, "minute");
     const use = Math.min(remain, available);
-    const segEnd = new Date(cur.getTime() + use * 60000);
-    segments.push({ start: cur, end: segEnd });
-    cur = segEnd;
+
+    cur = cur.add(use, "minute");
     remain -= use;
+
     if (remain > 0) cur = nextBusinessStart(cur);
   }
 
-  return segments;
+  return cur.toDate();
 }
 
-/** Simple overlap check. */
+/** Generate slots (Toronto-based) */
+function generateSlotsForDay(dayStart, { slotMinutes = 60 } = {}) {
+  const start = atHM(dayStart, BUSINESS_START_HOUR);
+  const end = atHM(dayStart, BUSINESS_END_HOUR);
+
+  const slots = [];
+  let t = start;
+
+  while (t.isBefore(end)) {
+    const slotEnd = t.add(slotMinutes, "minute");
+
+    slots.push({
+      start: t.toDate(),
+      end: slotEnd.toDate(),
+    });
+
+    t = t.add(slotMinutes, "minute");
+  }
+
+  return slots;
+}
+
+/** Overlap check */
 function isOverlap(aStart, aEnd, bStart, bEnd) {
   return aStart < bEnd && aEnd > bStart;
 }
 
-/** Generate start-of-hour (or custom) slots for a day. */
-function generateSlotsForDay(
-  dayStart,
-  {
-    startHour = BUSINESS_START_HOUR,
-    endHour = BUSINESS_END_HOUR,
-    slotMinutes = 60,
-  } = {}
-) {
-  const start = atHM(dayStart, startHour);
-  const end = atHM(dayStart, endHour);
-  const out = [];
-  for (
-    let t = new Date(start);
-    t < end;
-    t = new Date(t.getTime() + slotMinutes * 60000)
-  ) {
-    const slotEnd = new Date(t.getTime() + slotMinutes * 60000);
-    out.push({ start: new Date(t), end: slotEnd });
-  }
-  return out;
-}
-
 module.exports = {
+  BUSINESS_TZ,
   BUSINESS_START_HOUR,
   BUSINESS_END_HOUR,
   addBusinessMinutes,
-  splitIntoBusinessSegments,
   isOverlap,
   generateSlotsForDay,
   atHM,
