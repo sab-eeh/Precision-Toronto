@@ -408,66 +408,6 @@ export const servicesData = {
       image: serviceImages.suv[2],
     },
 
-    // ESCALADE (6+ SEATER OPTION)
-    {
-      id: "suv-escalade-detail-interior",
-      category: "Detailing",
-      title: "Escalade Interior Only",
-      tag: "Most Added",
-      description:
-        "Deep clean of Escalade interior: vacuum, shampoo, mats conditioned, steam clean seats & carpets, plastics conditioned, streak-free glass.",
-      addionaldesc: "Perfect for daily drivers, family vans and upkeep",
-      price: 199,
-      duration: "2–4 hours",
-      features: [
-        "All garbage removed",
-        "carpet shampoo + vacuum",
-        "Seat and upholstery Steam Clean",
-        "Plastics and Upholstery dressed + Uv protection",
-        "Streak free glass",
-      ],
-      image: serviceImages.suv[0],
-    },
-    {
-      id: "suv-escalade-detail-exterior",
-      category: "Detailing",
-      title: "Escalade Exterior Only",
-      tag: "Great Maintenance Option",
-      description:
-        "Escalade exterior deep clean: rims & tires, pre-treatment, foam wash, hand dry, sealant/ceramic spray, tire shine, streak-free windows.",
-      addionaldesc: "Ideal for maintaining gloss and protection.",
-      price: 109.99,
-      duration: "2-3 hours",
-      features: [
-        "Rims & tires deep cleaned",
-        "Pre-treatment & foam wash",
-        "Hand dry + paint sealant",
-        "Tire shine",
-        "Streak-free windows",
-      ],
-      image: serviceImages.suv[1],
-    },
-    {
-      id: "suv-escalade-detail-full",
-      category: "Detailing",
-      title: "Escalade Interior + Exterior",
-      tag: "Most Popular",
-      description:
-        "Full Escalade detail inside & out. Includes complete interior detail + exterior wash, rim & wheel well cleaning, paint pre-treat, foam + contact wash, hand dry, paint sealant, rims polished, tires dressed, streak-free glass.",
-      addionaldesc: "Best for full vehicle factory reset finish.",
-      price: 249.99,
-      duration: "3–5 hours",
-      features: [
-        "Interior full detail",
-        "Deep clean of rims & wheel wells",
-        "Paint pre-treatment",
-        "Foam wash + contact wash",
-        "Hand dry + 30–60 day paint sealant",
-        "Rims polished + tires dressed",
-        "Streak-free windows",
-      ],
-      image: serviceImages.suv[2],
-    },
     {
       id: "suv-pc-1",
       category: "Paint Correction",
