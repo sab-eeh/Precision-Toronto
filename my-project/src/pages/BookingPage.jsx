@@ -26,8 +26,7 @@ import api from "../api/client";
 import { Title, Meta } from "react-head";
 import { BookingContext } from "../context/BookingContext";
 import { parseDuration } from "../utils/duration";
-const Header = lazy(() => import("../layout/Header"));
-const Footer = lazy(() => import("../layout/Footer"));
+
 const FloatingContact = lazy(() => import("../components/FloatingContact"));
 const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
 
@@ -305,10 +304,6 @@ export default function BookingPage() {
       />
 
       <div className="min-h-screen flex flex-col text-white bg-gradient-to-b from-[#0A0F11] via-[#0D1418] to-[#101518] overflow-x-hidden">
-        <Suspense fallback={<div className="h-16 bg-gray-900 animate-pulse" />}>
-          <Header />
-        </Suspense>
-
         <Suspense fallback={null}>
           <FloatingContact />
         </Suspense>
@@ -526,10 +521,6 @@ export default function BookingPage() {
             </Button>
           </form>
         </div>
-
-        <Suspense fallback={<div className="h-24 bg-gray-900 animate-pulse" />}>
-          <Footer />
-        </Suspense>
       </div>
     </>
   );

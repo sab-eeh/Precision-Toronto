@@ -15,10 +15,8 @@ import { format } from "date-fns";
 import { Title, Meta } from "react-head";
 import api from "../api/client";
 import { BookingContext } from "../context/BookingContext";
-import { parseDuration } from "../utils/duration"; // ✅ FIX
+import { parseDuration } from "../utils/duration";
 
-const Header = lazy(() => import("../layout/Header"));
-const Footer = lazy(() => import("../layout/Footer"));
 const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
 const FloatingContact = lazy(() => import("../components/FloatingContact"));
 
@@ -245,10 +243,6 @@ export default function ConfirmationPage() {
       <Title>Confirm Booking | Precision</Title>
       <Meta name="description" content="Confirm your booking details." />
 
-      <Suspense fallback={<div className="h-16 bg-gray-900 animate-pulse" />}>
-        <Header />
-      </Suspense>
-
       <Suspense fallback={null}>
         <FloatingContact />
       </Suspense>
@@ -385,10 +379,6 @@ export default function ConfirmationPage() {
           </Button>
         </div>
       </div>
-
-      <Suspense fallback={<div className="h-24 bg-gray-900 animate-pulse" />}>
-        <Footer />
-      </Suspense>
     </div>
   );
 }

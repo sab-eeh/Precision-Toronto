@@ -4,8 +4,6 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Instagram, Video } from "lucide-react";
 import { Title, Meta } from "react-head";
 
-import Header from "../layout/Header";
-import Footer from "../layout/Footer";
 import FloatingContact from "../components/FloatingContact";
 
 import { galleryHero, posts, videoSources } from "../assets/gallery";
@@ -49,7 +47,6 @@ const Gallery = () => {
       />
 
       <div className="bg-[#0B1315] text-gray-300 overflow-hidden">
-        <Header />
         <FloatingContact />
 
         {/* Hero Section */}
@@ -206,8 +203,6 @@ const Gallery = () => {
             </a>
           </div>
         </section>
-
-        <Footer />
       </div>
     </>
   );

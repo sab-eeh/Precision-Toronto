@@ -3,8 +3,6 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react";
 
-import Header from "../layout/Header";
-import Footer from "../layout/Footer";
 import FloatingContact from "../components/FloatingContact";
 import { Title, Meta } from "react-head";
 
@@ -43,7 +41,6 @@ const About = () => {
       />
 
       <div className="bg-[#0B1315] text-gray-300 overflow-hidden">
-        <Header />
         <FloatingContact />
 
         {/* Hero Section */}
@@ -321,8 +318,6 @@ const About = () => {
             </p>
           </motion.div>
         </section>
-
-        <Footer />
       </div>
     </>
   );

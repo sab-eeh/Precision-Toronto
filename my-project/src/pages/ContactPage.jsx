@@ -1,6 +1,5 @@
 import React, { useState, lazy } from "react";
-import Header from "../layout/Header";
-import Footer from "../layout/Footer";
+
 import { Mail, Phone, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { Meta, Title } from "react-head";
@@ -56,7 +55,6 @@ const Contact = () => {
         content="Book your car detailing service with Precision Toronto. Call Haris today for premium auto cleaning, ceramic coating, and paint protection in Toronto, Canada."
       />
       <div className="bg-[#0B1315]">
-        <Header />
         <FloatingContact />
 
         {/* Hero Section */}
@@ -217,8 +215,6 @@ const Contact = () => {
 
         {/* Map Section */}
         <Map />
-
-        <Footer />
       </div>
     </>
   );

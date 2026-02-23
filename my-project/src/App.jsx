@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, {
   useState,
   useEffect,
@@ -12,178 +11,133 @@ import React, {
 import { Routes, Route, useLocation, Link, Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-/* -------------------- Lazy-loaded pages (named chunks) -------------------- */
-const HomePage = lazy(() =>
-  import(
-    /* webpackChunkName: "home", webpackPrefetch: true */ "./pages/HomePage"
-  )
-);
-const AboutPage = lazy(() =>
-  import(/* webpackChunkName: "about" */ "./pages/AboutPage")
-);
-const GalleryPage = lazy(() =>
-  import(/* webpackChunkName: "gallery" */ "./pages/GalleryPage")
-);
-const ContactPage = lazy(() =>
-  import(/* webpackChunkName: "contact" */ "./pages/ContactPage")
-);
-const ServicesPage = lazy(() =>
-  import(/* webpackChunkName: "services" */ "./pages/ServicesPage")
-);
-const BookingPage = lazy(() =>
-  import(/* webpackChunkName: "booking" */ "./pages/BookingPage")
-);
-const ConfirmationPage = lazy(() =>
-  import(/* webpackChunkName: "confirmation" */ "./pages/ConfirmationPage")
-);
-const AdminLogin = lazy(() =>
-  import(/* webpackChunkName: "admin-login" */ "./pages/AdminLogin")
-);
-const AdminDashboard = lazy(() =>
-  import(/* webpackChunkName: "admin-dashboard" */ "./pages/AdminDashboard")
-);
+/* ===== Layout ===== */
+import Header from "./layout/Header";
+import Footer from "./layout/Footer";
 
-/* -------------------- Prefetch helpers -------------------- */
-const PREFETCH_MAP = Object.freeze({
-  "/": () => import(/* webpackChunkName: "home" */ "./pages/HomePage"),
-  "/about": () => import(/* webpackChunkName: "about" */ "./pages/AboutPage"),
-  "/gallery": () =>
-    import(/* webpackChunkName: "gallery" */ "./pages/GalleryPage"),
-  "/contact": () =>
-    import(/* webpackChunkName: "contact" */ "./pages/ContactPage"),
-  "/services": () =>
-    import(/* webpackChunkName: "services" */ "./pages/ServicesPage"),
-  "/booking": () =>
-    import(/* webpackChunkName: "booking" */ "./pages/BookingPage"),
-  "/confirmation": () =>
-    import(/* webpackChunkName: "confirmation" */ "./pages/ConfirmationPage"),
-  "/admin/login": () =>
-    import(/* webpackChunkName: "admin-login" */ "./pages/AdminLogin"),
-  "/admin/dashboard": () =>
-    import(/* webpackChunkName: "admin-dashboard" */ "./pages/AdminDashboard"),
-});
+/* ===== Lazy Pages ===== */
+const HomePage = lazy(() => import("./pages/HomePage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const GalleryPage = lazy(() => import("./pages/GalleryPage"));
+const ContactPage = lazy(() => import("./pages/ContactPage"));
+const ServicesPage = lazy(() => import("./pages/ServicesPage"));
+const BookingPage = lazy(() => import("./pages/BookingPage"));
+const ConfirmationPage = lazy(() => import("./pages/ConfirmationPage"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
-function isSlowConnection() {
-  const conn =
-    navigator.connection ||
-    navigator.mozConnection ||
-    navigator.webkitConnection;
+/* ===== Error Boundary ===== */
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
 
-  const effectiveType = conn?.effectiveType || "";
-  const slow =
-    conn?.saveData ||
-    /(2g|slow-2g)/i.test(effectiveType) ||
-    /(^|-)2g$/i.test(effectiveType);
-
-  return !!slow;
-}
-
-function requestIdle(cb, timeout = 2000) {
-  if ("requestIdleCallback" in window) {
-    return window.requestIdleCallback(cb, { timeout });
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
-  return window.setTimeout(cb, Math.min(timeout, 1200));
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-screen flex items-center justify-center text-white bg-black">
+          Something went wrong. Please refresh.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
-function cancelIdle(id) {
-  if (typeof id === "number") clearTimeout(id);
-  else if ("cancelIdleCallback" in window) window.cancelIdleCallback(id);
-}
+/* ===== Prefetch ===== */
+const PREFETCH_MAP = {
+  "/services": () => import("./pages/ServicesPage"),
+  "/booking": () => import("./pages/BookingPage"),
+  "/about": () => import("./pages/AboutPage"),
+};
 
-/* -------------------- Prefetching <Link> (safe + once) -------------------- */
-const PrefetchLink = memo(function PrefetchLink({ to, children, ...props }) {
-  const prefetchedRef = useRef(false);
+const PrefetchLink = memo(({ to, children, ...props }) => {
+  const done = useRef(false);
 
-  const handlePrefetch = useCallback(() => {
-    if (prefetchedRef.current) return;
-    if (isSlowConnection()) return;
-
+  const prefetch = useCallback(() => {
+    if (done.current) return;
     const fn = PREFETCH_MAP[to];
     if (fn) {
-      prefetchedRef.current = true;
+      done.current = true;
       fn();
     }
   }, [to]);
 
   return (
-    <Link
-      to={to}
-      onPointerEnter={handlePrefetch}
-      onFocus={handlePrefetch}
-      {...props}
-    >
+    <Link to={to} onPointerEnter={prefetch} onFocus={prefetch} {...props}>
       {children}
     </Link>
   );
 });
 
-/* -------------------- Scroll reset -------------------- */
-const ScrollToTop = memo(function ScrollToTop() {
+/* ===== Scroll Reset ===== */
+const ScrollToTop = () => {
   const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }, [pathname]);
+  useEffect(() => window.scrollTo(0, 0), [pathname]);
   return null;
-});
+};
 
-/* -------------------- Loader -------------------- */
-const Loader = memo(function Loader() {
-  return (
-    <div className="flex justify-center items-center h-32">
-      <motion.div
-        className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"
-        animate={{ rotate: 360 }}
-        transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
-      />
-    </div>
-  );
-});
-
-/* -------------------- Page transition wrapper -------------------- */
-const PAGE_TRANSITION = Object.freeze({
-  initial: { opacity: 0.6, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-  transition: { duration: 0.22, ease: "easeOut" },
-});
-
-const PageWrapper = memo(function PageWrapper({ children }) {
-  const anim = useMemo(() => PAGE_TRANSITION, []);
-  return (
+/* ===== Loader ===== */
+const Loader = () => (
+  <div className="flex flex-col items-center justify-center h-[40vh] gap-4">
     <motion.div
-      initial={anim.initial}
-      animate={anim.animate}
-      exit={anim.exit}
-      transition={anim.transition}
-      className="min-h-screen"
-    >
-      {children}
-    </motion.div>
-  );
-});
+      className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full"
+      animate={{ rotate: 360 }}
+      transition={{ repeat: Infinity, duration: 0.7, ease: "linear" }}
+    />
+    <p className="text-gray-400 text-sm">Loading...</p>
+  </div>
+);
 
-/* -------------------- App -------------------- */
+/* ===== Page Wrapper ===== */
+const PageWrapper = ({ children }) => (
+  <motion.div
+    initial={{ opacity: 0.6, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    transition={{ duration: 0.25 }}
+    className="min-h-screen flex flex-col"
+  >
+    <Header />
+    <main className="flex-1">{children}</main>
+    <Footer />
+  </motion.div>
+);
+
+/* ===== Protected Route ===== */
+const ProtectedRoute = ({ children }) => {
+  const isAuth = localStorage.getItem("admin-auth") === "true";
+  return isAuth ? children : <Navigate to="/admin/login" replace />;
+};
+
+/* ===== App ===== */
 export default function App() {
-  const [selectedCar, setSelectedCar] = useState(null);
   const location = useLocation();
 
-  // Prefetch common routes once, in idle time (smart + safe)
+  // ✅ Persist booking state
+  const [selectedCar, setSelectedCar] = useState(() => {
+    return localStorage.getItem("selectedCar") || null;
+  });
+
   useEffect(() => {
-    if (isSlowConnection()) return;
+    if (selectedCar) {
+      localStorage.setItem("selectedCar", selectedCar);
+    }
+  }, [selectedCar]);
 
-    const id = requestIdle(() => {
-      // Only prefetch routes user is MOST likely to visit
-      ["/services", "/about", "/contact"].forEach((p) => {
-        const fn = PREFETCH_MAP[p];
-        if (fn) fn();
-      });
-    }, 2500);
-
-    return () => cancelIdle(id);
+  // ✅ Smart prefetch (focus on conversion)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      PREFETCH_MAP["/services"]?.();
+      PREFETCH_MAP["/booking"]?.();
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       <ScrollToTop />
 
       <Suspense fallback={<Loader />}>
@@ -252,6 +206,7 @@ export default function App() {
               }
             />
 
+            {/* Admin */}
             <Route
               path="/admin/login"
               element={
@@ -264,24 +219,21 @@ export default function App() {
             <Route
               path="/admin/dashboard"
               element={
-                <PageWrapper>
-                  <AdminDashboard />
-                </PageWrapper>
+                <ProtectedRoute>
+                  <PageWrapper>
+                    <AdminDashboard />
+                  </PageWrapper>
+                </ProtectedRoute>
               }
             />
 
-            {/* Redirects / legacy */}
-            <Route
-              path="/connect"
-              element={<Navigate to="/gallery" replace />}
-            />
-
-            {/* 404 fallback (important after hosting) */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Redirect */}
+            <Route path="/connect" element={<Navigate to="/gallery" />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </AnimatePresence>
       </Suspense>
-    </>
+    </ErrorBoundary>
   );
 }
 

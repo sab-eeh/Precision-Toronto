@@ -29,8 +29,6 @@ const CarModelViewer = lazy(() => import("../components/ui/CarModelViewer"));
 const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
 const BeforeAfterSlider = lazy(() => import("../components/BeforeAfterSlider"));
 const FloatingContact = lazy(() => import("../components/FloatingContact"));
-const Header = lazy(() => import("../layout/Header"));
-const Footer = lazy(() => import("../layout/Footer"));
 const ReviewsCarousel = lazy(() => import("../components/ReviewsCarousel"));
 
 // Small skeleton
@@ -305,17 +303,6 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0A0F11] via-[#0E1417] to-[#0A0F11] text-white overflow-x-hidden">
-      {/* Header */}
-      <Suspense
-        fallback={
-          <div className="p-4">
-            <Skeleton className="h-14 w-full rounded-xl" />
-          </div>
-        }
-      >
-        <Header />
-      </Suspense>
-
       {/* Floating Contact */}
       <div ref={floatingContactRef}>
         {floatingContactOnScreen ? (
@@ -628,17 +615,6 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
           <div className="py-10" />
         )}
       </div>
-
-      {/* Footer */}
-      <Suspense
-        fallback={
-          <div className="p-4">
-            <Skeleton className="h-40 w-full" />
-          </div>
-        }
-      >
-        <Footer />
-      </Suspense>
     </div>
   );
 });

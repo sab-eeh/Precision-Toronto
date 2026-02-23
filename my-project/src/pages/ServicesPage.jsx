@@ -29,8 +29,6 @@ import { parseDuration, formatDuration } from "../utils/duration";
 /* Lazy Components */
 const FloatingContact = lazy(() => import("../components/FloatingContact"));
 const ProgressTracker = lazy(() => import("../components/ProgressTracker"));
-const Header = lazy(() => import("../layout/Header"));
-const Footer = lazy(() => import("../layout/Footer"));
 
 /* Constants */
 const CATEGORIES = [
@@ -231,10 +229,6 @@ const ServicesPage = () => {
       />
 
       <div className="min-h-screen bg-gradient-to-b from-[#0A0F11] to-[#101518] text-white">
-        <Suspense fallback={<div className="h-20 bg-gray-900 animate-pulse" />}>
-          <Header />
-        </Suspense>
-
         <Suspense fallback={null}>
           <FloatingContact />
         </Suspense>
@@ -778,10 +772,6 @@ const ServicesPage = () => {
             </section>
           )}
         </main>
-
-        <Suspense fallback={<div className="h-40 bg-gray-900 animate-pulse" />}>
-          <Footer />
-        </Suspense>
       </div>
     </>
   );
