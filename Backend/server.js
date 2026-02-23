@@ -3,11 +3,9 @@ require("dotenv").config();
 const http = require("http");
 const app = require("./app");
 const connectDB = require("./config/db");
-const { securityMiddleware } = require("./middleware/security");
 
 const PORT = Number(process.env.PORT || 5000);
 
-securityMiddleware(app);
 // Connect DB first, then start server
 (async () => {
   try {
