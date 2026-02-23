@@ -66,7 +66,12 @@ const PrefetchLink = memo(({ to, children, ...props }) => {
   }, [to]);
 
   return (
-    <Link to={to} onPointerEnter={prefetch} onFocus={prefetch} {...props}>
+    <Link
+      to={to}
+      onPointerEnter={prefetch}
+      onFocus={prefetch}
+      {...props}
+    >
       {children}
     </Link>
   );
@@ -143,6 +148,7 @@ export default function App() {
       <Suspense fallback={<Loader />}>
         <AnimatePresence mode="wait" initial={false}>
           <Routes location={location} key={location.pathname}>
+            
             <Route
               path="/"
               element={
