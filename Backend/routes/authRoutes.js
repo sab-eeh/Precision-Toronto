@@ -1,4 +1,3 @@
-// backend/src/routes/authRoutes.js
 const express = require("express");
 const {
   login,
@@ -7,16 +6,18 @@ const {
   dashboard,
   registerAdminIfFirst,
 } = require("../controllers/authController");
-const { protect } = require("../middleware/authMiddleware");
+
+const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
-router.get("/dashboard", protect, dashboard);
 
-// Only use once to create first admin
+router.get("/dashboard", protect, adminOnly, dashboard);
+
+// 🔥 REMOVE AFTER FIRST USE
 router.post("/register-admin", registerAdminIfFirst);
 
 module.exports = router;

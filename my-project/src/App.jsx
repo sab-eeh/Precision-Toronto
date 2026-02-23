@@ -5,7 +5,6 @@ import React, {
   lazy,
   memo,
   useCallback,
-  useMemo,
   useRef,
 } from "react";
 import { Routes, Route, useLocation, Link, Navigate } from "react-router-dom";
@@ -14,6 +13,9 @@ import { motion, AnimatePresence } from "framer-motion";
 /* ===== Layout ===== */
 import Header from "./layout/Header";
 import Footer from "./layout/Footer";
+
+/* ===== Auth ===== */
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 /* ===== Lazy Pages ===== */
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -28,7 +30,10 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 /* ===== Error Boundary ===== */
 class ErrorBoundary extends React.Component {
-  state = { hasError: false };
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
   static getDerivedStateFromError() {
     return { hasError: true };
@@ -66,12 +71,7 @@ const PrefetchLink = memo(({ to, children, ...props }) => {
   }, [to]);
 
   return (
-    <Link
-      to={to}
-      onPointerEnter={prefetch}
-      onFocus={prefetch}
-      {...props}
-    >
+    <Link to={to} onPointerEnter={prefetch} onFocus={prefetch} {...props}>
       {children}
     </Link>
   );
@@ -80,7 +80,11 @@ const PrefetchLink = memo(({ to, children, ...props }) => {
 /* ===== Scroll Reset ===== */
 const ScrollToTop = () => {
   const { pathname } = useLocation();
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [pathname]);
+
   return null;
 };
 
@@ -96,7 +100,7 @@ const Loader = () => (
   </div>
 );
 
-/* ===== Page Wrapper ===== */
+/* ===== Layout Wrapper ===== */
 const PageWrapper = ({ children }) => (
   <motion.div
     initial={{ opacity: 0.6, y: 10 }}
@@ -111,17 +115,32 @@ const PageWrapper = ({ children }) => (
   </motion.div>
 );
 
-/* ===== Protected Route ===== */
+/* ===== Protected Route (JWT BASED) ===== */
 const ProtectedRoute = ({ children }) => {
-  const isAuth = localStorage.getItem("admin-auth") === "true";
-  return isAuth ? children : <Navigate to="/admin/login" replace />;
+  const { isAuth } = useAuth();
+
+  if (!isAuth) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  return children;
 };
 
-/* ===== App ===== */
-export default function App() {
+/* ===== Prevent Access to Login if Already Logged In ===== */
+const AdminLoginWrapper = ({ children }) => {
+  const { isAuth } = useAuth();
+
+  if (isAuth) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  return children;
+};
+
+/* ===== MAIN APP CONTENT ===== */
+function AppContent() {
   const location = useLocation();
 
-  // ✅ Persist booking state
   const [selectedCar, setSelectedCar] = useState(() => {
     return localStorage.getItem("selectedCar") || null;
   });
@@ -132,23 +151,24 @@ export default function App() {
     }
   }, [selectedCar]);
 
-  // ✅ Smart prefetch (focus on conversion)
+  /* ===== Smart Prefetch ===== */
   useEffect(() => {
     const timer = setTimeout(() => {
       PREFETCH_MAP["/services"]?.();
       PREFETCH_MAP["/booking"]?.();
     }, 1500);
+
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <ErrorBoundary>
+    <>
       <ScrollToTop />
 
       <Suspense fallback={<Loader />}>
         <AnimatePresence mode="wait" initial={false}>
           <Routes location={location} key={location.pathname}>
-            
+            {/* ===== Public Routes ===== */}
             <Route
               path="/"
               element={
@@ -212,12 +232,14 @@ export default function App() {
               }
             />
 
-            {/* Admin */}
+            {/* ===== Admin ===== */}
             <Route
               path="/admin/login"
               element={
                 <PageWrapper>
-                  <AdminLogin />
+                  <AdminLoginWrapper>
+                    <AdminLogin />
+                  </AdminLoginWrapper>
                 </PageWrapper>
               }
             />
@@ -226,19 +248,31 @@ export default function App() {
               path="/admin/dashboard"
               element={
                 <ProtectedRoute>
-                  <PageWrapper>
-                    <AdminDashboard />
-                  </PageWrapper>
+                  <AdminDashboard />
                 </ProtectedRoute>
               }
             />
 
-            {/* Redirect */}
-            <Route path="/connect" element={<Navigate to="/gallery" />} />
-            <Route path="*" element={<Navigate to="/" />} />
+            {/* ===== Redirects ===== */}
+            <Route
+              path="/connect"
+              element={<Navigate to="/gallery" replace />}
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
       </Suspense>
+    </>
+  );
+}
+
+/* ===== ROOT APP ===== */
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { parseDuration } from "../utils/duration";
+import { useAuth } from "../context/AuthContext";
 
 const API = "http://localhost:5000/api";
 const STATUS_OPTIONS = [
@@ -154,6 +155,8 @@ function isNewBooking(createdAt, minutes = 10) {
 }
 
 export default function AdminDashboard() {
+  const { logout } = useAuth();
+
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -182,16 +185,16 @@ export default function AdminDashboard() {
     ];
   }
 
-  // auth gate + initial fetch
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
+    const token = localStorage.getItem("token");
     if (!token) {
-      navigate("/admin/login");
+      navigate("/admin/login", { replace: true });
       return;
     }
+
     fetchBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate]);
+  }, []);
 
   async function fetchBookings() {
     try {
@@ -460,18 +463,23 @@ export default function AdminDashboard() {
     setPage(1);
   }, [q, statusFilter, sortKey, sortDir, pageSize]);
 
-  // Update page selection when pageItems change
   useEffect(() => {
-    if (selectAllOnPage) {
-      const next = new Set(selectedIds);
-      pageItems.forEach((b) => next.add(b._id));
-      setSelectedIds(next);
-    } else {
-      // ensure if selectAllOnPage is false, we do not remove existing cross-page selections
-      // but we don't auto-clear anything here.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageItems]);
+    if (!selectAllOnPage) return;
+
+    setSelectedIds((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+
+      pageItems.forEach((b) => {
+        if (!next.has(b._id)) {
+          next.add(b._id);
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev; // 🔥 KEY FIX
+    });
+  }, [pageItems, selectAllOnPage]);
 
   // Toggle one selection
   function toggleSelect(id) {
@@ -538,8 +546,8 @@ export default function AdminDashboard() {
           </div>
           <button
             onClick={() => {
-              localStorage.removeItem("adminToken");
-              navigate("/admin/login");
+              logout();
+              navigate("/admin/login", { replace: true });
             }}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900/60 hover:bg-gray-900/80 border border-gray-800 transition"
             title="Logout"
