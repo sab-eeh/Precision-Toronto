@@ -34,43 +34,37 @@ const MOBILE_LINKS = [
 ];
 
 const CONTACT_INFO = [
-  { icon: Mail, text: "precisiontoronto@gmail.com", color: "text-blue-400" },
-  {
-    icon: MapPin,
-    text: "Serving Greater Toronto Area",
-    color: "text-blue-400",
-  },
-  { icon: Phone, text: "+1 647-685-7153", color: "text-blue-400" },
+  { icon: Mail, text: "precisiontoronto@gmail.com" },
+  { icon: MapPin, text: "Serving Greater Toronto Area" },
+  { icon: Phone, text: "+1 647-685-7153" },
 ];
 
+// =================== Animations =================== //
+
 const headerVariants = {
-  visible: { y: 0, transition: { duration: 0.35, ease: "easeOut" } },
-  hidden: { y: -120, transition: { duration: 0.35, ease: "easeIn" } },
+  visible: { y: 0, transition: { duration: 0.3 } },
+  hidden: { y: -110, transition: { duration: 0.3 } },
 };
 
 const mobileMenuVariants = {
-  hidden: { opacity: 0, y: -15 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, staggerChildren: 0.05 },
-  },
-  exit: { opacity: 0, y: -15, transition: { duration: 0.25 } },
+  hidden: { opacity: 0, y: -10 },
+  visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.05 } },
+  exit: { opacity: 0, y: -10 },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, x: -10 },
+  hidden: { opacity: 0, x: -8 },
   visible: { opacity: 1, x: 0 },
 };
 
 // =================== Helpers =================== //
 
 const scrollToSection = (id) => {
-  const section = document.getElementById(id);
-  if (section) section.scrollIntoView({ behavior: "smooth" });
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth" });
 };
 
-// =================== Memoized Components =================== //
+// =================== Components =================== //
 
 const NavLinkItem = memo(({ to, label, state, isActive, onClick }) => {
   const navigate = useNavigate();
@@ -93,7 +87,7 @@ const NavLinkItem = memo(({ to, label, state, isActive, onClick }) => {
   return (
     <button
       onClick={handleClick}
-      className={`font-medium transition-colors ${
+      className={`text-sm font-medium transition-colors whitespace-nowrap ${
         isActive ? "text-blue-400" : "text-gray-200 hover:text-blue-300"
       }`}
     >
@@ -102,31 +96,24 @@ const NavLinkItem = memo(({ to, label, state, isActive, onClick }) => {
   );
 });
 
-const ContactItem = memo(({ Icon, text, color }) => (
-  <div className="flex items-center gap-2">
-    <Icon className={`w-4 h-4 ${color}`} />
-    <span>{text}</span>
+const ContactItem = memo(({ Icon, text }) => (
+  <div className="flex items-center gap-2 whitespace-nowrap">
+    <Icon className="w-4 h-4 text-blue-400" />
+    <span className="text-xs">{text}</span>
   </div>
 ));
 
-// =================== Custom Hook =================== //
+// =================== Hook =================== //
 
 const useScrollDirection = (threshold = 80) => {
   const [show, setShow] = useState(true);
   const lastY = useRef(0);
-  const ticking = useRef(false);
 
   useEffect(() => {
     const onScroll = () => {
-      if (!ticking.current) {
-        window.requestAnimationFrame(() => {
-          const currentY = window.scrollY;
-          setShow(!(currentY > lastY.current && currentY > threshold));
-          lastY.current = currentY;
-          ticking.current = false;
-        });
-        ticking.current = true;
-      }
+      const currentY = window.scrollY;
+      setShow(!(currentY > lastY.current && currentY > threshold));
+      lastY.current = currentY;
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -136,7 +123,7 @@ const useScrollDirection = (threshold = 80) => {
   return show;
 };
 
-// =================== Header Component =================== //
+// =================== Header =================== //
 
 const Header = memo(() => {
   const location = useLocation();
@@ -145,106 +132,100 @@ const Header = memo(() => {
 
   const isActive = (path) => location.pathname === path;
 
-  // Close mobile menu on route change
   useEffect(() => setMenuOpen(false), [location.pathname]);
 
-  // Scroll if coming with state.scrollTo
-  useEffect(
-    () => location.state?.scrollTo && scrollToSection(location.state.scrollTo),
-    [location]
-  );
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      scrollToSection(location.state.scrollTo);
+    }
+  }, [location]);
 
   return (
     <motion.header
       variants={headerVariants}
       animate={showHeader ? "visible" : "hidden"}
-      className="bg-[#14181E]/95 backdrop-blur-md sticky top-0 z-50 shadow-md"
+      className="sticky top-0 z-50 bg-[#14181E]/95 backdrop-blur-md border-b border-[#1F242C]"
     >
-      {/* Desktop Top Bar */}
-      <div className="hidden md:block border-b border-black bg-[#0c0c0c]">
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-2 text-sm text-gray-300">
-          <div className="flex items-center gap-6">
-            {CONTACT_INFO.map(({ icon, text, color }) => (
-              <ContactItem key={text} Icon={icon} text={text} color={color} />
+      {/* ===== Top Bar ===== */}
+      <div className="hidden md:block bg-[#0c0c0c] border-b border-black">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-2 flex items-center justify-between text-gray-300">
+          <div className="flex items-center gap-4 lg:gap-6 overflow-hidden">
+            {CONTACT_INFO.map((item) => (
+              <ContactItem key={item.text} Icon={item.icon} text={item.text} />
             ))}
           </div>
 
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-2 text-[#FFD700]">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 text-[#FFD700] text-sm">
               <Star className="w-4 h-4 fill-current" />
-              <span className="font-semibold">4.9/5</span>
-              <span className="text-gray-400">Google Reviews</span>
+              <span className="font-semibold">4.9</span>
             </div>
-            <a
-              href="https://www.instagram.com/precision.to"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:scale-110 transition-transform text-blue-400"
-            >
-              <Instagram className="w-5 h-5" />
-            </a>
-            <a
-              href="https://wa.me/16476857153"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:scale-110 transition-transform text-blue-400"
-            >
-              <MessageCircle className="w-5 h-5" />
-            </a>
-            <a
-              href="https://www.tiktok.com/@precision.to"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:scale-110 transition-transform text-blue-400"
-            >
-              <FaTiktok className="w-4 h-4" />
-            </a>
+
+            <div className="flex items-center gap-3 text-blue-400">
+              <a
+                href="https://www.instagram.com/precision.to"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Instagram className="w-5 h-5 hover:scale-110 transition" />
+              </a>
+              <a
+                href="https://wa.me/16476857153"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <MessageCircle className="w-5 h-5 hover:scale-110 transition" />
+              </a>
+              <a
+                href="https://www.tiktok.com/@precision.to"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaTiktok className="w-4 h-4 hover:scale-110 transition" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-2">
+      {/* ===== Main Header ===== */}
+      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-3 flex items-center justify-between">
         {/* Logo */}
-        <div className="relative">
+        <div className="flex-shrink-0">
           <img
             src="/logo.png"
-            className="w-32 mx-auto shadow-lg 
-               [mask-image:linear-gradient(to_bottom,black_80%,transparent)]
-               [-webkit-mask-image:linear-gradient(to_bottom,black_80%,transparent)]"
+            alt="logo"
+            className="w-28 sm:w-32 object-contain"
           />
-
-          {/* subtle glow blend */}
-          <div className="absolute inset-0 bg-black/10 blur-xl -z-10" />
         </div>
 
         {/* Desktop Nav */}
-        <div className="flex items-center gap-4">
-          <nav className="hidden md:flex items-center gap-10">
-            {DESKTOP_LINKS.map((link) => (
-              <NavLinkItem
-                key={link.label}
-                {...link}
-                isActive={isActive(link.to)}
-              />
-            ))}
-          </nav>
+        <div className="hidden md:flex items-center gap-8 lg:gap-10">
+          {DESKTOP_LINKS.map((link) => (
+            <NavLinkItem
+              key={link.label}
+              {...link}
+              isActive={isActive(link.to)}
+            />
+          ))}
+        </div>
 
+        {/* CTA + Mobile Toggle */}
+        <div className="flex items-center gap-3">
           <PrefetchLink to="/" className="hidden md:block">
             <motion.button
-              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="bg-blue-400 text-black px-5 py-2 mx-4 rounded-lg shadow-md"
+              whileHover={{ scale: 1.05 }}
+              className="bg-blue-400 text-black text-sm font-medium px-5 py-2 rounded-lg shadow-md whitespace-nowrap"
             >
               Book Now
             </motion.button>
           </PrefetchLink>
 
-          {/* Mobile Toggle */}
+          {/* Mobile Button */}
           <button
-            aria-label="Toggle menu"
-            className="md:hidden p-2 rounded-md border border-[#2A2F36] hover:bg-[#FFD700]/10 transition"
             onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 rounded-md border border-[#2A2F36] hover:bg-[#1F242C] transition"
           >
             {menuOpen ? (
               <X className="w-6 h-6 text-blue-400" />
@@ -255,7 +236,7 @@ const Header = memo(() => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* ===== Mobile Menu ===== */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
@@ -263,9 +244,9 @@ const Header = memo(() => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="md:hidden w-full bg-[#14181E] border-t border-[#1F242C] shadow-lg absolute left-0 z-40"
+            className="md:hidden absolute top-full left-0 w-full bg-[#14181E] border-t border-[#1F242C] shadow-xl"
           >
-            <div className="px-6 py-6 space-y-6">
+            <div className="px-5 py-6 space-y-6">
               <motion.ul className="space-y-5">
                 {MOBILE_LINKS.map((link) => (
                   <motion.li key={link.label} variants={itemVariants}>
@@ -278,18 +259,17 @@ const Header = memo(() => {
                 ))}
               </motion.ul>
 
-              <div className="pt-6 border-t border-[#1F242C] space-y-4 text-gray-300">
+              <div className="border-t border-[#1F242C] pt-5 space-y-4 text-gray-300">
                 <div className="flex items-center gap-2 text-[#FFD700]">
                   <Star className="w-4 h-4 fill-current" />
-                  <span className="font-semibold">4.9/5</span>
-                  <span className="text-gray-400">Google Reviews</span>
+                  <span className="font-semibold">4.9/5 Google</span>
                 </div>
-                {CONTACT_INFO.slice(-2).map(({ icon: Icon, text, color }) => (
+
+                {CONTACT_INFO.slice(1).map((item) => (
                   <ContactItem
-                    key={text}
-                    Icon={Icon}
-                    text={text}
-                    color={color}
+                    key={item.text}
+                    Icon={item.icon}
+                    text={item.text}
                   />
                 ))}
               </div>

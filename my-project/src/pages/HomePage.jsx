@@ -326,7 +326,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
       </div>
 
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden translate-y-[-40px] md:translate-y-0">
+      <section className="relative min-h-[92vh] md:min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background Image */}
         <img
           src={heroBackground}
@@ -335,52 +335,53 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
           loading="eager"
         />
 
-        {/* Dark Overlay */}
+        {/* Overlay */}
         <div className="absolute inset-0 bg-black/60" />
 
+        {/* Content */}
         <motion.div
-          className="relative z-10 text-center px-6 max-w-5xl mx-auto"
+          className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 text-center"
           {...heroAnim}
         >
-          {/* Main Headline */}
-          <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight tracking-tight">
+          {/* Headline */}
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.15] tracking-tight">
             PRECISION ISN’T A SERVICE.
-            <br />
+            <br className="hidden sm:block" />
             IT’S A STANDARD.
           </h1>
 
           {/* Subheadline */}
-          <p className="mt-6 text-lg md:text-3xl text-gray-300">
+          <p className="mt-4 sm:mt-5 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300">
             Experience True Vehicle Care
           </p>
 
           {/* Supporting Line */}
-          <p className="mt-3 text-base font-semibold md:text-2xl text-gray-300">
+          <p className="mt-2 sm:mt-3 text-sm sm:text-base md:text-lg lg:text-xl font-medium text-gray-300 leading-relaxed">
             Premium Detailing & Protection Services
-            <br />
+            <br className="hidden sm:block" />
             Serving Durham Region & Greater Toronto Area
           </p>
 
-          {/* CTA Button */}
+          {/* CTA */}
           <motion.button
             onClick={() =>
               document.getElementById("booking-section")?.scrollIntoView({
                 behavior: prefersReducedMotion ? "auto" : "smooth",
               })
             }
-            className="mt-8 px-10 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-2xl transition-all"
+            className="mt-6 sm:mt-8 px-8 sm:px-10 py-3.5 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-semibold rounded-full shadow-xl transition-all w-full sm:w-auto"
             whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
             whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
           >
             Get Started
           </motion.button>
 
-          {/* Star Rating Section */}
-          <div className="mt-6 flex flex-col items-center">
-            <div className="flex gap-12 text-yellow-400 text-3xl">
-              {"★ ★ ★ ★ ★"}
+          {/* Rating */}
+          <div className="mt-5 sm:mt-6 flex flex-col items-center">
+            <div className="flex gap-1 text-yellow-400 text-xl sm:text-2xl md:text-3xl tracking-wide">
+              ★★★★★
             </div>
-            <p className="mt-2 text-gray-300 text-lg">
+            <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm md:text-base text-gray-300">
               5-Star Rated Detailing Service
             </p>
           </div>
@@ -509,104 +510,107 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
         </section>
       </div>
 
-      {/* Before & After (static) */}
-      <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11] py-20">
-        <motion.h2
-          className="text-3xl md:text-4xl font-bold text-blue-400 text-center mb-6"
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          viewport={{ once: true }}
-        >
-          Stunning Before & After Results
-        </motion.h2>
+      {/* ===== Before & After (Grid) ===== */}
+      <section className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11] py-16 sm:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          {/* Heading */}
+          <motion.h2
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-blue-400 text-center"
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            viewport={{ once: true }}
+          >
+            Stunning Before & After Results
+          </motion.h2>
 
-        <motion.p
-          className="text-gray-400 text-center max-w-2xl mx-auto mb-12 px-4 leading-relaxed"
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.08 }}
-          viewport={{ once: true }}
-        >
-          Witness the difference precision makes — from worn-out finishes to
-          showroom-level brilliance.
-        </motion.p>
+          {/* Subtext */}
+          <motion.p
+            className="mt-4 text-sm sm:text-base md:text-lg text-gray-400 text-center max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.08 }}
+            viewport={{ once: true }}
+          >
+            Witness the difference precision makes — from worn-out finishes to
+            showroom-level brilliance.
+          </motion.p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 container mx-auto px-6">
-          {beforeAfterPairs.map((pair, idx) => {
-            const isTapped = activeIndex === idx;
+          {/* Grid */}
+          <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {beforeAfterPairs.map((pair, idx) => {
+              const isTapped = activeIndex === idx;
 
-            return (
-              <motion.figure
-                key={idx}
-                className="relative overflow-hidden rounded-xl shadow-lg group cursor-pointer select-none"
-                initial={{ opacity: 0, scale: 0.96 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.35, delay: idx * 0.05 }}
-                viewport={{ once: true }}
-                onClick={() => handleToggle(idx)}
-              >
-                {/* BEFORE image */}
-                <img
-                  src={pair.before}
-                  alt="Before detailing"
-                  className={[
-                    "w-full h-64 md:h-72 lg:h-80 object-cover absolute inset-0 transition-opacity duration-500",
-                    // Desktop hover
-                    "md:group-hover:opacity-0",
-                    // Mobile tap toggle
-                    isTapped ? "opacity-0" : "opacity-100",
-                  ].join(" ")}
-                  loading="lazy"
-                  decoding="async"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
+              return (
+                <motion.figure
+                  key={idx}
+                  className="relative overflow-hidden rounded-xl shadow-md group cursor-pointer select-none"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.35, delay: idx * 0.05 }}
+                  viewport={{ once: true }}
+                  onClick={() => handleToggle(idx)}
+                >
+                  {/* BEFORE */}
+                  <img
+                    src={pair.before}
+                    alt="Before detailing"
+                    className={[
+                      "absolute inset-0 w-full h-full object-cover transition-opacity duration-500",
+                      "md:group-hover:opacity-0",
+                      isTapped ? "opacity-0" : "opacity-100",
+                    ].join(" ")}
+                    loading="lazy"
+                  />
 
-                <span className="hidden md:inline-flex absolute top-3 left-3 bg-blue-600 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
-                  Before
-                </span>
+                  <span className="hidden md:inline-flex absolute top-3 left-3 bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-md shadow z-10">
+                    Before
+                  </span>
 
-                {/* AFTER image */}
-                <img
-                  src={pair.after}
-                  alt="After detailing"
-                  className="w-full h-64 md:h-72 lg:h-80 object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
+                  {/* AFTER */}
+                  <img
+                    src={pair.after}
+                    alt="After detailing"
+                    className="w-full h-[240px] sm:h-[260px] md:h-[280px] lg:h-[300px] object-cover"
+                    loading="lazy"
+                  />
 
-                <span className="hidden md:inline-flex absolute top-3 right-3 bg-blue-800 text-white text-xs md:text-sm font-semibold px-3 py-1 rounded-lg shadow-md z-10">
-                  After
-                </span>
+                  <span className="hidden md:inline-flex absolute top-3 right-3 bg-blue-800 text-white text-xs font-semibold px-3 py-1 rounded-md shadow z-10">
+                    After
+                  </span>
 
-                {/* Mobile hint overlay */}
-                <div className="md:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
-                  <div className="bg-black/55 text-white text-xs font-medium px-4 py-2 rounded-full backdrop-blur-sm border border-white/10 shadow-lg">
-                    {isTapped ? "Tap to view BEFORE" : "Tap to view AFTER"}
+                  {/* Mobile Hint */}
+                  <div className="md:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-20">
+                    <div className="bg-black/60 text-white text-[11px] font-medium px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
+                      {isTapped ? "Tap to view BEFORE" : "Tap to view AFTER"}
+                    </div>
                   </div>
-                </div>
-              </motion.figure>
-            );
-          })}
+                </motion.figure>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      {/* Heavy BeforeAfter slider */}
-      <div
+      {/* ===== Heavy Slider Section ===== */}
+      <section
         ref={beforeAfterRef}
-        className="py-20 px-6 bg-gradient-to-b from-[#0F1518] to-[#0A0F11]"
+        className="bg-gradient-to-b from-[#0F1518] to-[#0A0F11] py-16 sm:py-20"
       >
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           {beforeAfterOnScreen ? (
-            <Suspense fallback={<Skeleton className="h-[420px] w-full" />}>
+            <Suspense
+              fallback={
+                <Skeleton className="h-[300px] sm:h-[380px] md:h-[420px] w-full rounded-xl" />
+              }
+            >
               <BeforeAfterSlider />
             </Suspense>
           ) : (
-            <Skeleton className="h-[420px] w-full" />
+            <Skeleton className="h-[300px] sm:h-[380px] md:h-[420px] w-full rounded-xl" />
           )}
         </div>
-      </div>
+      </section>
 
       {/* Reviews */}
       <div ref={reviewsRef}>

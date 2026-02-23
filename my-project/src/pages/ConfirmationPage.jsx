@@ -231,12 +231,21 @@ export default function ConfirmationPage() {
       ? `$${bookingData.totalPrice.toFixed(2)}`
       : safeText(bookingData.totalPrice, "N/A");
 
+  // ONLY UI/STRUCTURE UPDATED — LOGIC UNCHANGED
+
+  const InfoBlock = ({ title, children }) => (
+    <div>
+      <h3 className="text-sm font-semibold text-gray-400 mb-1">{title}</h3>
+      {children}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#0A0F1C] text-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#0A0F11] via-[#0D1418] to-[#101518] text-white overflow-x-hidden">
       <Title>Confirm Booking | Precision</Title>
       <Meta name="description" content="Confirm your booking details." />
 
-      <Suspense fallback={<div className="h-20 bg-gray-800 animate-pulse" />}>
+      <Suspense fallback={<div className="h-16 bg-gray-900 animate-pulse" />}>
         <Header />
       </Suspense>
 
@@ -244,141 +253,140 @@ export default function ConfirmationPage() {
         <FloatingContact />
       </Suspense>
 
-      <Suspense fallback={<div className="h-6 bg-gray-700 animate-pulse" />}>
+      <Suspense fallback={<div className="h-2 bg-gray-800 animate-pulse" />}>
         <ProgressTracker currentStep={4} />
       </Suspense>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center gap-3">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 md:py-10">
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
           <Button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-300 hover:text-white transition"
+            className="w-fit flex items-center gap-2 text-gray-300 hover:text-white"
           >
             <ArrowLeft size={18} /> Back
           </Button>
-          <h1 className="text-3xl font-bold">Back to Booking</h1>
+
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-left sm:text-right">
+            {confirmed ? "Booking Confirmed" : "Review Booking"}
+          </h1>
         </div>
 
-        <div className="max-w-3xl mx-auto">
-          {/* Success Header */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center bg-primary/10">
-              <CheckCircle className="w-10 h-10 text-primary" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">
-              {confirmed ? "Booking Confirmed!" : "Review Your Booking"}
-            </h1>
-            <p className="text-gray-400 text-lg">
-              {confirmed
-                ? "Your appointment has been scheduled."
-                : "Please confirm your booking details below."}
-            </p>
-            <div aria-live="polite" className="mt-2">
-              {message && <p className="text-sm text-gray-300">{message}</p>}
-              {loading && (
-                <p className="text-sm text-blue-300">Confirming booking…</p>
-              )}
-            </div>
+        {/* SUCCESS / REVIEW HEADER */}
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center bg-blue-500/10">
+            <CheckCircle className="w-8 h-8 text-blue-400" />
           </div>
 
-          {/* Booking Details */}
-          <div className="bg-[#0F1724] rounded-xl p-6 mb-6 space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Services</h3>
-              <p className="text-gray-300">{servicesText}</p>
-              {addonsText !== "None" && (
-                <p className="text-sm text-gray-400 mt-1">
-                  Add-ons: {addonsText}
-                </p>
-              )}
-            </div>
+          <p className="text-gray-400 text-sm md:text-base">
+            {confirmed
+              ? "Your appointment has been successfully scheduled."
+              : "Please review your details before confirming."}
+          </p>
 
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Date & Time</h3>
-              <p className="text-gray-300">{displayDate}</p>
-              <p className="text-sm text-gray-400">{displayTime}</p>
-            </div>
+          <div className="mt-2 min-h-[20px]">
+            {message && <p className="text-sm text-gray-300">{message}</p>}
+            {loading && (
+              <p className="text-sm text-blue-300">Confirming booking...</p>
+            )}
+          </div>
+        </div>
 
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Location</h3>
-              <p className="text-gray-300">{address}</p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Customer</h3>
-              <p className="text-gray-300">{customerName}</p>
-              {customerEmail && (
-                <p className="text-sm text-gray-400">{customerEmail}</p>
-              )}
-              {customerPhone && (
-                <p className="text-sm text-gray-400">{customerPhone}</p>
-              )}
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Vehicle</h3>
-              <p className="text-gray-300">{vehicleText}</p>
-              {vehicle?.color && (
-                <p className="text-sm text-gray-400">Color: {vehicle.color}</p>
-              )}
-              {vehicle?.plate && (
-                <p className="text-sm text-gray-400">Plate: {vehicle.plate}</p>
-              )}
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Payment</h3>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-400">Total Amount</span>
-                <span className="text-xl font-bold text-primary">{total}</span>
-              </div>
-              <p className="text-sm text-gray-400 mt-1">
-                Payment due at service completion
+        {/* MAIN CARD */}
+        <div className="bg-[#111827] rounded-xl p-4 md:p-6 space-y-5 shadow-lg">
+          <InfoBlock title="Services">
+            <p className="text-gray-200">{servicesText}</p>
+            {addonsText !== "None" && (
+              <p className="text-xs text-gray-400 mt-1">
+                Add-ons: {addonsText}
               </p>
-            </div>
-
-            {bookingData.notes && (
-              <div>
-                <h3 className="text-lg font-semibold mb-2">
-                  Special Instructions
-                </h3>
-                <p className="text-gray-300">{bookingData.notes}</p>
-              </div>
             )}
+          </InfoBlock>
 
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Status:</span>
-              <Badge
-                className={
-                  confirmed
-                    ? "bg-success text-white"
-                    : "bg-yellow-600 text-white"
-                }
-              >
-                {confirmed ? "Confirmed" : "Pending"}
-              </Badge>
+          <InfoBlock title="Date & Time">
+            <p className="text-gray-200">{displayDate}</p>
+            <p className="text-sm text-gray-400">{displayTime}</p>
+          </InfoBlock>
+
+          <InfoBlock title="Location">
+            <p className="text-gray-200">{address}</p>
+          </InfoBlock>
+
+          <InfoBlock title="Customer">
+            <p className="text-gray-200">{customerName}</p>
+            {customerEmail && (
+              <p className="text-xs text-gray-400">{customerEmail}</p>
+            )}
+            {customerPhone && (
+              <p className="text-xs text-gray-400">{customerPhone}</p>
+            )}
+          </InfoBlock>
+
+          <InfoBlock title="Vehicle">
+            <p className="text-gray-200">{vehicleText}</p>
+            {vehicle?.color && (
+              <p className="text-xs text-gray-400">Color: {vehicle.color}</p>
+            )}
+            {vehicle?.plate && (
+              <p className="text-xs text-gray-400">Plate: {vehicle.plate}</p>
+            )}
+          </InfoBlock>
+
+          {/* PAYMENT */}
+          <div className="pt-4 border-t border-gray-700">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">Total</span>
+              <span className="text-xl font-bold text-blue-400">{total}</span>
             </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Payment due at service completion
+            </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            {!confirmed && (
-              <Button
-                disabled={loading || disabled}
-                onClick={onConfirmClick}
-                className="w-full sm:w-auto bg-primary text-white hover:opacity-90 disabled:opacity-60"
-              >
-                {loading ? "Confirming..." : "Confirm Booking"}
-              </Button>
-            )}
-            <Button onClick={() => navigate("/")} className="w-full sm:w-auto">
-              Back to Home
+          {/* NOTES */}
+          {bookingData.notes && (
+            <InfoBlock title="Notes">
+              <p className="text-gray-200 text-sm">{bookingData.notes}</p>
+            </InfoBlock>
+          )}
+
+          {/* STATUS */}
+          <div className="flex items-center gap-2 pt-2">
+            <span className="text-xs text-gray-400">Status:</span>
+            <Badge
+              className={
+                confirmed
+                  ? "bg-green-600 text-white"
+                  : "bg-yellow-600 text-white"
+              }
+            >
+              {confirmed ? "Confirmed" : "Pending"}
+            </Badge>
+          </div>
+        </div>
+
+        {/* ACTIONS */}
+        <div className="mt-6 flex flex-col sm:flex-row gap-3">
+          {!confirmed && (
+            <Button
+              disabled={loading || disabled}
+              onClick={onConfirmClick}
+              className="w-full sm:flex-1 bg-gradient-to-r from-blue-500 to-blue-700"
+            >
+              {loading ? "Confirming..." : "Confirm Booking"}
             </Button>
-          </div>
+          )}
+
+          <Button
+            onClick={() => navigate("/")}
+            className="w-full sm:flex-1 bg-[#1A2234] hover:bg-[#223048]"
+          >
+            Back to Home
+          </Button>
         </div>
       </div>
 
-      <Suspense fallback={<div className="h-40 bg-gray-900 animate-pulse" />}>
+      <Suspense fallback={<div className="h-24 bg-gray-900 animate-pulse" />}>
         <Footer />
       </Suspense>
     </div>
