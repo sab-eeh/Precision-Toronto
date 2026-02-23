@@ -234,7 +234,7 @@ function AppContent() {
 
             {/* ===== Admin ===== */}
             <Route
-              path="/admin/login"
+              path="/secure-ptx-portal-9a7x"
               element={
                 <PageWrapper>
                   <AdminLoginWrapper>

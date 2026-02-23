@@ -18,9 +18,9 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    if (error.status === 401) {
       localStorage.removeItem("token");
-      window.location.replace("/admin/login"); // safer
+      window.location.replace("/secure-ptx-portal-9a7x");
     }
     return Promise.reject(err);
   }

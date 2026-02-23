@@ -51,9 +51,14 @@ exports.registerAdminIfFirst = async (req, res) => {
 /**
  * 🔐 LOGIN (SECURE)
  */
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
 
     const user = await User.findOne({ email }).select("+password");
 
@@ -65,6 +70,16 @@ exports.login = async (req, res) => {
 
     if (!match) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // 🔐 ADMIN CHECK
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    // 🔐 HARD LOCK EMAIL
+    if (user.email !== process.env.ADMIN_EMAIL) {
+      return res.status(403).json({ message: "Unauthorized access" });
     }
 
     const token = signToken(user);
@@ -83,7 +98,27 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+exports.updateAdminCredentials = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
+    const admin = await User.findOne({ role: "admin" }).select("+password");
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    if (email) admin.email = email;
+    if (password) admin.password = password; // will auto hash
+
+    await admin.save();
+
+    res.json({ success: true, message: "Admin updated" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 /**
  * 🔒 DASHBOARD
  */
