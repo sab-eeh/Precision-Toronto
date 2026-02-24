@@ -25,8 +25,9 @@ const Contact = () => {
     setLoading(true);
     setStatus("");
 
+    const API_BASE = import.meta.env.VITE_API_URL;
     try {
-      const res = await fetch("https://precision-toronto.onrender.com/api/contact", {
+      fetch(`${API_BASE}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
