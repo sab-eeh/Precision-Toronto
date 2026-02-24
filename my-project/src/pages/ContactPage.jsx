@@ -71,8 +71,8 @@ const Contact = () => {
         </Suspense>
 
         {/* Hero */}
-        <section className="relative min-h-[35vh] md:min-h-[40vh] flex items-center justify-center text-center bg-[url('/contact-bg.jpg')] bg-cover bg-center px-4">
-          <div className="absolute inset-0 bg-black/60" />
+        <section className="relative min-h-[35vh] md:min-h-[40vh] flex items-center justify-center text-center  bg-cover bg-center px-4">
+          <div className="absolute inset-0 bg-black/40" />
 
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -104,14 +104,14 @@ const Contact = () => {
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-5">
-                {["name", "email", "phone"].map((field) => (
+                {["Full Name", "Email", "Phone"].map((field) => (
                   <input
                     key={field}
                     type={field === "email" ? "email" : "text"}
                     name={field}
                     value={form[field]}
                     onChange={handleChange}
-                    placeholder={field.toUpperCase()}
+                    placeholder={field}
                     required={field !== "phone"}
                     className="w-full px-4 py-3 rounded-lg bg-[#0B1315] border border-gray-700 text-white focus:ring-2 focus:ring-blue-400 outline-none"
                   />
