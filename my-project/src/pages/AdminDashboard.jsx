@@ -200,7 +200,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
 
-      API.get("/api/bookings", {
+      const res = await API.get("/api/bookings", {
         headers: authHeaders(),
       });
 
@@ -297,7 +297,7 @@ export default function AdminDashboard() {
     const ok = window.confirm("Delete this booking? This cannot be undone.");
     if (!ok) return;
     try {
-      await API.delete(`/api/bookings/${id}`);
+      const res = await API.delete(`/api/bookings/${id}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Delete failed");
       setBookings((prev) => prev.filter((b) => b._id !== id));
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
       const ids = Array.from(selectedIds);
       await Promise.all(
         ids.map((id) =>
-          API.get(`/api/bookings/${id}`, {
+        API.get(`/api/bookings/${id}`, {
             method: "DELETE",
             headers: authHeaders(),
           })
