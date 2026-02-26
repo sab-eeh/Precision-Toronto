@@ -16,39 +16,6 @@ const signToken = (user) =>
   );
 
 /**
- * 🔥 REMOVE THIS AFTER FIRST ADMIN CREATION
- */
-exports.registerAdminIfFirst = async (req, res) => {
-  try {
-    const count = await User.countDocuments({ role: "admin" });
-
-    if (count > 0) {
-      return res.status(403).json({
-        message: "Admin already exists. Route disabled.",
-      });
-    }
-
-    const { name, email, password } = req.body;
-
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role: "admin",
-    });
-
-    res.json({
-      success: true,
-      message: "Admin created successfully",
-      userId: user._id,
-    });
-  } catch (err) {
-    console.error("registerAdmin error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-/**
  * 🔐 LOGIN (SECURE)
  */
 
@@ -62,7 +29,7 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email }).select("+password");
 
-    if (!user) {
+    if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
