@@ -26,8 +26,6 @@ import { parseDuration } from "../utils/duration";
 import { useAuth } from "../context/AuthContext";
 import API from "../utils/axios";
 
-API.get("/api/bookings");
-
 const STATUS_OPTIONS = [
   "pending",
   "confirmed",
@@ -188,7 +186,7 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("adminToken");
     if (!token) {
       navigate("/admin/login", { replace: true });
       return;
@@ -201,12 +199,18 @@ export default function AdminDashboard() {
   async function fetchBookings() {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/bookings`, { headers: authHeaders() });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to load bookings");
+
+      API.get("/api/bookings", {
+        headers: authHeaders(),
+      });
+
+      const data = res.data;
+
       const arr = Array.isArray(data) ? data : data.bookings || data.data || [];
+
       const deduped = uniqueById(arr);
       deduped.sort((a, b) => new Date(b.startAt) - new Date(a.startAt));
+
       setBookings(deduped);
     } catch (e) {
       console.error("Fetch bookings error:", e);
@@ -236,14 +240,13 @@ export default function AdminDashboard() {
     if (!b?._id) return;
     try {
       setToast({ type: "success", message: "Approving booking..." });
-      const res = await fetch(`${API}/bookings/${b._id}`, {
-        method: "PUT",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "confirmed" }),
+      const res = await API.put(`/api/bookings/${b._id}`, {
+        status: "confirmed",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Approve failed");
-      const updated = data.booking || data.data || data;
+      const updated = res.data.booking || res.data.data || res.data;
+
       setBookings((prev) =>
         prev.map((x) => (x._id === updated._id ? updated : x))
       );
@@ -268,14 +271,14 @@ export default function AdminDashboard() {
         prev.map((b) => (b._id === booking._id ? { ...b, services } : b))
       );
 
-      const res = await fetch(`${API}/bookings/${booking._id}`, {
-        method: "PUT",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify({ services }),
+      const res = await API.put(`/api/bookings/${booking._id}`, {
+        services,
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Update services failed");
-      const updated = data.booking || data.data || data;
+      const updated = res.data.booking || res.data.data || res.data;
+
       setBookings((prev) =>
         prev.map((b) => (b._id === updated._id ? updated : b))
       );
@@ -294,10 +297,7 @@ export default function AdminDashboard() {
     const ok = window.confirm("Delete this booking? This cannot be undone.");
     if (!ok) return;
     try {
-      const res = await fetch(`${API}/bookings/${id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
+      await API.delete(`/api/bookings/${id}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Delete failed");
       setBookings((prev) => prev.filter((b) => b._id !== id));
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
       const ids = Array.from(selectedIds);
       await Promise.all(
         ids.map((id) =>
-          fetch(`${API}/bookings/${id}`, {
+          API.get(`/api/bookings/${id}`, {
             method: "DELETE",
             headers: authHeaders(),
           })
@@ -1253,21 +1253,17 @@ export default function AdminDashboard() {
                     }
                     if (modalEditing._note !== undefined)
                       payload.notes = modalEditing._note;
-                    const res = await fetch(
-                      `${API}/bookings/${modalEditing._id}`,
-                      {
-                        method: "PUT",
-                        headers: {
-                          ...authHeaders(),
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify(payload),
-                      }
+                    const res = await API.put(
+                      `/api/bookings/${modalEditing._id}`,
+                      payload
                     );
+
                     const data = await res.json();
                     if (!res.ok)
                       throw new Error(data?.message || "Update failed");
-                    const updated = data.booking || data.data || data;
+                    const updated =
+                      res.data.booking || res.data.data || res.data;
+
                     setBookings((prev) =>
                       prev.map((b) => (b._id === updated._id ? updated : b))
                     );
