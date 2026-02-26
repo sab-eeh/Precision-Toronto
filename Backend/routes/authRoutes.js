@@ -16,6 +16,7 @@ router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
 router.put("/reset-password/:token", resetPassword);
 router.put("/update-admin", updateAdminCredentials);
+router.post("/register-admin" , registerAdminIfFirst)
 
 router.get("/dashboard", protect, adminOnly, dashboard);
 
