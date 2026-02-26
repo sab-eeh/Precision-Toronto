@@ -10,7 +10,6 @@ const bookingRoutes = require("./routes/bookingRoutes");
 const authRoutes = require("./routes/authRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 
-// Init app
 const app = express();
 
 // Trust proxy (Render / Vercel / Nginx)
@@ -38,43 +37,44 @@ app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 // ======================
-// CORS CONFIG (PRODUCTION SAFE)
-// ======================
-
-// ======================
-// CORS CONFIG (PRODUCTION SAFE)
+// ✅ CORS CONFIG (FINAL FIX)
 // ======================
 
 const allowedOrigins = [
   "http://localhost:5173",
 
-  process.env.CLIENT_URL,
-  process.env.CLIENT_URL_WWW,
+  "https://precisiontoronto.com",
+  "https://www.precisiontoronto.com",
+
+  "https://precision-toronto.vercel.app", // TEMP (remove later)
 ];
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      console.log("🌐 Origin:", origin);
+    origin: function (origin, callback) {
+      console.log("🌐 Request Origin:", origin);
 
-      // Allow server-to-server or no-origin requests (Postman, curl)
+      // Allow server-to-server requests
       if (!origin) return callback(null, true);
 
-      const isAllowed = allowedOrigins.includes(origin);
+      // Allow all precisiontoronto domains (future-proof)
+      if (origin.includes("precisiontoronto.com")) {
+        return callback(null, true);
+      }
 
-      if (isAllowed) {
+      // Allow known origins
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
       console.error("❌ CORS blocked:", origin);
-      return callback(new Error(`Not allowed by CORS: ${origin}`));
+      return callback(new Error("CORS not allowed"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 
 // ======================
 // LOGGING
@@ -91,7 +91,7 @@ if (process.env.NODE_ENV !== "test") {
 app.use(
   "/api",
   rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 min
+    windowMs: 15 * 60 * 1000,
     max: 200,
     standardHeaders: true,
     legacyHeaders: false,
@@ -139,9 +139,7 @@ app.use((req, res) => {
 app.use((err, _req, res, _next) => {
   console.error("❌ Error:", err.message);
 
-  const status = err.statusCode || 500;
-
-  res.status(status).json({
+  res.status(err.statusCode || 500).json({
     success: false,
     message:
       process.env.NODE_ENV === "production"
