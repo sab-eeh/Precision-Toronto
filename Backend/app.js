@@ -75,7 +75,6 @@ app.use(
   })
 );
 
-app.options("*", cors());
 
 // ======================
 // LOGGING
