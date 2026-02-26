@@ -186,7 +186,7 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem("adminToken");
+    const token = localStorage.getItem("token");
     if (!token) {
       navigate("/admin/login", { replace: true });
       return;
