@@ -24,8 +24,10 @@ import {
 
 import { parseDuration } from "../utils/duration";
 import { useAuth } from "../context/AuthContext";
+import API from "../utils/axios";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
+API.get("/api/bookings");
+
 const STATUS_OPTIONS = [
   "pending",
   "confirmed",
