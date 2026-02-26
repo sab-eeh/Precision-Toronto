@@ -25,7 +25,7 @@ import {
 import { parseDuration } from "../utils/duration";
 import { useAuth } from "../context/AuthContext";
 
-const API = "http://localhost:5000/api";
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const STATUS_OPTIONS = [
   "pending",
   "confirmed",
