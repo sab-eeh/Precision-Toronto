@@ -27,26 +27,17 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+    }).select("+password");
 
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const match = await user.comparePassword(password);
-
-    if (!match) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    // 🔐 ADMIN CHECK
+    // ✅ Only role-based restriction
     if (user.role !== "admin") {
       return res.status(403).json({ message: "Access denied" });
-    }
-
-    // 🔐 HARD LOCK EMAIL
-    if (user.email !== process.env.ADMIN_EMAIL) {
-      return res.status(403).json({ message: "Unauthorized access" });
     }
 
     const token = signToken(user);
