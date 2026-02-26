@@ -41,9 +41,15 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 // CORS CONFIG (PRODUCTION SAFE)
 // ======================
 
+// ======================
+// CORS CONFIG (PRODUCTION SAFE)
+// ======================
+
 const allowedOrigins = [
   "http://localhost:5173",
+
   process.env.CLIENT_URL,
+  process.env.CLIENT_URL_WWW,
 ];
 
 app.use(
@@ -51,25 +57,25 @@ app.use(
     origin: (origin, callback) => {
       console.log("🌐 Origin:", origin);
 
+      // Allow server-to-server or no-origin requests (Postman, curl)
       if (!origin) return callback(null, true);
 
-      const isAllowed = allowedOrigins.some((allowed) => {
-        if (!allowed) return false;
+      const isAllowed = allowedOrigins.includes(origin);
 
-        // Allow subdomains + variations
-        return origin.startsWith(allowed.replace(/\/$/, ""));
-      });
-
-      if (isAllowed) return callback(null, true);
+      if (isAllowed) {
+        return callback(null, true);
+      }
 
       console.error("❌ CORS blocked:", origin);
       return callback(new Error(`Not allowed by CORS: ${origin}`));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-
+app.options("*", cors());
 
 // ======================
 // LOGGING
