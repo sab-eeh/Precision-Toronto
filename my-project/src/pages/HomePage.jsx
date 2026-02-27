@@ -157,22 +157,38 @@ const CarCard = memo(function CarCard({ car, onSelect, anim }) {
       type="button"
       onClick={handleClick}
       className="
+      group
       w-full max-w-[240px]
       rounded-2xl
       text-center
       p-4
-      bg-white/5
-      backdrop-blur-md
-      border border-white/10
-      shadow-lg
-      hover:shadow-blue-400/20
-      hover:ring-2 hover:ring-cyan-400/30
-      transition
+    
+      bg-white/80
+      backdrop-blur-xl
+    
+      border border-white/20
+    
+      text-black
+    
+      shadow-[0_4px_20px_rgba(0,0,0,0.15)]
+      
+      transition-all duration-300 ease-out
+    
+      hover:-translate-y-2
+      hover:shadow-[0_10px_30px_rgba(0,0,0,0.25)]
+      hover:shadow-blue-500/10
+      hover:bg-gradient-to-b hover:from-blue-950 hover:to-blue-600
     "
       {...anim}
       style={{ willChange: "transform, opacity" }}
     >
-      <div className="h-48 flex items-center justify-center">
+      {/* TOP FADE / GLASS EFFECT */}
+      <div className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/40 to-transparent opacity-60" />
+      </div>
+
+      {/* 3D MODEL */}
+      <div className="h-48 flex items-center justify-center relative z-10">
         <Suspense fallback={<Skeleton className="h-56 w-full" />}>
           <CarModelViewer
             modelPath={car.modelPath}
@@ -182,10 +198,24 @@ const CarCard = memo(function CarCard({ car, onSelect, anim }) {
         </Suspense>
       </div>
 
-      <div className="text-center mt-5">
-        <h3 className="text-lg font-semibold">{car.label}</h3>
-        <p className="text-sm text-gray-400">{car.desc}</p>
+      {/* TEXT */}
+      <div className="text-center mt-5 relative z-10">
+        <h3 className="text-lg font-semibold tracking-tight">{car.label}</h3>
+        <p className="text-sm text-gray-600 group-hover:text-black ">
+          {car.desc}
+        </p>
       </div>
+
+      {/* BLUE GLOW (ONLY ON HOVER) */}
+      <div
+        className="
+    absolute inset-0 rounded-2xl
+    opacity-0 group-hover:opacity-100
+    transition duration-300
+    shadow-[0_0_40px_rgba(59,130,246,0.15)]
+    pointer-events-none
+  "
+      />
     </motion.button>
   );
 });
@@ -332,9 +362,9 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
         >
           {/* Headline */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.15] tracking-tight">
-            PRECISION ISN’T A SERVICE 
+            PRECISION ISN’T A SERVICE
             <br className="hidden sm:block" />
-            IT’S A STANDARD.
+            <span className="px-2">IT’S A STANDARD.</span>
           </h1>
 
           {/* Subheadline */}
@@ -413,7 +443,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
             {/* Desktop grid */}
             <div className="hidden lg:grid grid-cols-5 gap-5 justify-items-center items-center">
               {CARS.map((car, idx) => (
-                <div key={car.type} className="w-full flex justify-center">
+                <div key={car.type} className="w-full  flex justify-center">
                   {carSectionOnScreen ? (
                     <CarCard
                       car={car}
