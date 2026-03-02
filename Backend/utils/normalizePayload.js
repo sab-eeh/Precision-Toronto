@@ -7,48 +7,14 @@ dayjs.extend(timezone);
 
 const BUSINESS_TZ = "America/Toronto";
 
-/**
- * Safely converts value to number
- */
-const toNumber = (val, fallback = 0) => {
-  const num = Number(val);
-  return Number.isFinite(num) ? num : fallback;
-};
+const normalizePayload = (body) => {
+  const payload = body.body || body;
 
-/**
- * Deduplicate array based on key
- */
-const dedupe = (arr = [], keyFn) => {
-  if (!Array.isArray(arr)) return [];
-  return Array.from(new Map(arr.map((item) => [keyFn(item), item])).values());
-};
+  const { serviceType, city } = payload;
 
-/**
- * Normalize services/addons
- */
-const normalizeItems = (items, type = "service") => {
-  const durationFallback = type === "service" ? 60 : 30;
-
-  return dedupe(
-    items,
-    (i) => `${(i.title || "").toLowerCase().trim()}|${i.price}`
-  ).map((i) => ({
-    [`${type}Id`]: i._id || null,
-    title: i.title?.trim() || "",
-    price: toNumber(i.price),
-    durationMinutes: toNumber(i.durationMinutes, durationFallback),
-  }));
-};
-
-/**
- * Normalize booking payload
- */
-const normalizePayload = (body = {}) => {
-  const payload = body?.body ?? body;
+  const normalizedServiceType = String(serviceType || "").toLowerCase();
 
   const {
-    serviceType,
-    city,
     selectedDate,
     selectedTime,
     customerInfo = {},
@@ -62,11 +28,28 @@ const normalizePayload = (body = {}) => {
     slotMinutes,
   } = payload;
 
-  const normalizedServiceType = ["mobile", "dropoff"].includes(
-    String(serviceType).toLowerCase()
-  )
-    ? serviceType.toLowerCase()
-    : "mobile";
+  const dedupe = (arr, keyFn) =>
+    Array.from(new Map(arr.map((item) => [keyFn(item), item])).values());
+
+  const services = dedupe(
+    selectedServices,
+    (s) => `${(s.title || "").toLowerCase().trim()}|${s.price}`
+  ).map((s) => ({
+    serviceId: s._id || null,
+    title: s.title?.trim(),
+    price: Number(s.price) || 0,
+    durationMinutes: Number(s.durationMinutes) || 60,
+  }));
+
+  const addons = dedupe(
+    selectedAddons,
+    (a) => `${(a.title || "").toLowerCase().trim()}|${a.price}`
+  ).map((a) => ({
+    addonId: a._id || null,
+    title: a.title?.trim(),
+    price: Number(a.price) || 0,
+    durationMinutes: Number(a.durationMinutes) || 30,
+  }));
 
   return {
     customerName: customerInfo?.name?.trim() || "",
@@ -75,31 +58,35 @@ const normalizePayload = (body = {}) => {
 
     notes: notes || "",
 
-    serviceType: normalizedServiceType,
-    city: city?.trim() || null,
+    serviceType:
+      normalizedServiceType === "mobile" || normalizedServiceType === "dropoff"
+        ? normalizedServiceType
+        : "mobile",
+
+    city: city ? city.trim() : null,
 
     vehicle: {
-      make: vehicleInfo?.make || "",
-      model: vehicleInfo?.model || "",
-      year: vehicleInfo?.year || "",
-      plate: vehicleInfo?.plate || "",
-      type: selectedCar || "",
+      make: vehicleInfo?.make,
+      model: vehicleInfo?.model,
+      year: vehicleInfo?.year,
+      plate: vehicleInfo?.plate,
+      type: selectedCar,
     },
 
-    services: normalizeItems(selectedServices, "service"),
-    addons: normalizeItems(selectedAddons, "addon"),
+    services,
+    addons,
 
-    totalPrice: toNumber(totalPrice),
+    totalPrice: Number(totalPrice) || 0,
 
     startAt: startAtISO
       ? dayjs.tz(startAtISO, BUSINESS_TZ).toDate()
       : undefined,
 
-    slotMinutes: toNumber(slotMinutes, 60),
+    slotMinutes: slotMinutes || 60,
 
     selectedDate,
     selectedTime,
   };
 };
 
-module.exports = { normalizePayload };
+module.exports = {normalizePayload};
