@@ -144,7 +144,7 @@ const Header = memo(() => {
     <motion.header
       variants={headerVariants}
       animate={showHeader ? "visible" : "hidden"}
-      className="sticky top-0 z-50 bg-[#0c0c0c] backdrop-blur-md border-b border-[#1F242C]"
+      className="sticky top-0 z-50 bg-[#14181E]/95 backdrop-blur-md border-b border-[#1F242C]"
     >
       {/* ===== Top Bar ===== */}
       <div className="hidden md:block bg-[#0c0c0c] border-b border-black">

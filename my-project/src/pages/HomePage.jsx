@@ -332,9 +332,9 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
         >
           {/* Headline */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.15] tracking-tight">
-            PRECISION ISN’T A SERVICE
+            PRECISION ISN’T A SERVICE 
             <br className="hidden sm:block" />
-            <span className="px-2">IT’S A STANDARD.</span>
+            IT’S A STANDARD.
           </h1>
 
           {/* Subheadline */}
