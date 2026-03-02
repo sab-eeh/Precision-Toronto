@@ -113,7 +113,7 @@ export default function ConfirmationPage() {
         selectedAddons: normalizedAddons,
         totalPrice:
           typeof totalPrice === "number" ? totalPrice : Number(totalPrice) || 0,
-        startAtISO, // ✅ FIXED
+        startAt: startAtISO,
         notes: notes || "",
         address: customerInfo?.address || "",
         serviceType: bookingData.serviceType || "mobile",
