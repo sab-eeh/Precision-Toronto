@@ -46,25 +46,32 @@ const normalizeItems = (items, type = "service") => {
 const buildStartAt = ({ startAtISO, selectedDate, selectedTime }) => {
   let parsed;
 
-  // ✅ Case 1: ISO string (preferred)
+  // ✅ Case 1: ISO (best case)
   if (startAtISO) {
     parsed = dayjs.utc(startAtISO).tz(BUSINESS_TZ);
   }
 
-  // ✅ Case 2: fallback from date + time
+  // ✅ Case 2: Date + Time (with FORMAT)
   else if (selectedDate && selectedTime) {
-    const combined = `${selectedDate} ${selectedTime}`;
-    parsed = dayjs.tz(combined, BUSINESS_TZ);
+    parsed = dayjs.tz(
+      `${selectedDate} ${selectedTime}`,
+      "YYYY-MM-DD h:mm A", // 🔥 IMPORTANT FIX
+      BUSINESS_TZ
+    );
   }
 
-  // ❌ Invalid case
+  // ❌ Final validation
   if (!parsed || !parsed.isValid()) {
+    console.error("❌ Invalid date input:", {
+      startAtISO,
+      selectedDate,
+      selectedTime,
+    });
     throw new Error("Invalid startAt date");
   }
 
   return parsed.toDate();
 };
-
 /**
  * Normalize booking payload
  */
