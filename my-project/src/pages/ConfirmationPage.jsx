@@ -113,10 +113,9 @@ export default function ConfirmationPage() {
         selectedAddons: normalizedAddons,
         totalPrice:
           typeof totalPrice === "number" ? totalPrice : Number(totalPrice) || 0,
-        startAt: startAtISO,
+        startAtISO, // ✅ FIXED
         notes: notes || "",
         address: customerInfo?.address || "",
-        // ✅ NEW FIELDS
         serviceType: bookingData.serviceType || "mobile",
         city: bookingData.city || null,
       };
