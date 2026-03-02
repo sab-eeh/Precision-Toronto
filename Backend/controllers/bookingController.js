@@ -7,6 +7,8 @@ const {
   generateSlotsForDay,
   atHM,
 } = require("../utils/time");
+const { sendBookingNotifications } = require("../services/notificationService");
+const { normalizePayload } = require("../utils/normalizePayload");
 
 const MAX_DAY_MINUTES = (BUSINESS_END_HOUR - BUSINESS_START_HOUR) * 60;
 
@@ -26,66 +28,6 @@ function computeDurationMinutes(services = [], addons = [], fallback = 60) {
  * - Accepts both selectedServices/services
  * - Accepts both selectedAddons/addons
  */
-function normalizePayload(body) {
-  const {
-    customerInfo = {},
-    vehicleInfo = {},
-    selectedServices,
-    selectedAddons,
-    services,
-    addons,
-    totalPrice,
-    startAt,
-    notes,
-    address,
-  } = body || {};
-
-  const incomingServices = Array.isArray(selectedServices)
-    ? selectedServices
-    : Array.isArray(services)
-    ? services
-    : [];
-
-  const incomingAddons = Array.isArray(selectedAddons)
-    ? selectedAddons
-    : Array.isArray(addons)
-    ? addons
-    : [];
-
-  return {
-    customerName: customerInfo?.name?.trim(),
-    phone: String(customerInfo?.phone || "").trim(),
-    email: String(customerInfo?.email || "")
-      .trim()
-      .toLowerCase(),
-    address: address || customerInfo?.address || "",
-    vehicle: {
-      type: vehicleInfo?.type || "sedan",
-      make: vehicleInfo?.make,
-      model: vehicleInfo?.model,
-      year: vehicleInfo?.year,
-      color: vehicleInfo?.color,
-      plate: vehicleInfo?.plate || vehicleInfo?.license,
-    },
-    services: incomingServices.map((s) => ({
-      serviceId: s?._id || s?.serviceId || null,
-      title: s?.title || "Service",
-      price: Number(s?.price) || 0,
-      durationMinutes: Math.max(1, Number(s?.durationMinutes) || 60),
-      done: !!s?.done,
-    })),
-    addons: incomingAddons.map((a) => ({
-      addonId: a?._id || a?.addonId || null,
-      title: a?.title || "Addon",
-      price: Number(a?.price) || 0,
-      durationMinutes: Math.max(1, Number(a?.durationMinutes) || 30),
-      done: !!a?.done,
-    })),
-    totalPrice: Number(totalPrice) || 0,
-    startAt,
-    notes,
-  };
-}
 
 async function createBooking(req, res) {
   try {
@@ -106,11 +48,36 @@ async function createBooking(req, res) {
 
     const durationMinutes = computeDurationMinutes(data.services, data.addons);
     const end = addBusinessMinutes(start, durationMinutes);
+    const DURHAM_CITIES = [
+      "Ajax",
+      "Pickering",
+      "Whitby",
+      "Oshawa",
+      "Clarington",
+    ];
+
+    let transportFee = 0;
+
+    if (data.serviceType === "mobile" && data.city) {
+      if (!DURHAM_CITIES.includes(data.city)) {
+        transportFee = 25;
+      }
+    }
+    console.log("🔥 WHICH NORMALIZER:", normalizePayload.toString());
+    const basePrice = Number(data.totalPrice || 0);
+    const finalPrice = basePrice + transportFee;
 
     const overlapping = await Booking.findOne({
       status: { $ne: "cancelled" },
       $expr: { $and: [{ $lt: ["$startAt", end] }, { $gt: ["$endAt", start] }] },
     }).lean();
+
+    if (data.serviceType === "mobile" && !data.city) {
+      return res.status(422).json({
+        success: false,
+        message: "City is required for mobile service",
+      });
+    }
 
     if (overlapping) {
       return res.status(409).json({
@@ -122,6 +89,9 @@ async function createBooking(req, res) {
 
     const booking = await Booking.create({
       ...data,
+
+      totalPrice: finalPrice,
+      transportFee,
       startAt: start,
       endAt: end,
       durationMinutes,
@@ -129,12 +99,22 @@ async function createBooking(req, res) {
       source: "web",
     });
 
+    console.log("RAW req.body:", req.body);
+
     notifyCustomer(booking).catch(console.error);
     notifyAdmin(booking).catch(console.error);
 
-    return res
-      .status(201)
-      .json({ success: true, message: "Booking created", booking });
+    console.log("🚀 FINAL DATA GOING TO DB:", data);
+    console.log("📦 req.body:", req.body);
+    res.status(201).json({
+      success: true,
+      message: "Booking created",
+      booking,
+    });
+
+    sendBookingNotifications(booking).catch((err) =>
+      console.error("Async notification failed:", err.message)
+    );
   } catch (err) {
     console.error("Booking error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
@@ -176,7 +156,6 @@ async function updateBooking(req, res) {
         .status(404)
         .json({ success: false, message: "Booking not found" });
 
-    // ✅ Build updates only for fields actually sent (prevents wiping)
     const updates = {};
 
     if (raw.customerInfo || raw.customerName) {
@@ -192,6 +171,16 @@ async function updateBooking(req, res) {
         ...(booking.vehicle || {}),
         ...(normalized.vehicle || {}),
       };
+    }
+    if (raw.serviceType) {
+      updates.serviceType =
+        raw.serviceType === "mobile" || raw.serviceType === "dropoff"
+          ? raw.serviceType
+          : booking.serviceType;
+    }
+
+    if (raw.city !== undefined) {
+      updates.city = raw.city || null;
     }
 
     // Accept services / selectedServices
@@ -261,10 +250,6 @@ async function updateBooking(req, res) {
   }
 }
 
-/**
- * Availability: checks whether a WHOLE requested duration (possibly multi-day) can start at each slot.
- * GET /api/bookings/availability?date=YYYY-MM-DD&durationMinutes=NNN
- */
 async function getAvailability(req, res) {
   try {
     const { date, durationMinutes } = req.query;

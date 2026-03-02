@@ -5,16 +5,14 @@ import { authHeaders } from "../api/client";
 import {
   LogOut,
   Calendar,
-  User,
+  MapPin,
   Car,
   DollarSign,
   Wrench,
   Clock,
   RefreshCw,
   Search,
-  Pencil,
   Trash2,
-  Eye,
   Filter,
   X,
   Check,
@@ -243,7 +241,7 @@ export default function AdminDashboard() {
       const res = await API.put(`/api/bookings/${b._id}`, {
         status: "confirmed",
       });
-      const data = await res.json();
+      const data = await res.data;
       if (!res.ok) throw new Error(data?.message || "Approve failed");
       const updated = res.data.booking || res.data.data || res.data;
 
@@ -275,7 +273,7 @@ export default function AdminDashboard() {
         services,
       });
 
-      const data = await res.json();
+      const data = await res.data;
       if (!res.ok) throw new Error(data?.message || "Update services failed");
       const updated = res.data.booking || res.data.data || res.data;
 
@@ -296,23 +294,23 @@ export default function AdminDashboard() {
   async function deleteBooking(id) {
     const ok = window.confirm("Delete this booking? This cannot be undone.");
     if (!ok) return;
+
     try {
-      const res = await API.delete(`/api/bookings/${id}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Delete failed");
+      await API.delete(`/api/bookings/${id}`);
+
+      // ✅ update UI instantly
       setBookings((prev) => prev.filter((b) => b._id !== id));
+
       setToast({ type: "success", message: "Booking deleted" });
-      setSelectedIds((s) => {
-        const next = new Set(s);
-        next.delete(id);
-        return next;
-      });
     } catch (e) {
       console.error("Delete error:", e);
-      setToast({ type: "error", message: e.message || "Delete failed" });
+
+      setToast({
+        type: "error",
+        message: e.response?.data?.message || "Delete failed",
+      });
     }
   }
-
   // Bulk delete
   async function bulkDeleteSelected() {
     if (selectedIds.size === 0) {
@@ -330,7 +328,7 @@ export default function AdminDashboard() {
       const ids = Array.from(selectedIds);
       await Promise.all(
         ids.map((id) =>
-        API.get(`/api/bookings/${id}`, {
+          API.get(`/api/bookings/${id}`, {
             method: "DELETE",
             headers: authHeaders(),
           })
@@ -517,11 +515,27 @@ export default function AdminDashboard() {
   // Summary calculations
   const summary = useMemo(() => {
     const total = bookings.reduce((s, b) => s + (Number(b.totalPrice) || 0), 0);
+
+    const transportRevenue = bookings.reduce(
+      (s, b) => s + (Number(b.transportFee) || 0),
+      0
+    );
+
     const counts = bookings.reduce((acc, b) => {
       acc[b.status] = (acc[b.status] || 0) + 1;
+
+      if (b.serviceType === "mobile") acc.mobile = (acc.mobile || 0) + 1;
+      if (b.serviceType === "dropoff") acc.dropoff = (acc.dropoff || 0) + 1;
+
       return acc;
     }, {});
-    return { totalRevenue: total, counts, totalBookings: bookings.length };
+
+    return {
+      totalRevenue: total,
+      transportRevenue,
+      counts,
+      totalBookings: bookings.length,
+    };
   }, [bookings]);
 
   // Prevent overlap & long text - utility class usage in markup
@@ -532,33 +546,47 @@ export default function AdminDashboard() {
       style={{ overflowX: "hidden" }}
     >
       {/* TOP HEADER */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between px-4 md:px-8 py-3 border-b border-gray-800 gap-3">
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-400 hidden md:block">
-            Welcome back, Haris
-          </div>
-          <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-indigo-700/60 to-violet-700/40 border border-gray-800 text-sm font-semibold whitespace-nowrap">
-            Haris Dashboard
-          </div>
-        </div>
+      <header className="border-b border-gray-800 bg-gray-950/60 backdrop-blur sticky top-0 z-40">
+        <div className="flex items-center justify-between px-4 md:px-8 py-3">
+          {/* LEFT SIDE */}
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Avatar / Initial */}
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white font-semibold shrink-0">
+              H
+            </div>
 
-        <div className="flex items-center gap-3 ml-auto">
-          <div className="hidden sm:block text-sm text-gray-400 mr-2">
-            Logged as Admin
+            {/* Text */}
+            <div className="flex flex-col leading-tight min-w-0">
+              <span className="text-sm text-gray-400 hidden sm:block">
+                Welcome back
+              </span>
+              <span className="text-sm md:text-base font-semibold truncate">
+                Haris
+              </span>
+            </div>
           </div>
-          <button
-            onClick={() => {
-              logout();
-              navigate("/admin/login", { replace: true });
-            }}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900/60 hover:bg-gray-900/80 border border-gray-800 transition"
-            title="Logout"
-          >
-            <LogOut className="h-4 w-4 text-red-400" />
-            <span className="text-sm text-red-300 hidden sm:inline">
-              Logout
-            </span>
-          </button>
+
+          {/* RIGHT SIDE */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Role badge */}
+            <div className="hidden sm:flex items-center px-3 py-1 rounded-lg bg-gray-900 border border-gray-800 text-xs text-gray-300">
+              Admin
+            </div>
+
+            {/* Logout */}
+            <button
+              onClick={() => {
+                logout();
+                navigate("/admin/login", { replace: true });
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 border border-gray-800 transition"
+            >
+              <LogOut className="h-4 w-4 text-red-400" />
+              <span className="hidden sm:inline text-sm text-red-300">
+                Logout
+              </span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -594,6 +622,26 @@ export default function AdminDashboard() {
                 {summary.counts.pending || 0}
               </div>
               <div className="text-[11px] text-gray-400">Pending</div>
+            </div>
+            <div className="px-3 py-2 rounded-xl bg-gray-900/40 border border-gray-800 text-xs text-gray-300 flex items-center gap-3 min-w-[160px]">
+              <div className="text-sm font-semibold">
+                {summary.counts.mobile || 0}
+              </div>
+              <div className="text-[11px] text-gray-400">Mobile</div>
+            </div>
+
+            <div className="px-3 py-2 rounded-xl bg-gray-900/40 border border-gray-800 text-xs text-gray-300 flex items-center gap-3 min-w-[160px]">
+              <div className="text-sm font-semibold">
+                {summary.counts.dropoff || 0}
+              </div>
+              <div className="text-[11px] text-gray-400">Drop-off</div>
+            </div>
+
+            <div className="px-3 py-2 rounded-xl bg-gray-900/40 border border-gray-800 text-xs text-gray-300 flex items-center gap-3 min-w-[160px]">
+              <div className="text-sm font-semibold">
+                ${summary.transportRevenue.toFixed(2)}
+              </div>
+              <div className="text-[11px] text-gray-400">Transport</div>
             </div>
           </div>
         </div>
@@ -752,6 +800,7 @@ export default function AdminDashboard() {
             </div>
           ) : (
             pageItems.map((b) => {
+              console.log("BOOKING:", b);
               const vehicle = b?.vehicle
                 ? [b.vehicle.make, b.vehicle.model, b.vehicle.year]
                     .filter(Boolean)
@@ -819,6 +868,29 @@ export default function AdminDashboard() {
                         {b.phone || ""} {b.email ? `• ${b.email}` : ""}
                       </div>
                     </div>
+                    <div className="flex gap-2 mt-1 flex-wrap">
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full ${
+                          b.serviceType === "mobile"
+                            ? "bg-blue-600 text-white"
+                            : "bg-green-600 text-white"
+                        }`}
+                      >
+                        {b.serviceType === "mobile" ? "Mobile" : "Drop-off"}
+                      </span>
+
+                      {b.city && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-200">
+                          {b.city}
+                        </span>
+                      )}
+
+                      {b.transportFee > 0 && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-600 text-black">
+                          +${b.transportFee} travel
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Vehicle, services, time, duration, total */}
@@ -845,6 +917,13 @@ export default function AdminDashboard() {
                         {typeof b.totalPrice === "number"
                           ? `$${b.totalPrice}`
                           : "—"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      <span className="capitalize">
+                        {b.serviceType === "mobile" ? "Mobile" : "Drop-off"}
+                        {b.serviceType === "mobile" && b.city && ` • ${b.city}`}
                       </span>
                     </div>
                   </div>
@@ -1258,7 +1337,7 @@ export default function AdminDashboard() {
                       payload
                     );
 
-                    const data = await res.json();
+                    const data = await res.data;
                     if (!res.ok)
                       throw new Error(data?.message || "Update failed");
                     const updated =

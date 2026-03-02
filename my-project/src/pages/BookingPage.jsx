@@ -169,6 +169,20 @@ export default function BookingPage() {
     }
   );
 
+  // SERVICE TYPE
+  const [serviceType, setServiceType] = useState(
+    booking?.serviceType || "mobile"
+  );
+
+  const [city, setCity] = useState(booking?.city || "");
+
+  const DURHAM_CITIES = ["Ajax", "Pickering", "Whitby", "Oshawa", "Clarington"];
+
+  const isOutsideDurham =
+    serviceType === "mobile" && city && !DURHAM_CITIES.includes(city);
+
+  const transportFee = isOutsideDurham ? 25 : 0;
+
   /* ---------- DRAFT SAVE ---------- */
   useEffect(() => {
     const t = setTimeout(() => {
@@ -180,6 +194,8 @@ export default function BookingPage() {
             selectedTime,
             customerInfo,
             vehicleInfo,
+            serviceType,
+            city,
           })
         );
       } catch {}
@@ -233,9 +249,17 @@ export default function BookingPage() {
       customerInfo.address &&
       vehicleInfo.make &&
       vehicleInfo.model &&
-      vehicleInfo.year
+      vehicleInfo.year &&
+      (serviceType === "dropoff" || city)
     );
-  }, [selectedDate, selectedTime, customerInfo, vehicleInfo]);
+  }, [
+    selectedDate,
+    selectedTime,
+    customerInfo,
+    vehicleInfo,
+    serviceType,
+    city,
+  ]);
 
   /* ---------- SUBMIT ---------- */
   const handleSubmit = useCallback(
@@ -246,6 +270,9 @@ export default function BookingPage() {
       if (!slot) return;
 
       const bookingData = {
+        serviceType,
+        city: serviceType === "mobile" ? city : null,
+        transportFee,
         selectedDate: formatYMDLocal(slot.start),
         selectedTime,
         customerInfo,
@@ -284,6 +311,9 @@ export default function BookingPage() {
       formattedDurations,
       setBooking,
       navigate,
+      serviceType,
+      city,
+      transportFee,
     ]
   );
 
@@ -338,6 +368,89 @@ export default function BookingPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* SERVICE TYPE */}
+            <Section title="Service Type" icon={<MapPin />}>
+              <div className="space-y-4">
+                {/* Toggle Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setServiceType("mobile")}
+                    className={cn(
+                      "flex-1 px-4 py-3 rounded-lg border text-sm font-medium transition",
+                      serviceType === "mobile"
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "bg-[#1A2234] border-gray-700 hover:bg-[#223048]"
+                    )}
+                  >
+                    🚗 Mobile Service
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setServiceType("dropoff")}
+                    className={cn(
+                      "flex-1 px-4 py-3 rounded-lg border text-sm font-medium transition",
+                      serviceType === "dropoff"
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "bg-[#1A2234] border-gray-700 hover:bg-[#223048]"
+                    )}
+                  >
+                    🏢 Drop-off Service
+                  </button>
+                </div>
+
+                {/* MOBILE → CITY */}
+                {serviceType === "mobile" && (
+                  <div className="space-y-2">
+                    <Label>Select Your City *</Label>
+
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full mt-1 px-4 py-3 rounded-lg bg-[#1A2234] border border-gray-700 focus:outline-none"
+                    >
+                      <option value="">Select city</option>
+
+                      <optgroup label="Durham Region">
+                        <option>Ajax</option>
+                        <option>Pickering</option>
+                        <option>Whitby</option>
+                        <option>Oshawa</option>
+                        <option>Clarington</option>
+                      </optgroup>
+
+                      <optgroup label="GTA">
+                        <option>Toronto</option>
+                        <option>Scarborough</option>
+                        <option>Markham</option>
+                        <option>Vaughan</option>
+                        <option>Richmond Hill</option>
+                        <option>Brampton</option>
+                        <option>Mississauga</option>
+                      </optgroup>
+                    </select>
+
+                    {isOutsideDurham && (
+                      <p className="text-xs text-yellow-400">
+                        ⚠️ Additional $25 transportation fee applies for your
+                        area.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* DROPOFF → LOCATION */}
+                {serviceType === "dropoff" && (
+                  <div className="p-4 rounded-lg bg-[#1A2234] border border-gray-700">
+                    <p className="text-sm text-gray-300">Drop-off Location:</p>
+                    <p className="text-blue-400 font-semibold">
+                      85 Gillett Dr, Ajax, ON
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Section>
             {/* DATE & TIME */}
             <Section title="Select Date & Time" icon={<CalendarIcon />}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -402,6 +515,11 @@ export default function BookingPage() {
 
             {/* CUSTOMER */}
             <Section title="Customer Information" icon={<MapPin />}>
+              <p className="pb-4">
+                We collect this information to schedule your service,
+                communicate updates, and maintain accurate service records for
+                your vehicle.
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InputField
                   id="name"
@@ -487,6 +605,22 @@ export default function BookingPage() {
               <div className="space-y-2 text-sm">
                 <SummaryRow label="Services" value={servicesSummary} />
                 <SummaryRow label="Vehicle" value={selectedCar} />
+                <SummaryRow
+                  label="Service Type"
+                  value={serviceType === "mobile" ? "Mobile" : "Drop-off"}
+                />
+
+                {serviceType === "mobile" && city && (
+                  <SummaryRow label="City" value={city} />
+                )}
+
+                {transportFee > 0 && (
+                  <SummaryRow
+                    label="Transport Fee"
+                    value={`$${transportFee}`}
+                    highlight
+                  />
+                )}
                 {selectedDate && (
                   <SummaryRow
                     label="Date"
@@ -505,7 +639,7 @@ export default function BookingPage() {
                 <div className="flex justify-between pt-3 border-t border-gray-700 text-lg font-semibold">
                   <span>Total</span>
                   <span className="text-blue-400">
-                    ${Number(totalPrice || 0).toFixed(2)}
+                    ${Number((totalPrice || 0) + transportFee).toFixed(2)}
                   </span>
                 </div>
               </div>
