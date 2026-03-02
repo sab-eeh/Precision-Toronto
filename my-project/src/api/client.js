@@ -20,8 +20,6 @@ export async function api(path, { method = "GET", body, headers = {} } = {}) {
     } catch {
       data = { message: "Invalid JSON response from server" };
     }
-    console.log("🌍 BASE URL:", BASE_URL);
-    console.log("📡 REQUEST:", `${BASE_URL}${path}`);
 
     if (!res.ok) {
       const message = data?.message || `Request failed (${res.status})`;

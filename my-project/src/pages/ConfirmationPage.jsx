@@ -119,7 +119,7 @@ export default function ConfirmationPage() {
         serviceType: bookingData.serviceType || "mobile",
         city: bookingData.city || null,
       };
-      console.log(payload);
+
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
       const response = await api("/api/bookings", {

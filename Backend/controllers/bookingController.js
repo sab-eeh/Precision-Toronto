@@ -63,7 +63,7 @@ async function createBooking(req, res) {
         transportFee = 25;
       }
     }
-    console.log("🔥 WHICH NORMALIZER:", normalizePayload.toString());
+  
     const basePrice = Number(data.totalPrice || 0);
     const finalPrice = basePrice + transportFee;
 
@@ -99,13 +99,9 @@ async function createBooking(req, res) {
       source: "web",
     });
 
-    console.log("RAW req.body:", req.body);
-
     notifyCustomer(booking).catch(console.error);
     notifyAdmin(booking).catch(console.error);
 
-    console.log("🚀 FINAL DATA GOING TO DB:", data);
-    console.log("📦 req.body:", req.body);
     res.status(201).json({
       success: true,
       message: "Booking created",

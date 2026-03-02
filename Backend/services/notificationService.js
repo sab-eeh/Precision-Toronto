@@ -4,27 +4,53 @@ const { bookingEmailTemplate } = require("./templates/bookingEmail");
 
 const sendBookingNotifications = async (booking) => {
   try {
-    const smsMessage = `Hi ${
-      booking.customerName
-    }, your booking is confirmed for ${new Date(
-      booking.startAt
-    ).toLocaleString()}.`;
+    const date = new Date(booking.startAt).toLocaleString();
 
-    const emailHTML = bookingEmailTemplate(booking);
+    const smsMessage = `🚗 Precision Toronto
 
-    await Promise.allSettled([
+Hi ${booking.customerName},
+Your booking is confirmed.
+
+📅 ${date}
+📍 ${booking.city || "N/A"}
+🚘 ${booking.serviceType}
+
+Thank you!`;
+
+    const adminEmailHTML = bookingEmailTemplate(booking, "admin");
+    const customerEmailHTML = bookingEmailTemplate(booking, "customer");
+
+    const results = await Promise.allSettled([
+      // SMS
       sendSMS({
         to: booking.phone,
         message: smsMessage,
       }),
+
+      // Admin Email
       sendEmail({
         to: process.env.ADMIN_EMAIL,
-        subject: "New Booking - Precision Toronto",
-        html: emailHTML,
+        subject: "🚗 New Booking Received",
+        html: adminEmailHTML,
       }),
+
+      // Customer Email
+      booking.email &&
+        sendEmail({
+          to: booking.email,
+          subject: "✅ Booking Confirmation",
+          html: customerEmailHTML,
+        }),
     ]);
+
+    console.log(
+      "📊 Notification Results:",
+      results.map((r) => r.status)
+    );
+
+    return results;
   } catch (err) {
-    console.error("Notification error:", err.message);
+    console.error("❌ Notification system error:", err.message);
   }
 };
 
