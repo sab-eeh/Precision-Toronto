@@ -1,14 +1,19 @@
-// backend/src/utils/normalizePayload.js
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const BUSINESS_TZ = "America/Toronto";
 
-export const normalizePayload = (body) => {
+const normalizePayload = (body) => {
+  const payload = body.body || body;
+
+  const { serviceType, city } = payload;
+
+  const normalizedServiceType = String(serviceType || "").toLowerCase();
+
   const {
     selectedDate,
     selectedTime,
@@ -21,7 +26,7 @@ export const normalizePayload = (body) => {
     notes,
     startAtISO,
     slotMinutes,
-  } = body;
+  } = payload;
 
   const dedupe = (arr, keyFn) =>
     Array.from(new Map(arr.map((item) => [keyFn(item), item])).values());
@@ -47,23 +52,41 @@ export const normalizePayload = (body) => {
   }));
 
   return {
-    customerName: customerInfo.name,
-    email: customerInfo.email,
-    phone: customerInfo.phone,
+    customerName: customerInfo?.name?.trim() || "",
+    email: customerInfo?.email?.trim().toLowerCase() || "",
+    phone: String(customerInfo?.phone || "").trim(),
+
     notes: notes || "",
+
+    serviceType:
+      normalizedServiceType === "mobile" || normalizedServiceType === "dropoff"
+        ? normalizedServiceType
+        : "mobile",
+
+    city: city ? city.trim() : null,
+
     vehicle: {
-      make: vehicleInfo.make,
-      model: vehicleInfo.model,
-      year: vehicleInfo.year,
-      plate: vehicleInfo.plate,
+      make: vehicleInfo?.make,
+      model: vehicleInfo?.model,
+      year: vehicleInfo?.year,
+      plate: vehicleInfo?.plate,
       type: selectedCar,
     },
+
     services,
     addons,
+
     totalPrice: Number(totalPrice) || 0,
-    startAt: startAtISO ? dayjs.tz(startAtISO, BUSINESS_TZ).toDate() : null,
+
+    startAt: startAtISO
+      ? dayjs.tz(startAtISO, BUSINESS_TZ).toDate()
+      : undefined,
+
     slotMinutes: slotMinutes || 60,
+
     selectedDate,
     selectedTime,
   };
 };
+
+module.exports = normalizePayload;

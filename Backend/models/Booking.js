@@ -44,6 +44,22 @@ const BookingSchema = new mongoose.Schema(
     email: { type: String, trim: true, lowercase: true },
     address: { type: String, trim: true, maxlength: 300 },
 
+    serviceType: {
+      type: String,
+      enum: ["mobile", "dropoff"],
+      default: "mobile",
+    },
+
+    city: {
+      type: String,
+      default: null,
+    },
+
+    transportFee: {
+      type: Number,
+      default: 0,
+    },
+
     vehicle: { type: VehicleSchema, default: {} },
 
     services: {

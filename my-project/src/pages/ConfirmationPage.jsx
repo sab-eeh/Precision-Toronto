@@ -116,11 +116,13 @@ export default function ConfirmationPage() {
         startAt: startAtISO,
         notes: notes || "",
         address: customerInfo?.address || "",
+        // ✅ NEW FIELDS
+        serviceType: bookingData.serviceType || "mobile",
+        city: bookingData.city || null,
       };
-
+      console.log(payload);
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
-
       const response = await api("/api/bookings", {
         method: "POST",
         body: payload,
@@ -229,6 +231,17 @@ export default function ConfirmationPage() {
       ? `$${bookingData.totalPrice.toFixed(2)}`
       : safeText(bookingData.totalPrice, "N/A");
 
+  // ✅ NEW: Service Type Data
+  const serviceType = bookingData.serviceType || "mobile";
+  const city = bookingData.city || null;
+  const transportFee = Number(bookingData.transportFee || 0);
+
+  // ✅ FINAL TOTAL (with fee)
+  const finalTotal =
+    typeof bookingData.totalPrice === "number"
+      ? (bookingData.totalPrice + transportFee).toFixed(2)
+      : safeText(bookingData.totalPrice);
+
   // ONLY UI/STRUCTURE UPDATED — LOGIC UNCHANGED
 
   const InfoBlock = ({ title, children }) => (
@@ -302,8 +315,35 @@ export default function ConfirmationPage() {
             <p className="text-sm text-gray-400">{displayTime}</p>
           </InfoBlock>
 
+          {/* SERVICE TYPE + LOCATION */}
+          <InfoBlock title="Service Type">
+            <p className="text-gray-200">
+              {serviceType === "mobile" ? "Mobile Service" : "Drop-off"}
+            </p>
+
+            {serviceType === "mobile" && city && (
+              <p className="text-xs text-gray-400 mt-1">City: {city}</p>
+            )}
+          </InfoBlock>
+
           <InfoBlock title="Location">
-            <p className="text-gray-200">{address}</p>
+            {serviceType === "mobile" ? (
+              <>
+                <p className="text-gray-200">{address}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Our team will arrive at your location.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-blue-400 font-medium">
+                  85 Gillett Dr, Ajax, ON
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Please drop your vehicle at this location.
+                </p>
+              </>
+            )}
           </InfoBlock>
 
           <InfoBlock title="Customer">
@@ -327,11 +367,23 @@ export default function ConfirmationPage() {
           </InfoBlock>
 
           {/* PAYMENT */}
-          <div className="pt-4 border-t border-gray-700">
+          <div className="pt-4 border-t border-gray-700 space-y-2">
+            {/* Transport Fee */}
+            {transportFee > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Transportation Fee</span>
+                <span className="text-yellow-400">${transportFee}</span>
+              </div>
+            )}
+
+            {/* TOTAL */}
             <div className="flex justify-between items-center">
               <span className="text-gray-400 text-sm">Total</span>
-              <span className="text-xl font-bold text-blue-400">{total}</span>
+              <span className="text-xl font-bold text-blue-400">
+                ${finalTotal}
+              </span>
             </div>
+
             <p className="text-xs text-gray-400 mt-1">
               Payment due at service completion
             </p>
