@@ -33,7 +33,7 @@ const ChatWindow = () => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
-        {messages.map((msg) => (
+        {(messages || []).map((msg) => (
           <MessageBubble key={msg._id} message={msg} />
         ))}
       </div>

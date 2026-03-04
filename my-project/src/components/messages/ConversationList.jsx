@@ -24,7 +24,7 @@ const ConversationList = () => {
 
       {/* Conversations */}
       <div className="flex-1 overflow-y-auto">
-        {conversations.map((conv) => (
+        {(conversations || []).map((conv) => (
           <div
             key={conv.phone}
             onClick={() => setActivePhone(conv.phone)}
