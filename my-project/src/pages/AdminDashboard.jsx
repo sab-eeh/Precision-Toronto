@@ -569,9 +569,15 @@ export default function AdminDashboard() {
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Role badge */}
-            <div className="hidden sm:flex items-center px-3 py-1 rounded-lg bg-gray-900 border border-gray-800 text-xs text-gray-300">
-              Admin
-            </div>
+            {/* <div className="hidden sm:flex items-center px-3 py-1 rounded-lg bg-gray-900 border border-gray-800 text-xs text-gray-300">
+              Admin Dashboard
+            </div> */}
+            <button
+              onClick={() => navigate("/admin/inbox")}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm text-white transition"
+            >
+              Open Inbox
+            </button>
 
             {/* Logout */}
             <button
