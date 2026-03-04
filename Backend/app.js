@@ -9,6 +9,8 @@ const compression = require("compression");
 const bookingRoutes = require("./routes/bookingRoutes");
 const authRoutes = require("./routes/authRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const smsRoutes = require("./routes/smsRoutes");
+const messageRoutes = require("./routes/messageRoutes");
 
 const app = express();
 
@@ -120,6 +122,8 @@ app.get("/", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/sms", smsRoutes);
+app.use("/api/messages", messageRoutes);
 
 // ======================
 // 404 HANDLER

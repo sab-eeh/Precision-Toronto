@@ -2,55 +2,155 @@ const { sendSMS } = require("./smsService");
 const { sendEmail } = require("./emailService");
 const { bookingEmailTemplate } = require("./templates/bookingEmail");
 
-const sendBookingNotifications = async (booking) => {
+/**
+ * Format date safely
+ */
+const formatDate = (date) => {
   try {
-    const date = new Date(booking.startAt).toLocaleString();
+    return new Date(date).toLocaleString();
+  } catch {
+    return "Scheduled Time";
+  }
+};
 
-    const smsMessage = `🚗 Precision Toronto
+/**
+ * Build SMS for customer depending on service type
+ */
+const buildCustomerSMS = (booking) => {
+  const date = formatDate(booking.startAt);
+  const serviceType = booking.serviceType?.toLowerCase();
 
-Hi ${booking.customerName},
-Your booking is confirmed.
+  if (serviceType === "mobile") {
+    return `🚗 Precision Toronto
+
+Hi ${booking.customerName || "Customer"},
+
+Your detailing appointment has been confirmed.
+
+📅 ${date}
+📍 ${booking.city || "N/A"} (Mobile Service)
+
+Our team will arrive fully equipped to deliver a professional service.
+
+Please remove personal belongings from the vehicle before arrival.
+
+Reply to this message if you need to make any changes.
+
+Thank you for choosing Precision Toronto.`;
+  }
+
+  return `🚗 Precision Toronto
+
+Hi ${booking.customerName || "Customer"},
+
+Your detailing appointment has been confirmed.
+
+📅 ${date}
+📍 ${booking.city || "N/A"} (Drop-Off Service)
+
+Please arrive at your scheduled time and message us when you arrive.
+
+For the best results, remove personal belongings before drop-off.
+
+Reply to this message if you need to make any changes.
+
+Thank you for choosing Precision Toronto.`;
+};
+
+/**
+ * Build SMS for admin
+ */
+const buildAdminSMS = (booking) => {
+  const date = formatDate(booking.startAt);
+
+  return `🚨 New Booking Alert
+
+Customer: ${booking.customerName || "Unknown"}
+Phone: ${booking.phone || "N/A"}
 
 📅 ${date}
 📍 ${booking.city || "N/A"}
-🚘 ${booking.serviceType}
+🚘 ${booking.serviceType || "service"}
 
-Thank you!`;
+Check admin dashboard for details.`;
+};
+
+/**
+ * Send booking notifications
+ */
+const sendBookingNotifications = async (booking) => {
+  try {
+    if (!booking) {
+      console.warn("⚠️ Booking notification skipped (no booking object)");
+      return null;
+    }
+
+    const jobs = [];
+
+    const customerSMS = buildCustomerSMS(booking);
+    const adminSMS = buildAdminSMS(booking);
 
     const adminEmailHTML = bookingEmailTemplate(booking, "admin");
     const customerEmailHTML = bookingEmailTemplate(booking, "customer");
 
-    const results = await Promise.allSettled([
-      // SMS
-      sendSMS({
-        to: booking.phone,
-        message: smsMessage,
-      }),
+    // Send customer SMS
+    if (booking.phone) {
+      jobs.push(
+        sendSMS({
+          to: booking.phone,
+          message: customerSMS,
+        })
+      );
+    }
 
-      // Admin Email
-      sendEmail({
-        to: process.env.ADMIN_EMAIL,
-        subject: "🚗 New Booking Received",
-        html: adminEmailHTML,
-      }),
+    // Send admin SMS alert
+    if (process.env.ADMIN_PHONE) {
+      jobs.push(
+        sendSMS({
+          to: process.env.ADMIN_PHONE,
+          message: adminSMS,
+        })
+      );
+    }
 
-      // Customer Email
-      booking.email &&
+    // Send admin email
+    if (process.env.ADMIN_EMAIL) {
+      jobs.push(
+        sendEmail({
+          to: process.env.ADMIN_EMAIL,
+          subject: "🚗 New Booking - Precision Toronto",
+          html: adminEmailHTML,
+        })
+      );
+    }
+
+    // Send customer email
+    if (booking.email) {
+      jobs.push(
         sendEmail({
           to: booking.email,
-          subject: "✅ Booking Confirmation",
+          subject: "✅ Your Booking is Confirmed",
           html: customerEmailHTML,
-        }),
-    ]);
+        })
+      );
+    }
+
+    if (!jobs.length) {
+      console.warn("⚠️ No notification jobs were created");
+      return null;
+    }
+
+    const results = await Promise.allSettled(jobs);
 
     console.log(
-      "📊 Notification Results:",
+      "📊 Notification results:",
       results.map((r) => r.status)
     );
 
     return results;
-  } catch (err) {
-    console.error("❌ Notification system error:", err.message);
+  } catch (error) {
+    console.error("❌ Notification system error:", error.message);
+    return null;
   }
 };
 

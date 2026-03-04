@@ -1,7 +1,8 @@
 const twilio = require("twilio");
+const Message = require("../models/Message");
 
 if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
-  throw new Error("❌ Twilio credentials missing in env");
+  throw new Error("❌ Twilio credentials missing in environment variables");
 }
 
 const client = twilio(
@@ -10,26 +11,32 @@ const client = twilio(
 );
 
 const sendSMS = async ({ to, message }) => {
+  if (!to || !message) {
+    throw new Error("SMS requires 'to' and 'message'");
+  }
+
   try {
-    if (!to || !message) {
-      throw new Error("SMS 'to' or 'message' missing");
-    }
+    console.log(`📤 Sending SMS → ${to}`);
 
-    console.log("📩 Sending SMS →", to);
-
-    const res = await client.messages.create({
+    const response = await client.messages.create({
       body: message,
       from: process.env.TWILIO_PHONE_NUMBER,
       to,
     });
 
-    console.log("✅ SMS sent:", res.sid);
+    await Message.create({
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to,
+      body: message,
+      direction: "outbound",
+    });
 
-    return res;
+    console.log(`✅ SMS sent → SID: ${response.sid}`);
+
+    return response;
   } catch (error) {
-    console.error("❌ SMS Error:", error.message);
+    console.error("❌ Twilio SMS Error:", error.message);
 
-    // fail-safe
     return null;
   }
 };
