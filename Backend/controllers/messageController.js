@@ -100,38 +100,30 @@ const getConversations = async (req, res) => {
  */
 const replyToConversation = async (req, res) => {
   try {
-    const { to, message, serviceType } = req.body;
+    const { phone, message } = req.body;
 
-    if (!to || !message) {
+    if (!phone || !message) {
       return res.status(400).json({
         success: false,
-        message: "Recipient phone and message are required",
+        message: "Phone and message required",
       });
     }
 
-    const sms = await sendSMS({
-      to,
+    await sendSMS({
+      to: phone,
       message,
-      serviceType,
     });
-
-    if (!sms) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send SMS",
-      });
-    }
 
     res.json({
       success: true,
       message: "SMS sent successfully",
     });
   } catch (error) {
-    console.error("❌ Reply SMS error:", error.message);
+    console.error("Reply error:", error);
 
     res.status(500).json({
       success: false,
-      message: "Failed to send reply",
+      message: "Failed to send message",
     });
   }
 };
