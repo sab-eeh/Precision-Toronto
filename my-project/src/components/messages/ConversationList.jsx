@@ -8,8 +8,14 @@ const ConversationList = () => {
 
   useEffect(() => {
     const load = async () => {
-      const data = await fetchConversations();
-      setConversations(data);
+      try {
+        const data = await fetchConversations();
+        console.log("Conversations:", data);
+
+        setConversations(data || []);
+      } catch (error) {
+        console.error("Failed to load conversations", error);
+      }
     };
 
     load();
