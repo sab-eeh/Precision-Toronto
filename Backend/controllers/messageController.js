@@ -1,5 +1,9 @@
 const Message = require("../models/Message");
+const { sendSMS } = require("../services/smsService");
 
+/**
+ * Get all messages for a specific phone conversation
+ */
 const getMessagesByPhone = async (req, res) => {
   try {
     const { phone } = req.params;
@@ -31,9 +35,17 @@ const getMessagesByPhone = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get conversation list (for admin inbox sidebar)
+ */
 const getConversations = async (req, res) => {
   try {
     const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    if (!twilioNumber) {
+      throw new Error("Twilio phone number not configured");
+    }
 
     const conversations = await Message.aggregate([
       {
@@ -83,4 +95,49 @@ const getConversations = async (req, res) => {
   }
 };
 
-module.exports = { getMessagesByPhone, getConversations };
+/**
+ * Admin reply to conversation
+ */
+const replyToConversation = async (req, res) => {
+  try {
+    const { to, message, serviceType } = req.body;
+
+    if (!to || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipient phone and message are required",
+      });
+    }
+
+    const sms = await sendSMS({
+      to,
+      message,
+      serviceType,
+    });
+
+    if (!sms) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send SMS",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "SMS sent successfully",
+    });
+  } catch (error) {
+    console.error("❌ Reply SMS error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to send reply",
+    });
+  }
+};
+
+module.exports = {
+  getMessagesByPhone,
+  getConversations,
+  replyToConversation,
+};

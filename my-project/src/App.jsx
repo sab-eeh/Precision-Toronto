@@ -16,6 +16,8 @@ import Footer from "./layout/Footer";
 
 /* ===== Auth ===== */
 import { AuthProvider, useAuth } from "./context/AuthContext";
+/* ===== Messages ===== */
+import { MessageProvider } from "./context/MessageContext";
 
 /* ===== Lazy Pages ===== */
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -27,6 +29,7 @@ const BookingPage = lazy(() => import("./pages/BookingPage"));
 const ConfirmationPage = lazy(() => import("./pages/ConfirmationPage"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminInbox = lazy(() => import("./pages/AdminInbox"));
 
 /* ===== Error Boundary ===== */
 class ErrorBoundary extends React.Component {
@@ -252,6 +255,7 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/admin/inbox" element={<AdminInbox />} />
 
             {/* ===== Redirects ===== */}
             <Route
@@ -271,7 +275,9 @@ export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AppContent />
+        <MessageProvider>
+          <AppContent />
+        </MessageProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

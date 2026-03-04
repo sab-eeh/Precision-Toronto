@@ -99,6 +99,7 @@ const sendBookingNotifications = async (booking) => {
         sendSMS({
           to: booking.phone,
           message: customerSMS,
+          serviceType: booking.serviceType,
         })
       );
     }

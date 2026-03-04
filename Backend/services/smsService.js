@@ -10,7 +10,7 @@ const client = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
-const sendSMS = async ({ to, message }) => {
+const sendSMS = async ({ to, message, serviceType = null }) => {
   if (!to || !message) {
     throw new Error("SMS requires 'to' and 'message'");
   }
@@ -29,6 +29,7 @@ const sendSMS = async ({ to, message }) => {
       to,
       body: message,
       direction: "outbound",
+      serviceType: serviceType || null,
     });
 
     console.log(`✅ SMS sent → SID: ${response.sid}`);
