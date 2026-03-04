@@ -108,6 +108,17 @@ const replyToConversation = async (req, res) => {
         message: "Phone and message required",
       });
     }
+    const savedMessage = await Message.create({
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phone,
+      body: message,
+      direction: "outbound",
+    });
+
+    res.json({
+      success: true,
+      data: savedMessage,
+    });
 
     await sendSMS({
       to: phone,

@@ -24,21 +24,25 @@ const sendSMS = async ({ to, message, serviceType = null }) => {
       to,
     });
 
-    await Message.create({
+    // Save message to database
+    const savedMessage = await Message.create({
       from: process.env.TWILIO_PHONE_NUMBER,
       to,
       body: message,
       direction: "outbound",
-      serviceType: serviceType || null,
+      serviceType,
     });
 
-    if (global.io) {
-      global.io.emit("newMessage", saved);
+    // Emit real-time event
+    const io = global.io;
+
+    if (io) {
+      io.emit("newMessage", savedMessage);
     }
 
-    console.log(`✅ SMS sent → SID: ${response.sid}`);
+    console.log("✅ SMS sent:", res.sid);
 
-    return response;
+    return savedMessage, response;
   } catch (error) {
     console.error("❌ Twilio SMS Error:", error.message);
 
