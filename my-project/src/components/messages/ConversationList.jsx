@@ -1,24 +1,54 @@
 import { useEffect } from "react";
 import { useMessages } from "../../context/MessageContext";
 import { fetchConversations } from "../../services/messageService";
+import socket from "../../services/socket";
 
 const ConversationList = () => {
   const { conversations, setConversations, activePhone, setActivePhone } =
     useMessages();
 
   useEffect(() => {
-    const load = async () => {
+    const loadConversations = async () => {
       try {
         const data = await fetchConversations();
-        console.log("Conversations:", data);
-
         setConversations(data || []);
       } catch (error) {
-        console.error("Failed to load conversations", error);
+        console.error("Failed loading conversations", error);
       }
     };
 
-    load();
+    loadConversations();
+
+    const updateConversations = (msg) => {
+      setConversations((prev) => {
+        const phone = msg.direction === "outbound" ? msg.to : msg.from;
+
+        const existing = prev.find((c) => c.phone === phone);
+
+        if (existing) {
+          return prev.map((c) =>
+            c.phone === phone
+              ? { ...c, lastMessage: msg.body, lastTime: msg.createdAt }
+              : c
+          );
+        }
+
+        return [
+          {
+            phone,
+            lastMessage: msg.body,
+            lastTime: msg.createdAt,
+          },
+          ...prev,
+        ];
+      });
+    };
+
+    socket.on("newMessage", updateConversations);
+
+    return () => {
+      socket.off("newMessage", updateConversations);
+    };
   }, []);
 
   return (

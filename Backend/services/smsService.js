@@ -32,6 +32,10 @@ const sendSMS = async ({ to, message, serviceType = null }) => {
       serviceType: serviceType || null,
     });
 
+    if (global.io) {
+      global.io.emit("newMessage", saved);
+    }
+
     console.log(`✅ SMS sent → SID: ${response.sid}`);
 
     return response;

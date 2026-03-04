@@ -1,22 +1,25 @@
 import { useEffect } from "react";
 import { useMessages } from "../../context/MessageContext";
-import { fetchMessages } from "../../services/messageService";
 import ReplyBox from "./ReplyBox";
 import ChatHeader from "./ChatHeader";
 import MessageBubble from "./MessageBubble";
+import socket from "../../services/socket";
 
 const ChatWindow = () => {
   const { activePhone, messages, setMessages } = useMessages();
 
   useEffect(() => {
-    if (!activePhone) return;
+    const handleNewMessage = (msg) => {
+      if (!activePhone) return;
 
-    const loadMessages = async () => {
-      const data = await fetchMessages(activePhone);
-      setMessages(data);
+      if (msg.from === activePhone || msg.to === activePhone) {
+        setMessages((prev) => [...prev, msg]);
+      }
     };
 
-    loadMessages();
+    socket.on("newMessage", handleNewMessage);
+
+    return () => socket.off("newMessage", handleNewMessage);
   }, [activePhone]);
 
   if (!activePhone) {

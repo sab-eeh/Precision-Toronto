@@ -13,12 +13,17 @@ router.post("/incoming", async (req, res) => {
 
     console.log(`📩 Incoming SMS from ${From}`);
 
-    await Message.create({
+    const newMessage = await Message.create({
       from: From,
       to: To,
       body: Body,
       direction: "inbound",
     });
+
+    // 🔥 Emit real-time event
+    if (global.io) {
+      global.io.emit("newMessage", newMessage);
+    }
 
     res.status(200).send("<Response></Response>");
   } catch (error) {
