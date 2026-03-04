@@ -1,34 +1,34 @@
 import { useState } from "react";
-import { useMessages } from "../../context/MessageContext";
 import { sendReply } from "../../services/messageService";
+import { useMessages } from "../../context/MessageContext";
 
 const ReplyBox = () => {
   const { activePhone } = useMessages();
   const [text, setText] = useState("");
 
   const handleSend = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() || !activePhone) return;
 
-    await sendReply({
-      to: activePhone,
-      message: text,
-    });
-
-    setText("");
+    try {
+      await sendReply(activePhone, text);
+      setText("");
+    } catch (err) {
+      console.error("Send failed:", err);
+    }
   };
 
   return (
-    <div className="border-t border-white/10 p-4 flex gap-3">
+    <div className="flex gap-3 p-4 border-t border-slate-800">
       <input
-        className="flex-1 rounded-lg bg-white/5 border border-white/10 px-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-        placeholder="Type message..."
         value={text}
         onChange={(e) => setText(e.target.value)}
+        placeholder="Type message..."
+        className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white"
       />
 
       <button
         onClick={handleSend}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium"
+        className="bg-blue-600 hover:bg-blue-500 px-5 py-2 rounded-lg text-white"
       >
         Send
       </button>

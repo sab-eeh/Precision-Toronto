@@ -12,6 +12,15 @@ export const fetchMessages = async (phone) => {
   return res.data.data || [];
 };
 
-export const sendReply = async (payload) => {
-  return axios.post(`${API}api/messages/reply`, payload);
+export const sendReply = async (phone, message) => {
+  if (!phone || !message) {
+    throw new Error("phone and message required");
+  }
+
+  const res = await axios.post(`${API}api/messages/reply`, {
+    phone,
+    message,
+  });
+
+  return res.data;
 };
