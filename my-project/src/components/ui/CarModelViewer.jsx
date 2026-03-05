@@ -1,8 +1,6 @@
-// src/components/ui/CarModelViewer.jsx
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
-  useGLTF,
   Html,
   OrbitControls,
   Environment,
@@ -10,8 +8,13 @@ import {
   PerformanceMonitor,
 } from "@react-three/drei";
 
-// Draco decoder path (only sets config, doesn't download yet)
-useGLTF.setDecoderPath("/draco/");
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
+import { useInView } from "react-intersection-observer";
+
+/* ---------------- MODEL SETTINGS ---------------- */
 
 const MODEL_SETTINGS = Object.freeze({
   coupe: { scale: 69, y: -0.8 },
@@ -21,65 +24,128 @@ const MODEL_SETTINGS = Object.freeze({
   truck: { scale: 5.7, y: -1 },
 });
 
-const Loader = React.memo(function Loader() {
-  return (
-    <Html center>
-      <div className="flex flex-col items-center justify-center text-white bg-black/50 p-4 rounded-lg">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white mb-3" />
-        <p className="text-sm">Loading…</p>
-      </div>
-    </Html>
-  );
-});
+/* ---------------- Loader UI ---------------- */
 
-// Forces canvas re-render only when needed
+const Loader = React.memo(() => (
+  <Html center>
+    <div className="flex flex-col items-center justify-center text-white bg-black/50 p-4 rounded-lg">
+      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-white mb-3" />
+      <p className="text-sm">Loading…</p>
+    </div>
+  </Html>
+));
+
+/* ---------------- Frame invalidator ---------------- */
+
 function InvalidateOnFrame({ active }) {
   const { invalidate } = useThree();
+
   useFrame(() => {
     if (active) invalidate();
   });
+
   return null;
 }
 
-const CarModel = React.memo(function CarModel({
-  modelPath,
-  modelType,
-  rotate = true,
-}) {
-  const meshRef = useRef();
-  const { scene } = useGLTF(modelPath);
+/* ---------------- Custom GLTF Loader ---------------- */
 
-  const { scale, y } = useMemo(
-    () => MODEL_SETTINGS[String(modelType || "").toLowerCase()] || { scale: 1, y: 0 },
-    [modelType]
-  );
+function useOptimizedGLTF(path) {
+  const { gl } = useThree();
+  const [scene, setScene] = useState(null);
 
   useEffect(() => {
+    const loader = new GLTFLoader();
+
+    /* DRACO */
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath("/draco/");
+    loader.setDRACOLoader(dracoLoader);
+
+    /* KTX2 */
+    const ktx2Loader = new KTX2Loader();
+    ktx2Loader.setTranscoderPath("/basis/");
+    ktx2Loader.detectSupport(gl);
+    loader.setKTX2Loader(ktx2Loader);
+
+    loader.setMeshoptDecoder(MeshoptDecoder);
+
+    loader.load(path, (gltf) => {
+      setScene(gltf.scene);
+    });
+
+    return () => {
+      dracoLoader.dispose();
+      ktx2Loader.dispose();
+    };
+  }, [path, gl]);
+
+  return scene;
+}
+
+/* ---------------- Car Model ---------------- */
+
+const CarModel = React.memo(({ modelPath, modelType, rotate = true }) => {
+  const meshRef = useRef();
+  const scene = useOptimizedGLTF(modelPath);
+
+  const { scale, y } = useMemo(() => {
+    return (
+      MODEL_SETTINGS[String(modelType || "").toLowerCase()] || {
+        scale: 1,
+        y: 0,
+      }
+    );
+  }, [modelType]);
+
+  useEffect(() => {
+    if (!scene) return;
+
     scene.scale.setScalar(scale);
     scene.position.set(0, y, 0);
 
-    // Light optimization: stop frustum popping for scaled meshes
-    scene.traverse((o) => {
-      if (o.isMesh) {
-        o.frustumCulled = false;
+    scene.traverse((obj) => {
+      if (obj.isMesh) {
+        obj.castShadow = false;
+        obj.receiveShadow = false;
       }
     });
+
+    return () => {
+      scene.traverse((obj) => {
+        if (obj.geometry) obj.geometry.dispose();
+
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((m) => m.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      });
+    };
   }, [scene, scale, y]);
 
   useFrame(({ clock }) => {
-    if (!rotate) return;
-    if (meshRef.current) {
-      meshRef.current.rotation.y = clock.elapsedTime * 0.4;
-    }
+    if (!rotate || !meshRef.current) return;
+
+    meshRef.current.rotation.y = clock.elapsedTime * 0.35;
   });
+
+  if (!scene) return null;
 
   return <primitive ref={meshRef} object={scene} />;
 });
 
+/* ---------------- Viewer ---------------- */
+
 function CarModelViewer({ modelPath, modelType, quality = "auto" }) {
+  const { ref, inView } = useInView({
+    triggerOnce: true,
+    rootMargin: "200px",
+  });
+
   const [isInteracting, setIsInteracting] = useState(false);
 
-  // DPR depends on quality + connection
   const maxDpr = useMemo(() => {
     const c =
       navigator.connection ||
@@ -88,59 +154,62 @@ function CarModelViewer({ modelPath, modelType, quality = "auto" }) {
 
     const slow =
       c?.saveData ||
-      (c?.effectiveType && /(2g|slow-2g)/i.test(c.effectiveType || ""));
+      (c?.effectiveType && /(2g|slow-2g)/i.test(c.effectiveType));
 
     if (quality === "low") return 1.1;
     if (quality === "high") return slow ? 1.5 : 2.25;
-    // auto
+
     return slow ? 1.25 : 2;
   }, [quality]);
 
-  // IMPORTANT: demand mode = huge performance gain
-  // We'll invalidate while rotating OR user interacting
-  const shouldAnimate = true; // keep rotation for premium look
+  const shouldAnimate = !isInteracting;
 
   return (
-    <div className="w-full h-72 rounded-xl overflow-hidden">
-      <Canvas
-        camera={{ position: [3, 2, 5], fov: 45 }}
-        dpr={[1, maxDpr]}
-        frameloop="demand"
-        shadows={false}
-        gl={{
-          antialias: quality !== "low",
-          powerPreference: "high-performance",
-          alpha: true,
-          stencil: false,
-          depth: true,
-          failIfMajorPerformanceCaveat: true,
-        }}
-        onPointerDown={() => setIsInteracting(true)}
-        onPointerUp={() => setIsInteracting(false)}
-        onPointerLeave={() => setIsInteracting(false)}
-      >
-        <PerformanceMonitor>
-          <AdaptiveDpr pixelated />
-        </PerformanceMonitor>
+    <div ref={ref} className="w-full h-72 rounded-xl overflow-hidden">
+      {inView && (
+        <Canvas
+          camera={{ position: [3, 2, 5], fov: 45 }}
+          dpr={[1, maxDpr]}
+          frameloop="demand"
+          shadows={false}
+          gl={{
+            antialias: quality !== "low",
+            powerPreference: "default",
+            alpha: true,
+            stencil: false,
+            depth: true,
+            failIfMajorPerformanceCaveat: true,
+          }}
+          onPointerDown={() => setIsInteracting(true)}
+          onPointerUp={() => setIsInteracting(false)}
+          onPointerLeave={() => setIsInteracting(false)}
+        >
+          <PerformanceMonitor>
+            <AdaptiveDpr pixelated />
+          </PerformanceMonitor>
 
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 10, 5]} intensity={1.2} />
+          <ambientLight intensity={0.7} />
+          <directionalLight position={[8, 10, 5]} intensity={0.9} />
 
-        <Suspense fallback={<Loader />}>
-          <Environment preset="city" />
-          <CarModel modelPath={modelPath} modelType={modelType} rotate={shouldAnimate} />
-        </Suspense>
+          <Suspense fallback={<Loader />}>
+            <Environment preset="city" />
 
-        {/* Controls: keep disabled for performance.
-            If you want enable rotate drag, set enableRotate true. */}
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          enableRotate={false}
-        />
+            <CarModel
+              modelPath={modelPath}
+              modelType={modelType}
+              rotate={shouldAnimate}
+            />
+          </Suspense>
 
-        <InvalidateOnFrame active={shouldAnimate || isInteracting} />
-      </Canvas>
+          <OrbitControls
+            enableZoom={false}
+            enablePan={false}
+            enableRotate={false}
+          />
+
+          <InvalidateOnFrame active={shouldAnimate || isInteracting} />
+        </Canvas>
+      )}
     </div>
   );
 }

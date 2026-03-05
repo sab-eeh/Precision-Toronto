@@ -67,32 +67,32 @@ const CARS = Object.freeze([
     type: "coupe",
     label: " 2 Door Coupe",
     desc: "Luxury sports car treatment",
-    modelPath: "/models/coupe/scene.gltf",
+    modelPath: "/models/coupe/scene-final.glb",
   },
   {
     type: "sedan",
     label: "4 Door Sedan",
     desc: "Perfect for daily drivers",
-    modelPath: "/models/sedan/scene.gltf",
+    modelPath: "/models/sedan/scene-final.glb",
   },
   {
     type: "suv1",
     label: "5 Seater SUV",
     desc: "Ideal for small family",
-    modelPath: "/models/suv1/scene.gltf",
+    modelPath: "/models/suv1/scene-final.glb",
   },
   {
     type: "suv2",
     label: "6+ Seater SUV",
     desc: "Best for large family vehicles",
-    modelPath: "/models/suv2/scene.gltf",
+    modelPath: "/models/suv2/scene-final.glb",
   },
 
   {
     type: "truck",
     label: "Truck",
     desc: "Heavy duty performance",
-    modelPath: "/models/truck/scene.gltf",
+    modelPath: "/models/truck/scene-final.glb",
   },
 ]);
 
@@ -332,7 +332,7 @@ const HomePage = memo(function HomePage({ onCarSelect }) {
         >
           {/* Headline */}
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.15] tracking-tight">
-            PRECISION ISN’T A SERVICE 
+            PRECISION ISN’T A SERVICE
             <br className="hidden sm:block" />
             IT’S A STANDARD.
           </h1>
