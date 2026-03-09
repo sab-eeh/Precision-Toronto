@@ -6,6 +6,9 @@ router.post("/incoming", async (req, res) => {
   try {
     const { Body, From, To } = req.body;
 
+    const from = From.replace(/\s/g, "");
+    const to = To.replace(/\s/g, "");
+
     if (!Body || !From) {
       console.warn("⚠️ Invalid SMS payload received");
       return res.status(200).send("<Response></Response>");

@@ -6,7 +6,7 @@ const { sendSMS } = require("../services/smsService");
  */
 const getMessagesByPhone = async (req, res) => {
   try {
-    const { phone } = req.params;
+    let { phone } = req.params;
 
     if (!phone) {
       return res.status(400).json({
@@ -14,6 +14,9 @@ const getMessagesByPhone = async (req, res) => {
         message: "Phone number required",
       });
     }
+
+    // Normalize phone format
+    phone = phone.replace(/\s/g, "");
 
     const messages = await Message.find({
       $or: [{ from: phone }, { to: phone }],
@@ -108,6 +111,12 @@ const replyToConversation = async (req, res) => {
         message: "Phone and message required",
       });
     }
+
+    await sendSMS({
+      to: phone,
+      message,
+    });
+
     const savedMessage = await Message.create({
       from: process.env.TWILIO_PHONE_NUMBER,
       to: phone,
@@ -115,19 +124,14 @@ const replyToConversation = async (req, res) => {
       direction: "outbound",
     });
 
+    // Emit real-time update
+    if (global.io) {
+      global.io.emit("newMessage", savedMessage);
+    }
+
     res.json({
       success: true,
       data: savedMessage,
-    });
-
-    await sendSMS({
-      to: phone,
-      message,
-    });
-
-    res.json({
-      success: true,
-      message: "SMS sent successfully",
     });
   } catch (error) {
     console.error("Reply error:", error);
