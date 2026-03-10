@@ -6,7 +6,8 @@ import {
 } from "../../services/messageService";
 
 const ChatHeader = () => {
-  const { activePhone } = useMessages();
+  const { activePhone, setMessages, setActivePhone, setConversations } =
+    useMessages();
 
   const formatPhone = (phone) => {
     if (!phone) return "";
