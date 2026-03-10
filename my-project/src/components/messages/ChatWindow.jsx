@@ -4,13 +4,16 @@ import ReplyBox from "./ReplyBox";
 import ChatHeader from "./ChatHeader";
 import MessageBubble from "./MessageBubble";
 import socket from "../../services/socket";
-import { fetchMessages } from "../../services/messageService";
+import {
+  fetchMessages,
+  markConversationRead,
+} from "../../services/messageService";
 
 const ChatWindow = () => {
   const { activePhone, messages, setMessages } = useMessages();
-
   const bottomRef = useRef(null);
 
+  /* LOAD MESSAGES WHEN CHAT OPENS */
   useEffect(() => {
     if (!activePhone) return;
 
@@ -18,6 +21,9 @@ const ChatWindow = () => {
       try {
         const history = await fetchMessages(activePhone);
         setMessages(history || []);
+
+        // mark messages as read
+        await markConversationRead(activePhone);
       } catch (error) {
         console.error("Failed to load messages:", error);
       }
@@ -26,12 +32,26 @@ const ChatWindow = () => {
     loadMessages();
   }, [activePhone, setMessages]);
 
+  /* REALTIME SOCKET LISTENER */
+  useEffect(() => {
+    const handleNewMessage = (msg) => {
+      if (!activePhone) return;
+
+      if (msg.from === activePhone || msg.to === activePhone) {
+        setMessages((prev) => [...prev, msg]);
+      }
+    };
+
+    socket.on("newMessage", handleNewMessage);
+
+    return () => socket.off("newMessage", handleNewMessage);
+  }, [activePhone, setMessages]);
+
   /* AUTO SCROLL */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  /* EMPTY STATE */
   if (!activePhone) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-gray-400 text-sm">
@@ -43,12 +63,12 @@ const ChatWindow = () => {
 
   return (
     <div className="flex flex-col flex-1 h-full">
-      {/* STICKY HEADER */}
+      {/* HEADER */}
       <div className="sticky top-0 z-10 border-b border-white/10 bg-[#0B1624]">
         <ChatHeader />
       </div>
 
-      {/* MESSAGE SCROLL AREA */}
+      {/* MESSAGE AREA */}
       <div className="flex-1 overflow-y-auto px-8 py-6">
         {messages?.length === 0 && (
           <div className="flex flex-col items-center justify-center mt-24 text-gray-400 text-sm">

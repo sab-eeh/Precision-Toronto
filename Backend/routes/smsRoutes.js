@@ -21,6 +21,7 @@ router.post("/incoming", async (req, res) => {
       to: To,
       body: Body,
       direction: "inbound",
+      read: false
     });
 
     // 🔥 Emit real-time event

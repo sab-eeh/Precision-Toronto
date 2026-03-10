@@ -30,7 +30,15 @@ const ConversationList = () => {
         if (existing) {
           return prev.map((c) =>
             c.phone === phone
-              ? { ...c, lastMessage: msg.body, lastTime: msg.createdAt }
+              ? {
+                  ...c,
+                  lastMessage: msg.body,
+                  lastTime: msg.createdAt,
+                  unreadCount:
+                    msg.direction === "inbound" && activePhone !== phone
+                      ? (c.unreadCount || 0) + 1
+                      : c.unreadCount,
+                }
               : c
           );
         }
@@ -40,6 +48,7 @@ const ConversationList = () => {
             phone,
             lastMessage: msg.body,
             lastTime: msg.createdAt,
+            unreadCount: msg.direction === "inbound" ? 1 : 0,
           },
           ...prev,
         ];
@@ -48,10 +57,8 @@ const ConversationList = () => {
 
     socket.on("newMessage", updateConversations);
 
-    return () => {
-      socket.off("newMessage", updateConversations);
-    };
-  }, [setConversations]);
+    return () => socket.off("newMessage", updateConversations);
+  }, [setConversations, activePhone]);
 
   const filtered = (conversations || []).filter((c) =>
     c.phone.toLowerCase().includes(search.toLowerCase())
@@ -82,7 +89,7 @@ const ConversationList = () => {
         />
       </div>
 
-      {/* CONVERSATION LIST */}
+      {/* LIST */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 && (
           <div className="text-center text-gray-400 text-sm mt-10">
@@ -98,7 +105,6 @@ const ConversationList = () => {
               key={conv.phone}
               onClick={() => setActivePhone(conv.phone)}
               className={`flex items-center gap-3 px-5 py-4 cursor-pointer border-b border-white/5 transition-all duration-150
-              
               ${
                 isActive
                   ? "bg-blue-500/10 border-l-2 border-l-blue-500"
@@ -122,9 +128,17 @@ const ConversationList = () => {
                   </span>
                 </div>
 
-                <p className="text-xs text-gray-400 truncate mt-1">
-                  {conv.lastMessage || "New conversation"}
-                </p>
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-400 truncate">
+                    {conv.lastMessage || "New conversation"}
+                  </p>
+
+                  {conv.unreadCount > 0 && (
+                    <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full ml-2">
+                      {conv.unreadCount}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );

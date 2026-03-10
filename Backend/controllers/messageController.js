@@ -67,6 +67,20 @@ const getConversations = async (req, res) => {
           lastMessage: { $first: "$body" },
           lastTime: { $first: "$createdAt" },
           serviceType: { $first: "$serviceType" },
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$direction", "inbound"] },
+                    { $eq: ["$read", false] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
         },
       },
       {
@@ -75,6 +89,7 @@ const getConversations = async (req, res) => {
           lastMessage: 1,
           lastTime: 1,
           serviceType: 1,
+          unreadCount: 1,
           _id: 0,
         },
       },
@@ -125,6 +140,7 @@ const replyToConversation = async (req, res) => {
       to: phone,
       body: message,
       direction: "outbound",
+      read: true,
     });
 
     // Emit real-time update
@@ -199,10 +215,30 @@ const togglePinConversation = async (req, res) => {
     });
   }
 };
+
+const markConversationRead = async (req, res) => {
+  try {
+    const { phone } = req.params;
+
+    await Message.updateMany(
+      {
+        from: phone,
+        direction: "inbound",
+        read: false,
+      },
+      { read: true }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false });
+  }
+};
 module.exports = {
   getMessagesByPhone,
   getConversations,
   replyToConversation,
   deleteConversation,
   togglePinConversation,
+  markConversationRead,
 };

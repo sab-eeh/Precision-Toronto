@@ -40,3 +40,10 @@ export const togglePinConversation = async (phone, pinned) => {
 
   return res.data;
 };
+
+export const markConversationRead = async (phone) => {
+  const res = await axios.patch(
+    `${API}api/messages/conversation/${encodeURIComponent(phone)}/read`
+  );
+  return res.data;
+};
