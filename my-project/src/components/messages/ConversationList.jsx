@@ -60,9 +60,14 @@ const ConversationList = () => {
     return () => socket.off("newMessage", updateConversations);
   }, [setConversations, activePhone]);
 
-  const filtered = (conversations || []).filter((c) =>
-    c.phone.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = (conversations || [])
+    .filter((c) => c.phone.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+
+      return new Date(b.lastTime) - new Date(a.lastTime);
+    });
 
   const formatTime = (time) => {
     if (!time) return "";
@@ -120,6 +125,7 @@ const ConversationList = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-white truncate">
+                    {conv.pinned && "📌 "}
                     {conv.phone}
                   </span>
 
