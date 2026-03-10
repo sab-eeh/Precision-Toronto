@@ -3,7 +3,7 @@ import { sendReply } from "../../services/messageService";
 import { useMessages } from "../../context/MessageContext";
 
 const ReplyBox = () => {
-  const { activePhone, setMessages } = useMessages();
+  const { activePhone } = useMessages();
 
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -15,21 +15,12 @@ const ReplyBox = () => {
 
     const messageText = text;
 
-    const optimisticMessage = {
-      body: messageText,
-      from: "admin",
-      to: activePhone,
-      direction: "outbound",
-      createdAt: new Date(),
-    };
-
-    setMessages((prev) => [...prev, optimisticMessage]);
-
     setText("");
     setSending(true);
 
     try {
       await sendReply(activePhone, messageText);
+      // message will appear via Socket.IO
     } catch (err) {
       console.error("Send failed:", err);
     } finally {
@@ -37,7 +28,6 @@ const ReplyBox = () => {
     }
   };
 
-  /* ENTER TO SEND */
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -45,7 +35,6 @@ const ReplyBox = () => {
     }
   };
 
-  /* AUTO EXPAND TEXTAREA */
   const handleChange = (e) => {
     setText(e.target.value);
 
@@ -57,7 +46,6 @@ const ReplyBox = () => {
   return (
     <div className="px-6 py-4 bg-[#0B1624] border-t border-white/10">
       <div className="flex items-end gap-3">
-        {/* TEXTAREA */}
         <textarea
           ref={textareaRef}
           rows={1}
@@ -65,15 +53,13 @@ const ReplyBox = () => {
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="Type a message..."
-          className="flex-1 resize-none bg-[#0A1A2B] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 max-h-[120px] overflow-y-auto scrollbar-hide"
+          className="flex-1 resize-none bg-[#0A1A2B] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 max-h-[120px] overflow-y-auto"
         />
 
-        {/* SEND BUTTON */}
         <button
           onClick={handleSend}
           disabled={!text.trim() || sending}
           className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150
-          
           ${
             !text.trim() || sending
               ? "bg-blue-600/40 text-white/50 cursor-not-allowed"
