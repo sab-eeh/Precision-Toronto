@@ -143,8 +143,38 @@ const replyToConversation = async (req, res) => {
   }
 };
 
+const deleteConversation = async (req, res) => {
+  try {
+    const { phone } = req.params;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number required",
+      });
+    }
+
+    const deleted = await Message.deleteMany({
+      $or: [{ from: phone }, { to: phone }],
+    });
+
+    res.json({
+      success: true,
+      deletedCount: deleted.deletedCount,
+    });
+  } catch (error) {
+    console.error("❌ Delete conversation error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete conversation",
+    });
+  }
+};
+
 module.exports = {
   getMessagesByPhone,
   getConversations,
   replyToConversation,
+  deleteConversation
 };

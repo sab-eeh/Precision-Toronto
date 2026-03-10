@@ -5,15 +5,12 @@ const {
   getMessagesByPhone,
   getConversations,
   replyToConversation,
+  deleteConversation,
 } = require("../controllers/messageController");
 
-// list conversations
 router.get("/conversations", getConversations);
-
-// get full conversation
 router.get("/:phone", getMessagesByPhone);
-
-// admin reply
 router.post("/reply", replyToConversation);
+router.delete("/conversation/:phone", deleteConversation);
 
 module.exports = router;

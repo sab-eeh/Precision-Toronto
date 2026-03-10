@@ -1,11 +1,31 @@
 import { useMessages } from "../../context/MessageContext";
 
+import {
+  deleteConversation,
+  fetchConversations,
+} from "../../services/messageService";
+
 const ChatHeader = () => {
   const { activePhone } = useMessages();
 
   const formatPhone = (phone) => {
     if (!phone) return "";
     return phone;
+  };
+  const handleDelete = async () => {
+    if (!activePhone) return;
+
+    const confirmDelete = window.confirm("Delete this entire conversation?");
+
+    if (!confirmDelete) return;
+
+    await deleteConversation(activePhone);
+
+    setMessages([]);
+    setActivePhone(null);
+
+    const updated = await fetchConversations();
+    setConversations(updated);
   };
 
   return (
@@ -26,6 +46,12 @@ const ChatHeader = () => {
           <span className="text-xs text-gray-400">SMS Conversation</span>
         </div>
       </div>
+      <button
+        onClick={handleDelete}
+        className="text-red-400 hover:text-red-500 text-sm"
+      >
+        Delete Chat
+      </button>
 
       {/* RIGHT SECTION */}
       <div className="flex items-center gap-3 text-xs text-gray-400">

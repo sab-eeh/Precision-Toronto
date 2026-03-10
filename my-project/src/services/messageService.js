@@ -24,3 +24,10 @@ export const sendReply = async (phone, message) => {
 
   return res.data;
 };
+
+export const deleteConversation = async (phone) => {
+  const res = await axios.delete(
+    `${API}api/messages/conversation/${encodeURIComponent(phone)}`
+  );
+  return res.data;
+};
