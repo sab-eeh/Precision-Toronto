@@ -67,6 +67,7 @@ const getConversations = async (req, res) => {
           lastMessage: { $first: "$body" },
           lastTime: { $first: "$createdAt" },
           serviceType: { $first: "$serviceType" },
+          pinned: { $first: "$pinned" },
           unreadCount: {
             $sum: {
               $cond: [
@@ -90,6 +91,7 @@ const getConversations = async (req, res) => {
           lastTime: 1,
           serviceType: 1,
           unreadCount: 1,
+          pinned: 1,
           _id: 0,
         },
       },
