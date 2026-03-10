@@ -4,25 +4,26 @@ import ReplyBox from "./ReplyBox";
 import ChatHeader from "./ChatHeader";
 import MessageBubble from "./MessageBubble";
 import socket from "../../services/socket";
+import { fetchMessages } from "../../services/messageService";
 
 const ChatWindow = () => {
   const { activePhone, messages, setMessages } = useMessages();
 
   const bottomRef = useRef(null);
 
-  /* SOCKET LISTENER */
   useEffect(() => {
-    const handleNewMessage = (msg) => {
-      if (!activePhone) return;
+    if (!activePhone) return;
 
-      if (msg.from === activePhone || msg.to === activePhone) {
-        setMessages((prev) => [...prev, msg]);
+    const loadMessages = async () => {
+      try {
+        const history = await fetchMessages(activePhone);
+        setMessages(history || []);
+      } catch (error) {
+        console.error("Failed to load messages:", error);
       }
     };
 
-    socket.on("newMessage", handleNewMessage);
-
-    return () => socket.off("newMessage", handleNewMessage);
+    loadMessages();
   }, [activePhone, setMessages]);
 
   /* AUTO SCROLL */
