@@ -806,7 +806,7 @@ export default function AdminDashboard() {
             </div>
           ) : (
             pageItems.map((b) => {
-              console.log("BOOKING:", b);
+              
               const vehicle = b?.vehicle
                 ? [b.vehicle.make, b.vehicle.model, b.vehicle.year]
                     .filter(Boolean)
