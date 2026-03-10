@@ -29,7 +29,11 @@ const messageSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-
+    pinned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Booking",

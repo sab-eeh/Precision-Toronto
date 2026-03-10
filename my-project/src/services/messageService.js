@@ -31,3 +31,12 @@ export const deleteConversation = async (phone) => {
   );
   return res.data;
 };
+
+export const togglePinConversation = async (phone, pinned) => {
+  const res = await axios.patch(
+    `${API}api/messages/conversation/${encodeURIComponent(phone)}/pin`,
+    { pinned }
+  );
+
+  return res.data;
+};

@@ -13,6 +13,14 @@ const ChatHeader = () => {
     if (!phone) return "";
     return phone;
   };
+  const handlePin = async () => {
+    if (!activePhone) return;
+
+    await togglePinConversation(activePhone, true);
+
+    const updated = await fetchConversations();
+    setConversations(updated);
+  };
   const handleDelete = async () => {
     if (!activePhone) return;
 
@@ -52,6 +60,12 @@ const ChatHeader = () => {
         className="text-red-400 hover:text-red-500 text-sm"
       >
         Delete Chat
+      </button>
+      <button
+        onClick={handlePin}
+        className="text-yellow-400 hover:text-yellow-500 text-sm"
+      >
+        📌 Pin
       </button>
 
       {/* RIGHT SECTION */}

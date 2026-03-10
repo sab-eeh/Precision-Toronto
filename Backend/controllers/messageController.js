@@ -79,7 +79,10 @@ const getConversations = async (req, res) => {
         },
       },
       {
-        $sort: { lastTime: -1 },
+        $sort: {
+          pinned: -1,
+          lastTime: -1,
+        },
       },
     ]);
 
@@ -172,9 +175,34 @@ const deleteConversation = async (req, res) => {
   }
 };
 
+const togglePinConversation = async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const { pinned } = req.body;
+
+    await Message.updateMany(
+      {
+        $or: [{ from: phone }, { to: phone }],
+      },
+      { pinned }
+    );
+
+    res.json({
+      success: true,
+      pinned,
+    });
+  } catch (error) {
+    console.error("Pin error:", error);
+
+    res.status(500).json({
+      success: false,
+    });
+  }
+};
 module.exports = {
   getMessagesByPhone,
   getConversations,
   replyToConversation,
-  deleteConversation
+  deleteConversation,
+  togglePinConversation,
 };
