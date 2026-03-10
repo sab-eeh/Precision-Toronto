@@ -45,7 +45,11 @@ const messageSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-
+    type: {
+      type: String,
+      enum: ["sms", "system"],
+      default: "sms",
+    },
     serviceType: {
       type: String,
       enum: ["mobile", "dropoff"],

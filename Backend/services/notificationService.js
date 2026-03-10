@@ -1,6 +1,7 @@
 const { sendSMS } = require("./smsService");
 const { sendEmail } = require("./emailService");
 const { bookingEmailTemplate } = require("./templates/bookingEmail");
+const Message = require("../models/Message");
 
 /**
  * Format date safely
@@ -105,13 +106,27 @@ const sendBookingNotifications = async (booking) => {
     }
 
     // Send admin SMS alert
-    if (process.env.ADMIN_PHONE) {
-      jobs.push(
-        sendSMS({
-          to: process.env.ADMIN_PHONE,
-          message: adminSMS,
-        })
-      );
+    // Send customer SMS
+    if (booking.phone) {
+      await sendSMS({
+        to: booking.phone,
+        message: customerSMS,
+        serviceType: booking.serviceType,
+      });
+
+      /* Save message to CRM */
+      const savedMessage = await Message.create({
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: booking.phone,
+        body: customerSMS,
+        direction: "outbound",
+        read: true,
+      });
+
+      /* Emit realtime update */
+      if (global.io) {
+        global.io.emit("newMessage", savedMessage);
+      }
     }
 
     // Send admin email
