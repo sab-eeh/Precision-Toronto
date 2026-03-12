@@ -50,7 +50,7 @@ const VerticalBeforeAfterSlider = () => {
 
         {/* Before/After Slider */}
         <div className="relative max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg">
-          <div className="relative h-[400px] sm:h-[480px] md:h-[560px] lg:h-[620px] overflow-hidden group">
+          <div className="relative h-[400px] sm:h-[480px] md:h-[460px] lg:h-[520px] overflow-hidden group">
             {/* Top (Before) */}
             <div
               className="absolute inset-0 bg-cover bg-center transition-all duration-500"
